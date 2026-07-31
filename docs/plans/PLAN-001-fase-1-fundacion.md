@@ -11,6 +11,7 @@
 ## 📋 Resumen de la Fase
 
 **Objetivos**:
+
 - Setup completo del proyecto Next.js con TypeScript
 - Sistema de autenticación con Firebase
 - Layout base de la aplicación
@@ -18,6 +19,7 @@
 - Dashboard básico (estructura, sin datos reales)
 
 **Entregables**:
+
 - [x] Proyecto Next.js 14 configurado
 - [x] TypeScript + ESLint + Prettier
 - [x] Tailwind CSS + shadcn/ui
@@ -97,34 +99,34 @@ tienda-web/
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "typescript": "^5.4.0",
-    
+
     "@firebase/app": "^0.10.0",
     "@firebase/auth": "^1.7.0",
     "@firebase/firestore": "^4.6.0",
     "@firebase/storage": "^0.12.0",
-    
+
     "zustand": "^4.5.0",
-    
+
     "react-hook-form": "^7.51.0",
     "zod": "^3.23.0",
     "@hookform/resolvers": "^3.3.0",
-    
+
     "date-fns": "^3.6.0",
     "lucide-react": "^0.372.0",
     "clsx": "^2.1.0",
     "tailwind-merge": "^2.3.0",
-    
+
     "react-hot-toast": "^2.4.0"
   },
   "devDependencies": {
     "@types/node": "^20.12.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
-    
+
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3",
-    
+
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.0",
     "prettier": "^3.2.0",
@@ -158,6 +160,7 @@ npm install -D prettier prettier-plugin-tailwindcss
 **Archivos a crear/modificar**:
 
 1. `.env.local` (configuración Firebase)
+
 ```env
 NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
@@ -168,6 +171,7 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
 2. `.prettierrc` (formateo)
+
 ```json
 {
   "semi": true,
@@ -179,6 +183,7 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
 3. `next.config.js` (configuración Next.js)
+
 ```javascript
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -191,6 +196,7 @@ module.exports = nextConfig;
 ```
 
 **Validación**:
+
 - [ ] `npm run dev` funciona sin errores
 - [ ] TypeScript compila correctamente
 - [ ] Tailwind CSS funciona
@@ -204,6 +210,7 @@ module.exports = nextConfig;
 **Archivos a crear**:
 
 1. `lib/firebase.ts` (configuración)
+
 ```typescript
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
@@ -220,7 +227,8 @@ const firebaseConfig = {
 };
 
 // Inicializar Firebase (evitar reinicialización)
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const app =
+  getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
@@ -229,6 +237,7 @@ export default app;
 ```
 
 2. `lib/auth.ts` (helpers de autenticación)
+
 ```typescript
 import {
   signInWithEmailAndPassword,
@@ -242,14 +251,22 @@ import { auth, db } from './firebase';
 import type { UserProfile } from '@/types/user';
 
 export async function signIn(email: string, password: string) {
-  const userCredential = await signInWithEmailAndPassword(auth, email, password);
+  const userCredential = await signInWithEmailAndPassword(
+    auth,
+    email,
+    password
+  );
   return userCredential.user;
 }
 
 export async function signUp(email: string, password: string, name: string) {
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  const userCredential = await createUserWithEmailAndPassword(
+    auth,
+    email,
+    password
+  );
   const user = userCredential.user;
-  
+
   // Crear perfil en Firestore
   const userProfile: UserProfile = {
     id: user.uid,
@@ -260,9 +277,9 @@ export async function signUp(email: string, password: string, name: string) {
     createdAt: new Date(),
     updatedAt: new Date(),
   };
-  
+
   await setDoc(doc(db, 'users', user.uid), userProfile);
-  
+
   return user;
 }
 
@@ -273,11 +290,11 @@ export async function signOut() {
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   const docRef = doc(db, 'users', uid);
   const docSnap = await getDoc(docRef);
-  
+
   if (docSnap.exists()) {
     return docSnap.data() as UserProfile;
   }
-  
+
   return null;
 }
 
@@ -287,6 +304,7 @@ export function onAuthChange(callback: (user: User | null) => void) {
 ```
 
 3. `types/user.ts` (tipos TypeScript)
+
 ```typescript
 export type UserRole = 'owner' | 'admin' | 'cashier';
 
@@ -317,6 +335,7 @@ export interface Store {
 ```
 
 **Validación**:
+
 - [ ] Firebase inicializa sin errores
 - [ ] Funciones de auth importables
 - [ ] TypeScript reconoce tipos
@@ -330,6 +349,7 @@ export interface Store {
 **Archivos a crear**:
 
 1. `store/authStore.ts`
+
 ```typescript
 import { create } from 'zustand';
 import type { User } from 'firebase/auth';
@@ -339,7 +359,7 @@ interface AuthState {
   user: User | null;
   profile: UserProfile | null;
   loading: boolean;
-  
+
   setUser: (user: User | null) => void;
   setProfile: (profile: UserProfile | null) => void;
   setLoading: (loading: boolean) => void;
@@ -350,7 +370,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   profile: null,
   loading: true,
-  
+
   setUser: (user) => set({ user }),
   setProfile: (profile) => set({ profile }),
   setLoading: (loading) => set({ loading }),
@@ -359,6 +379,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 ```
 
 2. `hooks/useAuth.ts` (custom hook)
+
 ```typescript
 'use client';
 
@@ -369,15 +390,16 @@ import { useAuthStore } from '@/store/authStore';
 
 export function useAuth() {
   const router = useRouter();
-  const { user, profile, loading, setUser, setProfile, setLoading } = useAuthStore();
-  
+  const { user, profile, loading, setUser, setProfile, setLoading } =
+    useAuthStore();
+
   useEffect(() => {
     setLoading(true);
-    
+
     const unsubscribe = onAuthChange(async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
-        
+
         // Cargar perfil
         const userProfile = await getUserProfile(firebaseUser.uid);
         setProfile(userProfile);
@@ -385,31 +407,32 @@ export function useAuth() {
         setUser(null);
         setProfile(null);
       }
-      
+
       setLoading(false);
     });
-    
+
     return () => unsubscribe();
   }, [setUser, setProfile, setLoading]);
-  
+
   return { user, profile, loading };
 }
 
 export function useRequireAuth(redirectUrl = '/login') {
   const { user, loading } = useAuth();
   const router = useRouter();
-  
+
   useEffect(() => {
     if (!loading && !user) {
       router.push(redirectUrl);
     }
   }, [user, loading, router, redirectUrl]);
-  
+
   return { user, loading };
 }
 ```
 
 **Validación**:
+
 - [ ] Store funciona correctamente
 - [ ] Hook useAuth detecta cambios de autenticación
 - [ ] TypeScript sin errores
@@ -449,6 +472,7 @@ npx shadcn-ui@latest add alert
 ```
 
 **Archivos generados**:
+
 - `components/ui/button.tsx`
 - `components/ui/input.tsx`
 - `components/ui/label.tsx`
@@ -458,6 +482,7 @@ npx shadcn-ui@latest add alert
 - etc.
 
 **Validación**:
+
 - [ ] Componentes shadcn/ui instalados
 - [ ] Estilos aplicados correctamente
 
@@ -470,6 +495,7 @@ npx shadcn-ui@latest add alert
 **Archivos a crear**:
 
 1. `components/layout/Sidebar.tsx`
+
 ```typescript
 'use client';
 
@@ -499,7 +525,7 @@ const menuItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  
+
   return (
     <div className="flex h-screen w-64 flex-col border-r bg-slate-50">
       {/* Logo */}
@@ -507,13 +533,13 @@ export function Sidebar() {
         <Store className="mr-2 h-6 w-6 text-blue-600" />
         <span className="text-xl font-bold text-slate-900">TiendaWeb</span>
       </div>
-      
+
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-4">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
-          
+
           return (
             <Link
               key={item.href}
@@ -537,6 +563,7 @@ export function Sidebar() {
 ```
 
 2. `components/layout/Header.tsx`
+
 ```typescript
 'use client';
 
@@ -555,23 +582,23 @@ import { LogOut, User } from 'lucide-react';
 
 export function Header() {
   const { profile } = useAuth();
-  
+
   const handleSignOut = async () => {
     await signOut();
   };
-  
+
   const initials = profile?.name
     .split(' ')
     .map((n) => n[0])
     .join('')
     .toUpperCase();
-  
+
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6">
       <div className="flex items-center">
         <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
       </div>
-      
+
       <div className="flex items-center space-x-4">
         {/* User menu */}
         <DropdownMenu>
@@ -607,6 +634,7 @@ export function Header() {
 ```
 
 3. `app/(dashboard)/layout.tsx` (layout de dashboard)
+
 ```typescript
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
@@ -631,6 +659,7 @@ export default function DashboardLayout({
 ```
 
 **Validación**:
+
 - [ ] Sidebar renderiza correctamente
 - [ ] Header muestra info de usuario
 - [ ] Layout responsive
@@ -645,6 +674,7 @@ export default function DashboardLayout({
 **Archivos a crear**:
 
 1. `components/auth/LoginForm.tsx`
+
 ```typescript
 'use client';
 
@@ -671,7 +701,7 @@ export function LoginForm() {
   const router = useRouter();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const {
     register,
     handleSubmit,
@@ -679,14 +709,14 @@ export function LoginForm() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
-  
+
   const onSubmit = async (data: LoginFormData) => {
     try {
       setLoading(true);
       setError('');
-      
+
       await signIn(data.email, data.password);
-      
+
       toast.success('¡Bienvenido!');
       router.push('/dashboard');
     } catch (err: any) {
@@ -695,7 +725,7 @@ export function LoginForm() {
       setLoading(false);
     }
   };
-  
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {error && (
@@ -703,7 +733,7 @@ export function LoginForm() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      
+
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input
@@ -716,7 +746,7 @@ export function LoginForm() {
           <p className="text-sm text-red-500">{errors.email.message}</p>
         )}
       </div>
-      
+
       <div className="space-y-2">
         <Label htmlFor="password">Contraseña</Label>
         <Input
@@ -729,7 +759,7 @@ export function LoginForm() {
           <p className="text-sm text-red-500">{errors.password.message}</p>
         )}
       </div>
-      
+
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
       </Button>
@@ -739,6 +769,7 @@ export function LoginForm() {
 ```
 
 2. `app/(auth)/login/page.tsx`
+
 ```typescript
 import Link from 'next/link';
 import { LoginForm } from '@/components/auth/LoginForm';
@@ -775,6 +806,7 @@ export default function LoginPage() {
 4. `app/(auth)/register/page.tsx` (similar a login/page.tsx)
 
 **Validación**:
+
 - [ ] Login funcional
 - [ ] Registro funcional
 - [ ] Validaciones funcionan
@@ -790,6 +822,7 @@ export default function LoginPage() {
 **Archivos a crear**:
 
 1. `middleware.ts` (en raíz del proyecto)
+
 ```typescript
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
@@ -799,21 +832,21 @@ export function middleware(request: NextRequest) {
   // En producción, verificar token JWT o Firebase session
   const isAuthenticated = request.cookies.has('session');
   const { pathname } = request.nextUrl;
-  
+
   // Rutas públicas
   const publicPaths = ['/login', '/register'];
   const isPublicPath = publicPaths.some((path) => pathname.startsWith(path));
-  
+
   // Si no está autenticado y intenta acceder a ruta privada
   if (!isAuthenticated && !isPublicPath && pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
-  
+
   // Si está autenticado y intenta acceder a login/register
   if (isAuthenticated && isPublicPath) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
-  
+
   return NextResponse.next();
 }
 
@@ -823,6 +856,7 @@ export const config = {
 ```
 
 2. `app/(dashboard)/page.tsx` (Dashboard básico)
+
 ```typescript
 'use client';
 
@@ -832,7 +866,7 @@ import { DollarSign, Package, ShoppingCart, Users } from 'lucide-react';
 
 export default function DashboardPage() {
   const { profile } = useAuth();
-  
+
   return (
     <div className="space-y-6">
       <div>
@@ -843,7 +877,7 @@ export default function DashboardPage() {
           Resumen de tu negocio
         </p>
       </div>
-      
+
       {/* KPI Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -860,7 +894,7 @@ export default function DashboardPage() {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -875,7 +909,7 @@ export default function DashboardPage() {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -890,7 +924,7 @@ export default function DashboardPage() {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -906,7 +940,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      
+
       {/* Placeholder para gráficos */}
       <Card>
         <CardHeader>
@@ -924,6 +958,7 @@ export default function DashboardPage() {
 ```
 
 **Validación**:
+
 - [ ] Rutas protegidas redirigen a login si no autenticado
 - [ ] Dashboard solo accesible con sesión
 - [ ] Middleware funciona correctamente
@@ -937,6 +972,7 @@ export default function DashboardPage() {
 **Archivos a modificar**:
 
 1. `app/layout.tsx`
+
 ```typescript
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
@@ -970,6 +1006,7 @@ export default function RootLayout({
 ```
 
 2. `components/providers/AuthProvider.tsx`
+
 ```typescript
 'use client';
 
@@ -977,12 +1014,13 @@ import { useAuth } from '@/hooks/useAuth';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   useAuth(); // Inicializa listener de auth
-  
+
   return <>{children}</>;
 }
 ```
 
 **Validación**:
+
 - [ ] Auth listener funciona globalmente
 - [ ] Estado sincronizado en toda la app
 
@@ -995,6 +1033,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 **Archivos a crear**:
 
 1. `README.md`
+
 ```markdown
 # TiendaWeb - Sistema POS Web
 
@@ -1018,6 +1057,7 @@ Sistema de punto de venta web completo con gestión de inventario, ventas, clien
 ## Fase Actual
 
 Fase 1: Fundación ✅
+
 - Autenticación completa
 - Layout base
 - Dashboard básico
@@ -1034,6 +1074,7 @@ Fase 1: Fundación ✅
 3. `.gitignore` (actualizar si es necesario)
 
 **Validación**:
+
 - [ ] Documentación clara
 - [ ] Setup instructions funcionan
 
@@ -1042,6 +1083,7 @@ Fase 1: Fundación ✅
 ## ✅ Checklist de Validación Final
 
 ### Setup y Configuración
+
 - [ ] Proyecto Next.js 14 inicializado
 - [ ] TypeScript configurado sin errores
 - [ ] Tailwind CSS funcional
@@ -1050,6 +1092,7 @@ Fase 1: Fundación ✅
 - [ ] shadcn/ui instalado con componentes base
 
 ### Autenticación
+
 - [ ] Login funcional con email/password
 - [ ] Registro de usuarios funcional
 - [ ] Logout funcional
@@ -1058,6 +1101,7 @@ Fase 1: Fundación ✅
 - [ ] Validaciones de formulario funcionan
 
 ### Layout y Navegación
+
 - [ ] Sidebar renderiza correctamente
 - [ ] Header muestra info de usuario
 - [ ] Navegación entre rutas funciona
@@ -1065,34 +1109,40 @@ Fase 1: Fundación ✅
 - [ ] Items de menú activos resaltados
 
 ### Dashboard
+
 - [ ] Dashboard básico renderiza
 - [ ] Cards de KPI visibles (con datos placeholder)
 - [ ] Área de gráfico reservada
 - [ ] Diseño limpio y profesional
 
 ### Protección de Rutas
+
 - [ ] Middleware redirige rutas protegidas
 - [ ] Usuario no autenticado no accede a /dashboard
 - [ ] Usuario autenticado no accede a /login
 - [ ] Redirecciones funcionan correctamente
 
 ### TypeScript
+
 - [ ] Sin errores de compilación TypeScript
 - [ ] Tipos definidos para User, Store, etc.
 - [ ] Autocompletado funciona en IDE
 
 ### Calidad de Código
+
 - [ ] Código formateado con Prettier
 - [ ] Sin errores de ESLint
 - [ ] Componentes bien organizados
 - [ ] Nombres descriptivos
 
 ### Performance
+
 - [ ] Carga inicial < 3s
 - [ ] Navegación entre páginas rápida
 - [ ] Sin re-renders innecesarios visibles
 
 ### UX
+
 - [ ] Mensajes de error claros
 - [ ] Loading states visibles
 - [ ] Transiciones suaves
@@ -1102,18 +1152,18 @@ Fase 1: Fundación ✅
 
 ## 📊 Estimación de Tiempo
 
-| Tarea | Tiempo | Prioridad |
-|-------|--------|-----------|
-| 1. Inicialización | 2h | Alta |
-| 2. Firebase | 2h | Alta |
-| 3. Auth Store | 1h | Alta |
-| 4. shadcn/ui | 1h | Alta |
-| 5. Layout | 3h | Alta |
-| 6. Auth Screens | 3h | Alta |
-| 7. Protección de rutas | 2h | Alta |
-| 8. Auth Provider | 1h | Alta |
-| 9. Documentación | 1h | Media |
-| **TOTAL** | **16h** | |
+| Tarea                  | Tiempo  | Prioridad |
+| ---------------------- | ------- | --------- |
+| 1. Inicialización      | 2h      | Alta      |
+| 2. Firebase            | 2h      | Alta      |
+| 3. Auth Store          | 1h      | Alta      |
+| 4. shadcn/ui           | 1h      | Alta      |
+| 5. Layout              | 3h      | Alta      |
+| 6. Auth Screens        | 3h      | Alta      |
+| 7. Protección de rutas | 2h      | Alta      |
+| 8. Auth Provider       | 1h      | Alta      |
+| 9. Documentación       | 1h      | Media     |
+| **TOTAL**              | **16h** |           |
 
 Más 4h de buffer para debugging y ajustes = **20 horas** (2.5 días)
 

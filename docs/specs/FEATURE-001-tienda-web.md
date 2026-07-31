@@ -46,9 +46,11 @@ Los mismos roles que tienda-app:
 ### Casos de Uso Principales
 
 #### CU-001: Procesamiento Rápido de Venta (POS Web)
+
 **Actor**: Cajero  
 **Precondiciones**: Usuario autenticado, productos en inventario  
 **Flujo**:
+
 1. Cajero accede a pantalla POS
 2. Busca producto por nombre, código o escanea barcode
 3. Agrega producto al carrito (cantidad, descuento opcional)
@@ -60,9 +62,11 @@ Los mismos roles que tienda-app:
 **Postcondiciones**: Venta registrada, inventario actualizado, recibo generado
 
 #### CU-002: Gestión Completa de Inventario
+
 **Actor**: Administrador  
 **Precondiciones**: Usuario autenticado con permisos de admin  
 **Flujo**:
+
 1. Accede a módulo de productos
 2. Visualiza lista completa con filtros (categoría, stock, proveedor)
 3. Puede crear/editar/eliminar productos
@@ -74,9 +78,11 @@ Los mismos roles que tienda-app:
 **Postcondiciones**: Inventario actualizado, movimientos registrados
 
 #### CU-003: Dashboard Ejecutivo en Tiempo Real
+
 **Actor**: Propietario  
 **Precondiciones**: Usuario autenticado con rol owner  
 **Flujo**:
+
 1. Accede a dashboard principal
 2. Visualiza KPIs del día/semana/mes
 3. Revisa gráficos de ventas por período
@@ -87,9 +93,11 @@ Los mismos roles que tienda-app:
 **Postcondiciones**: Información actualizada consultada
 
 #### CU-004: Sincronización Multi-dispositivo
+
 **Actor**: Sistema  
 **Precondiciones**: Conexión a internet, Firebase configurado  
 **Flujo**:
+
 1. Usuario realiza venta en móvil (tienda-app)
 2. Cambio se sincroniza a Firebase
 3. Usuario en web (tienda-web) recibe actualización en tiempo real
@@ -99,9 +107,11 @@ Los mismos roles que tienda-app:
 **Postcondiciones**: Datos sincronizados en tiempo real
 
 #### CU-005: Gestión de Multi-Moneda
+
 **Actor**: Administrador  
 **Precondiciones**: Configuración de monedas activa  
 **Flujo**:
+
 1. Sistema obtiene tasas de cambio actualizadas (BCV, APIs)
 2. Usuario crea producto con precio en múltiples monedas
 3. En POS, usuario selecciona moneda de venta
@@ -116,10 +126,12 @@ Los mismos roles que tienda-app:
 ## 📦 Requerimientos Funcionales
 
 ### RF-001: Autenticación y Autorización
+
 **Prioridad**: Crítica  
 **Descripción**: Sistema de login con Firebase Auth, roles y permisos
 
 **Criterios de Aceptación**:
+
 - [ ] Login con email/password
 - [ ] Login con Google (OAuth)
 - [ ] Recuperación de contraseña
@@ -129,10 +141,12 @@ Los mismos roles que tienda-app:
 - [ ] Logout seguro
 
 ### RF-002: Dashboard Ejecutivo
+
 **Prioridad**: Alta  
 **Descripción**: Panel principal con KPIs, gráficos y alertas
 
 **Criterios de Aceptación**:
+
 - [ ] Ventas del día/semana/mes/año
 - [ ] Ingresos totales por moneda
 - [ ] Productos con bajo stock (alerta visual)
@@ -143,10 +157,12 @@ Los mismos roles que tienda-app:
 - [ ] Actualización automática cada 30 segundos
 
 ### RF-003: Punto de Venta (POS Web)
+
 **Prioridad**: Crítica  
 **Descripción**: Pantalla principal para procesamiento rápido de ventas
 
 **Criterios de Aceptación**:
+
 - [ ] Búsqueda de productos (nombre, código, barcode)
 - [ ] Escaneo de código de barras con cámara
 - [ ] Carrito de compra con cantidades/descuentos
@@ -159,10 +175,12 @@ Los mismos roles que tienda-app:
 - [ ] Venta pausada/recuperada
 
 ### RF-004: Gestión de Productos
+
 **Prioridad**: Crítica  
 **Descripción**: CRUD completo de productos con control de inventario
 
 **Criterios de Aceptación**:
+
 - [ ] Crear/editar/eliminar productos
 - [ ] Campos: nombre, código, precio, costo, stock, categoría, proveedor, etc.
 - [ ] Soporte multi-moneda en precios
@@ -173,10 +191,12 @@ Los mismos roles que tienda-app:
 - [ ] Historial de cambios de precio
 
 ### RF-005: Gestión de Inventario
+
 **Prioridad**: Alta  
 **Descripción**: Control de entradas, salidas y movimientos de inventario
 
 **Criterios de Aceptación**:
+
 - [ ] Registro de entradas (compras a proveedores)
 - [ ] Registro de salidas (ajustes, mermas, devoluciones)
 - [ ] Historial de movimientos por producto
@@ -185,10 +205,12 @@ Los mismos roles que tienda-app:
 - [ ] Reporte de valorización de inventario
 
 ### RF-006: Gestión de Ventas
+
 **Prioridad**: Alta  
 **Descripción**: Visualización y gestión de todas las ventas
 
 **Criterios de Aceptación**:
+
 - [ ] Lista de ventas con filtros (fecha, cliente, monto, estado)
 - [ ] Detalle completo de venta
 - [ ] Reimprimir recibo
@@ -197,10 +219,12 @@ Los mismos roles que tienda-app:
 - [ ] Exportar a Excel/PDF
 
 ### RF-007: Gestión de Clientes
+
 **Prioridad**: Media  
 **Descripción**: CRUD de clientes con historial de compras
 
 **Criterios de Aceptación**:
+
 - [ ] Crear/editar/eliminar clientes
 - [ ] Campos: nombre, documento, teléfono, email, dirección
 - [ ] Historial de compras por cliente
@@ -208,10 +232,12 @@ Los mismos roles que tienda-app:
 - [ ] Envío de estados de cuenta por email
 
 ### RF-008: Gestión de Proveedores
+
 **Prioridad**: Media  
 **Descripción**: CRUD de proveedores con control de compras
 
 **Criterios de Aceptación**:
+
 - [ ] Crear/editar/eliminar proveedores
 - [ ] Campos: nombre, RIF/NIT, teléfono, email, contacto
 - [ ] Historial de compras a proveedor
@@ -219,10 +245,12 @@ Los mismos roles que tienda-app:
 - [ ] Productos asociados a proveedor
 
 ### RF-009: Cuentas por Cobrar
+
 **Prioridad**: Alta  
 **Descripción**: Gestión de créditos a clientes
 
 **Criterios de Aceptación**:
+
 - [ ] Registro de ventas a crédito
 - [ ] Registro de abonos parciales
 - [ ] Cálculo automático de saldo
@@ -231,10 +259,12 @@ Los mismos roles que tienda-app:
 - [ ] Estados de cuenta imprimibles
 
 ### RF-010: Cuentas por Pagar
+
 **Prioridad**: Alta  
 **Descripción**: Gestión de deudas con proveedores
 
 **Criterios de Aceptación**:
+
 - [ ] Registro de compras a crédito
 - [ ] Registro de pagos parciales
 - [ ] Cálculo automático de saldo
@@ -242,10 +272,12 @@ Los mismos roles que tienda-app:
 - [ ] Reporte de deudas por proveedor
 
 ### RF-011: Capital y Reportes Financieros
+
 **Prioridad**: Alta  
 **Descripción**: Control de flujo de caja y reportes
 
 **Criterios de Aceptación**:
+
 - [ ] Registro de ingresos/egresos
 - [ ] Flujo de caja diario/mensual
 - [ ] Reporte de utilidades
@@ -253,10 +285,12 @@ Los mismos roles que tienda-app:
 - [ ] Exportación de reportes contables
 
 ### RF-012: Tasas de Cambio
+
 **Prioridad**: Alta  
 **Descripción**: Gestión automática de tasas de cambio
 
 **Criterios de Aceptación**:
+
 - [ ] Actualización automática desde APIs (BCV, DolarToday)
 - [ ] Registro manual de tasas
 - [ ] Historial de tasas por fecha
@@ -264,10 +298,12 @@ Los mismos roles que tienda-app:
 - [ ] Snapshot de tasa en ventas (histórico confiable)
 
 ### RF-013: Configuración de Tienda
+
 **Prioridad**: Media  
 **Descripción**: Configuración general del negocio
 
 **Criterios de Aceptación**:
+
 - [ ] Datos de la tienda (nombre, RIF, dirección, logo)
 - [ ] Configuración de monedas activas
 - [ ] Configuración de impuestos (IVA)
@@ -276,10 +312,12 @@ Los mismos roles que tienda-app:
 - [ ] Configuración de permisos por rol
 
 ### RF-014: Sincronización Multi-dispositivo
+
 **Prioridad**: Crítica  
 **Descripción**: Sincronización en tiempo real con tienda-app
 
 **Criterios de Aceptación**:
+
 - [ ] Sincronización bidireccional con Firebase
 - [ ] Actualización en tiempo real (WebSockets)
 - [ ] Resolución de conflictos
@@ -287,10 +325,12 @@ Los mismos roles que tienda-app:
 - [ ] Indicador de estado de sincronización
 
 ### RF-015: Impresión y Exportación
+
 **Prioridad**: Media  
 **Descripción**: Generación de documentos imprimibles
 
 **Criterios de Aceptación**:
+
 - [ ] Recibos de venta (PDF)
 - [ ] Reportes de inventario (Excel, PDF)
 - [ ] Estados de cuenta (PDF)
@@ -302,6 +342,7 @@ Los mismos roles que tienda-app:
 ## 📐 Requerimientos No Funcionales
 
 ### RNF-001: Rendimiento
+
 - Carga inicial de la aplicación: < 3 segundos
 - Procesamiento de venta: < 500ms
 - Búsqueda de productos: < 200ms
@@ -309,11 +350,13 @@ Los mismos roles que tienda-app:
 - Soporte para 10,000+ productos sin degradación
 
 ### RNF-002: Disponibilidad
+
 - Disponibilidad: 99.5% (permite mantenimiento planificado)
 - Modo offline funcional (con SQLite local o IndexedDB)
 - Sincronización automática al recuperar conexión
 
 ### RNF-003: Seguridad
+
 - Autenticación con Firebase Auth
 - Comunicación HTTPS obligatoria
 - Tokens JWT con expiración
@@ -322,6 +365,7 @@ Los mismos roles que tienda-app:
 - No almacenar contraseñas en localStorage
 
 ### RNF-004: Usabilidad
+
 - Interfaz intuitiva, sin capacitación requerida
 - Atajos de teclado para operaciones frecuentes
 - Responsive design (desktop, tablet)
@@ -329,17 +373,20 @@ Los mismos roles que tienda-app:
 - Mensajes de error claros y accionables
 
 ### RNF-005: Compatibilidad
+
 - Navegadores: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
 - Resoluciones: desde 1366x768 hasta 4K
 - Sincronización con tienda-app (React Native)
 
 ### RNF-006: Escalabilidad
+
 - Soportar hasta 100 usuarios concurrentes
 - Base de datos con 100,000+ registros de ventas
 - 10,000+ productos
 - 5,000+ clientes
 
 ### RNF-007: Mantenibilidad
+
 - Código documentado
 - Arquitectura modular
 - Tests unitarios (cobertura > 70%)
@@ -367,12 +414,14 @@ Los mismos roles que tienda-app:
 ### Backend/Persistencia
 
 **Opción 1 (Recomendada)**: Firebase (paridad con tienda-app)
+
 - **Auth**: Firebase Auth
 - **Base de datos**: Firestore (sincronización real-time)
 - **Storage**: Firebase Storage (imágenes)
 - **Hosting**: Vercel o Firebase Hosting
 
 **Opción 2**: Backend propio
+
 - **API**: Next.js API Routes o Express.js
 - **Base de datos**: PostgreSQL + Prisma
 - **Cache**: Redis
@@ -434,24 +483,24 @@ interface Product {
   name: string;
   description?: string;
   category: string;
-  
+
   // Precios multi-moneda
   prices: {
     VES?: number;
     USD?: number;
     EUR?: number;
   };
-  
+
   cost: number;
   costCurrency: string;
-  
+
   stock: number;
   stockMin: number;
   trackInventory: boolean;
-  
+
   supplierId?: string;
   imageUrl?: string;
-  
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -461,27 +510,27 @@ interface Sale {
   id: string;
   storeId: string;
   saleNumber: string; // Autoincremental por tienda
-  
+
   customerId?: string;
   cashierId: string;
-  
+
   items: SaleItem[];
-  
+
   subtotal: number;
   discount: number;
   tax: number;
   total: number;
-  
+
   currency: string;
   exchangeRateSnapshot: {
     [currency: string]: number;
   };
-  
+
   paymentMethod: 'cash' | 'card' | 'transfer' | 'credit';
   paymentStatus: 'paid' | 'pending' | 'partial';
-  
+
   status: 'completed' | 'cancelled';
-  
+
   createdAt: Date;
   cancelledAt?: Date;
   cancelledBy?: string;
@@ -599,12 +648,14 @@ Neutral: #64748b (slate-500)
 ### Pantallas Principales
 
 #### 1. Dashboard
+
 - KPIs en cards (ventas, ingresos, stock bajo, clientes)
 - Gráfico de ventas (líneas, últimos 30 días)
 - Top productos (tabla)
 - Alertas (cuentas vencidas, stock bajo)
 
 #### 2. POS
+
 - Split screen: Búsqueda/Catálogo | Carrito
 - Búsqueda con autocompletado
 - Grid de productos populares
@@ -612,12 +663,14 @@ Neutral: #64748b (slate-500)
 - Panel de pago con métodos
 
 #### 3. Productos
+
 - Tabla con filtros, búsqueda, ordenamiento
 - Columnas: Código, Nombre, Categoría, Precio, Stock, Acciones
 - Modal de crear/editar producto
 - Importación CSV
 
 #### 4. Ventas
+
 - Tabla de ventas con filtros por fecha, cliente, estado
 - Columnas: #, Fecha, Cliente, Total, Estado, Acciones
 - Detalle de venta en modal
@@ -691,24 +744,28 @@ Neutral: #64748b (slate-500)
 ## 🔗 Integraciones
 
 ### Integración 1: Firebase
+
 - **Propósito**: Auth, sincronización, storage
 - **Endpoints**: Firebase SDK
 - **Datos**: Users, Stores, Products, Sales, Customers, etc.
 
 ### Integración 2: API de Tasas de Cambio
+
 - **Propósito**: Obtener tasas actualizadas
-- **Opciones**: 
+- **Opciones**:
   - BCV (Banco Central de Venezuela)
   - DolarToday
   - ExchangeRate-API.com
 - **Frecuencia**: 1 vez al día (6:00 AM)
 
 ### Integración 3: WhatsApp Business API
+
 - **Propósito**: Envío de recibos por WhatsApp
 - **Implementación**: Twilio o WhatsApp Cloud API
 - **Formato**: Link a recibo PDF
 
 ### Integración 4: Email (Opcional)
+
 - **Propósito**: Envío de recibos y estados de cuenta
 - **Servicio**: SendGrid o Resend
 - **Formato**: PDF adjunto
@@ -718,9 +775,11 @@ Neutral: #64748b (slate-500)
 ## 🚀 Plan de Fases
 
 ### Fase 1: Fundación (Semana 1-2)
+
 **Objetivos**: Setup del proyecto, autenticación, layout base
 
 **Entregables**:
+
 - [ ] Proyecto Next.js configurado con TypeScript
 - [ ] Tailwind CSS + shadcn/ui instalado
 - [ ] Firebase configurado (Auth + Firestore)
@@ -730,6 +789,7 @@ Neutral: #64748b (slate-500)
 - [ ] Dashboard básico (sin datos reales aún)
 
 **Stack Decisión**:
+
 - Next.js 14 (App Router)
 - TypeScript
 - Tailwind CSS
@@ -738,9 +798,11 @@ Neutral: #64748b (slate-500)
 - Zustand (estado global)
 
 ### Fase 2: Módulo POS y Productos (Semana 3-4)
+
 **Objetivos**: Funcionalidad core de venta
 
 **Entregables**:
+
 - [ ] CRUD de productos completo
 - [ ] Pantalla POS funcional
 - [ ] Carrito de compra
@@ -749,9 +811,11 @@ Neutral: #64748b (slate-500)
 - [ ] Generación de recibos (PDF)
 
 ### Fase 3: Inventario y Movimientos (Semana 5)
+
 **Objetivos**: Control de inventario
 
 **Entregables**:
+
 - [ ] Registro de entradas de inventario
 - [ ] Registro de salidas de inventario
 - [ ] Historial de movimientos
@@ -759,18 +823,22 @@ Neutral: #64748b (slate-500)
 - [ ] Kardex por producto
 
 ### Fase 4: Clientes y Proveedores (Semana 6)
+
 **Objetivos**: Gestión de relaciones
 
 **Entregables**:
+
 - [ ] CRUD de clientes
 - [ ] CRUD de proveedores
 - [ ] Historial de compras por cliente
 - [ ] Historial de compras a proveedor
 
 ### Fase 5: Cuentas por Cobrar/Pagar (Semana 7)
+
 **Objetivos**: Control financiero
 
 **Entregables**:
+
 - [ ] Gestión de créditos a clientes
 - [ ] Registro de abonos
 - [ ] Gestión de deudas con proveedores
@@ -778,9 +846,11 @@ Neutral: #64748b (slate-500)
 - [ ] Reportes de cartera
 
 ### Fase 6: Reportes y Dashboard Final (Semana 8)
+
 **Objetivos**: Analytics e insights
 
 **Entregables**:
+
 - [ ] Dashboard completo con KPIs reales
 - [ ] Gráficos de ventas
 - [ ] Reportes de inventario
@@ -788,9 +858,11 @@ Neutral: #64748b (slate-500)
 - [ ] Exportación a Excel/PDF
 
 ### Fase 7: Features Avanzados (Semana 9-10)
+
 **Objetivos**: Funcionalidades premium
 
 **Entregables**:
+
 - [ ] Multi-moneda completo
 - [ ] Tasas de cambio automáticas
 - [ ] Impresión nativa
@@ -803,6 +875,7 @@ Neutral: #64748b (slate-500)
 ## ✅ Criterios de Aceptación Globales
 
 ### Funcionales
+
 - [ ] Usuario puede registrarse y autenticarse
 - [ ] Usuario puede procesar ventas completas
 - [ ] Usuario puede gestionar productos (CRUD)
@@ -813,6 +886,7 @@ Neutral: #64748b (slate-500)
 - [ ] Sistema sincroniza con tienda-app vía Firebase
 
 ### No Funcionales
+
 - [ ] Carga inicial < 3s
 - [ ] Procesamiento de venta < 500ms
 - [ ] Sin errores críticos en consola
