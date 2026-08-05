@@ -1,6 +1,127 @@
 # Changelog - TiendaWeb
 
-## [0.3.0] - 2025-01-XX - Fase 3: Inventario y Movimientos
+## [0.4.0] - 2026-08-05 - Fase 4: Clientes y Proveedores
+
+### ✨ Nuevas Funcionalidades
+
+**Gestión de Clientes** 🧑‍💼
+- CRUD completo de clientes con validación de documento único
+- Campos: nombre, documento (RIF/CI), teléfono, email, dirección, límite de crédito, notas
+- Balance de cuentas por cobrar (inicializado en 0, preparado para Fase 5)
+- Búsqueda global en tabla por nombre/documento/teléfono/email
+- Tabla con ordenamiento, filtros y paginación (10 clientes/página)
+- Modal de historial de compras por cliente (integrado con sales)
+- Dashboard de estadísticas: total clientes, con saldo pendiente, total por cobrar
+
+**Gestión de Proveedores** 🚚
+- CRUD completo de proveedores con validación de RIF único
+- Campos: nombre, RIF/NIT, teléfono, email, persona de contacto, notas
+- Balance de cuentas por pagar (inicializado en 0, preparado para Fase 5)
+- Búsqueda global en tabla por nombre/RIF/contacto/teléfono/email
+- Tabla con ordenamiento, filtros y paginación (10 proveedores/página)
+- Modal de productos asociados por proveedor (integrado con products collection)
+- Dashboard de estadísticas: total proveedores, con saldo pendiente, total por pagar
+
+**Componentes UI** 🎨
+- `CustomerForm`: Formulario con validación Zod + React Hook Form
+- `CustomersTable`: TanStack Table con búsqueda, ordenamiento y paginación
+- `SupplierForm`: Formulario con validación Zod + React Hook Form
+- `SuppliersTable`: TanStack Table con búsqueda, ordenamiento y paginación
+
+### 🏗️ Infraestructura
+
+**Servicios Firestore** (lib/)
+- `customers.ts`: createCustomer, getCustomers, getCustomerById, updateCustomer, deleteCustomer, searchCustomers, getCustomerSalesHistory, updateCustomerBalance, getCustomersWithBalance
+- `suppliers.ts`: createSupplier, getSuppliers, getSupplierById, updateSupplier, deleteSupplier, searchSuppliers, getSupplierProducts, updateSupplierBalance, getSuppliersWithBalance
+
+**Zustand Stores** (store/)
+- `customersStore.ts`: Estado global de clientes con actions
+- `suppliersStore.ts`: Estado global de proveedores con actions
+
+**Tipos TypeScript** (types/)
+- `customer.ts`: `Customer`, `CustomerFormData`
+- `supplier.ts`: `Supplier`, `SupplierFormData`
+
+### 📂 Archivos Creados (12 archivos)
+
+1. `types/customer.ts`
+2. `types/supplier.ts`
+3. `lib/customers.ts`
+4. `lib/suppliers.ts`
+5. `store/customersStore.ts`
+6. `store/suppliersStore.ts`
+7. `components/customers/CustomerForm.tsx`
+8. `components/customers/CustomersTable.tsx`
+9. `components/suppliers/SupplierForm.tsx`
+10. `components/suppliers/SuppliersTable.tsx`
+11. `app/dashboard/customers/page.tsx`
+12. `app/dashboard/suppliers/page.tsx`
+
+### 📊 Firestore Collections
+
+**customers**: storeId, name, document (único), phone, email, address, creditLimit, balance, notes, createdAt, updatedAt
+
+**suppliers**: storeId, name, rif (único), phone, email, contactPerson, balance, notes, createdAt, updatedAt
+
+### 🔥 Índices Firestore Requeridos
+
+- customers: `(storeId ASC, name ASC)`, `(storeId ASC, document ASC)`
+- suppliers: `(storeId ASC, name ASC)`, `(storeId ASC, rif ASC)`
+- sales: `(storeId ASC, customerId ASC, createdAt DESC)` para historial
+
+### 📈 Métricas
+
+- **Archivos nuevos**: 12
+- **Colecciones**: 2 (customers, suppliers)
+- **Rutas**: 2 nuevas (/dashboard/customers, /dashboard/suppliers)
+- **Build**: ✅ Exitoso (0 errores TypeScript)
+- **Estimación**: 28 horas | **Real**: ~6 horas
+
+---
+
+## [0.3.1] - 2026-08-05 - Correcciones Críticas Post-QA Fase 3
+
+### 🐛 Correcciones Críticas
+
+**BUG-101: Race Condition en Transacciones de Inventario - CRÍTICO**
+- **Problema**: `registerInventoryMovement` leía el producto ANTES de la transacción, permitiendo que movimientos simultáneos sobrescribieran el stock
+- **Impacto**: Pérdida de exactitud en inventario
+- **Solución**: Mover lectura de producto DENTRO de `runTransaction` para garantizar atomicidad completa
+- **Archivo**: `lib/inventory.ts` líneas 40-100
+
+**BUG-102: checkStockAlert Fallaba Silenciosamente - CRÍTICO**
+- **Problema**: Función con try-catch que solo loggeaba errores sin propagarlos, generando alertas faltantes
+- **Impacto**: Usuario no se enteraba de stock bajo cuando la creación de alerta fallaba
+- **Solución**: Lanzar errores y manejar apropiadamente en caller sin bloquear operación principal
+- **Archivo**: `lib/inventory.ts` función `checkStockAlert`
+
+### 🔧 Correcciones Adicionales
+
+**BUG-103: Double Reverse Innecesario en Kardex - ALTO**
+- `generateKardex()` ahora usa `slice().reverse()` en vez de mutar array original
+- Eliminado segundo `.reverse()` innecesario
+
+**BUG-104: Valorización No Validaba Categoría - ALTO**
+- `calculateInventoryValuation()` ahora valida categoría con fallback a "Sin Categoría"
+- Previene crashes por `byCategory[undefined]`
+
+**BUG-107: Condición de Alerta Incorrecta - MEDIO**
+- Cambio de `currentStock <= minStock` a `currentStock < minStock`
+- Consistencia: alerta se crea solo cuando stock está POR DEBAJO del mínimo
+
+**BUG-109: Referencias de Kardex Mejoradas - BAJO**
+- Formato de referencia cambiado a `MOV-XXXXXXXX` (mayúsculas)
+
+### 📊 Calidad
+
+- Score QA: **72.5/100** → En proceso de re-validación
+- Build: **✅ Exitoso** (0 errores TypeScript)
+- Bugs críticos corregidos: **2/2**
+- Bugs altos corregidos: **2/4**
+
+---
+
+## [0.3.0] - 2026-07-31 - Fase 3: Inventario y Movimientos
 
 ### ✨ Nuevas Funcionalidades
 

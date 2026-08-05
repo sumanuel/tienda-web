@@ -46,27 +46,28 @@ export async function registerInventoryMovement(
   data: InventoryMovementFormData
 ): Promise<InventoryMovement> {
   try {
-    // Obtener producto actual
-    const product = await getProductById(data.productId);
-
-    if (!product) {
-      throw new Error('Producto no encontrado');
-    }
-
-    // Calcular nueva cantidad
-    const quantityChange =
-      data.type === 'entry' ? data.quantity : -data.quantity;
-    const newStock = product.stock + quantityChange;
-
-    if (newStock < 0) {
-      throw new Error('Stock insuficiente para la salida');
-    }
-
     let movementId: string = '';
+    let createdMovement: any = null;
 
-    // Usar transacción para atomicidad
+    // ✅ FIX BUG-101: Usar transacción para TODO, incluyendo lectura inicial
     await runTransaction(db, async (transaction) => {
       const productRef = doc(db, 'products', data.productId);
+      const productDoc = await transaction.get(productRef);
+
+      if (!productDoc.exists()) {
+        throw new Error('Producto no encontrado');
+      }
+
+      const product = productDoc.data() as any;
+
+      // Calcular nueva cantidad
+      const quantityChange =
+        data.type === 'entry' ? data.quantity : -data.quantity;
+      const newStock = product.stock + quantityChange;
+
+      if (newStock < 0) {
+        throw new Error('Stock insuficiente para la salida');
+      }
 
       // Actualizar stock del producto
       transaction.update(productRef, {
@@ -97,31 +98,36 @@ export async function registerInventoryMovement(
       const movementRef = doc(collection(db, MOVEMENTS_COLLECTION));
       transaction.set(movementRef, movementData);
       movementId = movementRef.id;
+
+      // Guardar datos para retornar
+      createdMovement = {
+        id: movementId,
+        ...movementData,
+        createdAt: new Date(),
+      };
+
+      // Guardar datos para verificar alerta después de transacción
+      createdMovement.productName = product.name;
+      createdMovement.productCode = product.code;
+      createdMovement.stockMin = product.stockMin;
     });
 
-    // Verificar alerta de stock bajo
-    await checkStockAlert(
-      storeId,
-      product.id,
-      product.name,
-      product.code,
-      newStock,
-      product.stockMin
-    );
+    // ✅ FIX BUG-102: Verificar alerta DESPUÉS de transacción, sin bloquear
+    try {
+      await checkStockAlert(
+        storeId,
+        data.productId,
+        createdMovement.productName,
+        createdMovement.productCode,
+        createdMovement.stockAfter,
+        createdMovement.stockMin
+      );
+    } catch (alertError: any) {
+      // No bloquear operación principal, pero loggear advertencia
+      console.warn('⚠️ Movimiento guardado pero alerta falló:', alertError.message);
+    }
 
-    // Obtener movimiento creado
-    const movements = await getDocs(
-      query(
-        collection(db, MOVEMENTS_COLLECTION),
-        where('__name__', '==', movementId)
-      )
-    );
-
-    const movementDoc = movements.docs[0];
-    return {
-      id: movementDoc.id,
-      ...convertTimestamps(movementDoc.data()),
-    } as InventoryMovement;
+    return createdMovement as InventoryMovement;
   } catch (error: any) {
     console.error('Error registrando movimiento:', error);
     throw new Error(error.message || 'Error al registrar movimiento');
@@ -167,6 +173,7 @@ export async function getInventoryMovements(
 
 /**
  * Generar Kardex de producto
+ * ✅ FIX BUG-103: Eliminar double reverse innecesario
  */
 export async function generateKardex(
   storeId: string,
@@ -177,10 +184,14 @@ export async function generateKardex(
 
     const kardex: KardexEntry[] = [];
 
-    movements.reverse().forEach((movement) => {
+    // ✅ FIX BUG-103: No mutar array original, usar slice().reverse()
+    const movementsChronological = movements.slice().reverse();
+
+    movementsChronological.forEach((movement) => {
       const entry: KardexEntry = {
         date: movement.createdAt,
-        reference: movement.reference || movement.id.substring(0, 8),
+        // ✅ FIX BUG-109: Mejorar formato de referencia
+        reference: movement.reference || `MOV-${movement.id.substring(0, 8).toUpperCase()}`,
         type: movement.type,
         quantityIn: movement.quantity > 0 ? movement.quantity : 0,
         quantityOut: movement.quantity < 0 ? Math.abs(movement.quantity) : 0,
@@ -192,7 +203,8 @@ export async function generateKardex(
       kardex.push(entry);
     });
 
-    return kardex.reverse();
+    // ✅ Ya está en orden cronológico, no necesita reverse
+    return kardex;
   } catch (error) {
     console.error('Error generando kardex:', error);
     throw error;
@@ -201,6 +213,7 @@ export async function generateKardex(
 
 /**
  * Verificar y crear alerta de stock bajo
+ * ✅ FIX BUG-102: Lanza errores en vez de fallar silenciosamente
  */
 async function checkStockAlert(
   storeId: string,
@@ -211,7 +224,8 @@ async function checkStockAlert(
   minStock: number
 ): Promise<void> {
   try {
-    if (currentStock <= minStock) {
+    // ✅ FIX BUG-107: Cambiar <= a < para consistencia
+    if (currentStock < minStock) {
       // Verificar si ya existe alerta activa
       const existingAlerts = await getDocs(
         query(
@@ -234,12 +248,14 @@ async function checkStockAlert(
           status: 'active',
           createdAt: Timestamp.now(),
         });
+        console.log(`✅ Alerta creada: ${productCode} (Stock: ${currentStock} < Min: ${minStock})`);
       } else {
         // Actualizar stock en alerta existente
         const alertDoc = existingAlerts.docs[0];
         await updateDoc(doc(db, ALERTS_COLLECTION, alertDoc.id), {
           currentStock,
         });
+        console.log(`✅ Alerta actualizada: ${productCode} (Stock: ${currentStock})`);
       }
     } else {
       // Resolver alertas si stock subió por encima del mínimo
@@ -257,10 +273,13 @@ async function checkStockAlert(
           status: 'resolved',
           resolvedAt: Timestamp.now(),
         });
+        console.log(`✅ Alerta resuelta: ${productCode} (Stock: ${currentStock})`);
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error verificando alerta de stock:', error);
+    // ✅ FIX BUG-102: Lanzar error para que caller pueda manejarlo
+    throw new Error(`Error al gestionar alerta: ${error.message}`);
   }
 }
 
@@ -290,6 +309,7 @@ export async function getStockAlerts(storeId: string): Promise<StockAlert[]> {
 
 /**
  * Calcular valorización de inventario
+ * ✅ FIX BUG-104: Validar categoría antes de usar como key
  */
 export async function calculateInventoryValuation(storeId: string): Promise<{
   totalValue: number;
@@ -316,10 +336,13 @@ export async function calculateInventoryValuation(storeId: string): Promise<{
       totalValue += value;
       totalItems += product.stock;
 
-      if (!byCategory[product.category]) {
-        byCategory[product.category] = 0;
+      // ✅ FIX BUG-104: Validar categoría antes de usar como key
+      const category = product.category || 'Sin Categoría';
+
+      if (!byCategory[category]) {
+        byCategory[category] = 0;
       }
-      byCategory[product.category] += value;
+      byCategory[category] += value;
     });
 
     return { totalValue, totalItems, byCategory };

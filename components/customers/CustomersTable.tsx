@@ -1,0 +1,241 @@
+/**
+ * Tabla de Clientes con búsqueda, ordenamiento y paginación
+ */
+
+'use client';
+
+import { useMemo, useState } from 'react';
+import {
+  useReactTable,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  getPaginationRowModel,
+  ColumnDef,
+  flexRender,
+} from '@tanstack/react-table';
+import { Customer } from '@/types/customer';
+import { Search, Edit, Trash2, Eye } from 'lucide-react';
+
+interface CustomersTableProps {
+  customers: Customer[];
+  onEdit: (customer: Customer) => void;
+  onDelete: (customerId: string) => void;
+  onView: (customer: Customer) => void;
+}
+
+export default function CustomersTable({
+  customers,
+  onEdit,
+  onDelete,
+  onView,
+}: CustomersTableProps) {
+  const [globalFilter, setGlobalFilter] = useState('');
+
+  const columns = useMemo<ColumnDef<Customer>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: 'Nombre',
+        cell: (info) => (
+          <span className="font-medium text-gray-900">{info.getValue() as string}</span>
+        ),
+      },
+      {
+        accessorKey: 'document',
+        header: 'Documento',
+        cell: (info) => (
+          <span className="text-gray-700">{info.getValue() as string}</span>
+        ),
+      },
+      {
+        accessorKey: 'phone',
+        header: 'Teléfono',
+        cell: (info) => (
+          <span className="text-gray-600">{(info.getValue() as string) || '—'}</span>
+        ),
+      },
+      {
+        accessorKey: 'email',
+        header: 'Email',
+        cell: (info) => (
+          <span className="text-gray-600 text-sm">{(info.getValue() as string) || '—'}</span>
+        ),
+      },
+      {
+        accessorKey: 'balance',
+        header: 'Por Cobrar',
+        cell: (info) => {
+          const balance = info.getValue() as number;
+          return (
+            <span
+              className={
+                balance > 0
+                  ? 'text-orange-600 font-semibold'
+                  : 'text-gray-600'
+              }
+            >
+              ${balance.toFixed(2)}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: 'creditLimit',
+        header: 'Límite Crédito',
+        cell: (info) => {
+          const limit = info.getValue() as number | undefined;
+          return limit ? (
+            <span className="text-gray-600">${limit.toFixed(2)}</span>
+          ) : (
+            <span className="text-gray-400">—</span>
+          );
+        },
+      },
+      {
+        id: 'actions',
+        header: 'Acciones',
+        cell: ({ row }) => (
+          <div className="flex gap-2">
+            <button
+              onClick={() => onView(row.original)}
+              className="text-blue-600 hover:text-blue-800 transition-colors"
+              title="Ver historial"
+            >
+              <Eye size={18} />
+            </button>
+            <button
+              onClick={() => onEdit(row.original)}
+              className="text-blue-600 hover:text-blue-800 transition-colors"
+              title="Editar"
+            >
+              <Edit size={18} />
+            </button>
+            <button
+              onClick={() => {
+                if (confirm(`¿Eliminar cliente ${row.original.name}?`)) {
+                  onDelete(row.original.id);
+                }
+              }}
+              className="text-red-600 hover:text-red-800 transition-colors"
+              title="Eliminar"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
+        ),
+      },
+    ],
+    [onEdit, onDelete, onView]
+  );
+
+  const table = useReactTable({
+    data: customers,
+    columns,
+    state: {
+      globalFilter,
+    },
+    onGlobalFilterChange: setGlobalFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
+  });
+
+  return (
+    <div className="space-y-4">
+      {/* Búsqueda */}
+      <div className="relative">
+        <Search
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          size={20}
+        />
+        <input
+          type="text"
+          value={globalFilter}
+          onChange={(e) => setGlobalFilter(e.target.value)}
+          placeholder="Buscar por nombre, documento, teléfono o email..."
+          className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+      </div>
+
+      {/* Tabla */}
+      <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th
+                    key={header.id}
+                    className="px-4 py-3 text-left text-sm font-semibold text-gray-700"
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody className="divide-y divide-gray-200 bg-white">
+            {table.getRowModel().rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="px-4 py-8 text-center text-gray-500"
+                >
+                  {globalFilter
+                    ? 'No se encontraron clientes con ese criterio'
+                    : 'No hay clientes registrados'}
+                </td>
+              </tr>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="px-4 py-3 text-sm text-gray-900">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Paginación */}
+      {table.getRowModel().rows.length > 0 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-700">
+            Mostrando {table.getRowModel().rows.length} de {customers.length}{' '}
+            clientes
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
