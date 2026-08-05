@@ -124,7 +124,10 @@ export async function registerInventoryMovement(
       );
     } catch (alertError: any) {
       // No bloquear operación principal, pero loggear advertencia
-      console.warn('⚠️ Movimiento guardado pero alerta falló:', alertError.message);
+      console.warn(
+        '⚠️ Movimiento guardado pero alerta falló:',
+        alertError.message
+      );
     }
 
     return createdMovement as InventoryMovement;
@@ -191,7 +194,9 @@ export async function generateKardex(
       const entry: KardexEntry = {
         date: movement.createdAt,
         // ✅ FIX BUG-109: Mejorar formato de referencia
-        reference: movement.reference || `MOV-${movement.id.substring(0, 8).toUpperCase()}`,
+        reference:
+          movement.reference ||
+          `MOV-${movement.id.substring(0, 8).toUpperCase()}`,
         type: movement.type,
         quantityIn: movement.quantity > 0 ? movement.quantity : 0,
         quantityOut: movement.quantity < 0 ? Math.abs(movement.quantity) : 0,
@@ -248,14 +253,18 @@ async function checkStockAlert(
           status: 'active',
           createdAt: Timestamp.now(),
         });
-        console.log(`✅ Alerta creada: ${productCode} (Stock: ${currentStock} < Min: ${minStock})`);
+        console.log(
+          `✅ Alerta creada: ${productCode} (Stock: ${currentStock} < Min: ${minStock})`
+        );
       } else {
         // Actualizar stock en alerta existente
         const alertDoc = existingAlerts.docs[0];
         await updateDoc(doc(db, ALERTS_COLLECTION, alertDoc.id), {
           currentStock,
         });
-        console.log(`✅ Alerta actualizada: ${productCode} (Stock: ${currentStock})`);
+        console.log(
+          `✅ Alerta actualizada: ${productCode} (Stock: ${currentStock})`
+        );
       }
     } else {
       // Resolver alertas si stock subió por encima del mínimo
@@ -273,7 +282,9 @@ async function checkStockAlert(
           status: 'resolved',
           resolvedAt: Timestamp.now(),
         });
-        console.log(`✅ Alerta resuelta: ${productCode} (Stock: ${currentStock})`);
+        console.log(
+          `✅ Alerta resuelta: ${productCode} (Stock: ${currentStock})`
+        );
       }
     }
   } catch (error: any) {

@@ -57,7 +57,7 @@ export default function SupplierForm({
           </label>
           <input
             {...register('name')}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
             placeholder="Distribuidora XYZ C.A."
           />
           {errors.name && (
@@ -72,7 +72,7 @@ export default function SupplierForm({
           </label>
           <input
             {...register('rif')}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
             placeholder="J-12345678-9"
           />
           {errors.rif && (
@@ -88,7 +88,7 @@ export default function SupplierForm({
           <input
             {...register('phone')}
             type="tel"
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
             placeholder="+58 212-1234567"
           />
         </div>
@@ -101,7 +101,7 @@ export default function SupplierForm({
           <input
             {...register('email')}
             type="email"
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
             placeholder="ventas@proveedor.com"
           />
           {errors.email && (
@@ -116,7 +116,7 @@ export default function SupplierForm({
           </label>
           <input
             {...register('contactPerson')}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
             placeholder="María González - Gerente de Ventas"
           />
         </div>
@@ -129,7 +129,7 @@ export default function SupplierForm({
           <textarea
             {...register('notes')}
             rows={3}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
             placeholder="Notas adicionales sobre el proveedor..."
           />
         </div>
@@ -140,16 +140,20 @@ export default function SupplierForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+          className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50"
         >
           Cancelar
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
         >
-          {isSubmitting ? 'Guardando...' : initialData ? 'Actualizar Proveedor' : 'Crear Proveedor'}
+          {isSubmitting
+            ? 'Guardando...'
+            : initialData
+              ? 'Actualizar Proveedor'
+              : 'Crear Proveedor'}
         </button>
       </div>
     </form>

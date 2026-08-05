@@ -13,6 +13,7 @@
 Implementar gestión completa de **Clientes** y **Proveedores** con CRUD, historial de operaciones y vinculación con ventas/compras.
 
 **Objetivos**:
+
 - CRUD de clientes con datos de contacto y crédito
 - CRUD de proveedores con control de deudas
 - Historial de compras por cliente (desde sales)
@@ -31,12 +32,12 @@ interface Customer {
   id: string;
   storeId: string;
   name: string;
-  document: string;          // RIF, CI, DNI
+  document: string; // RIF, CI, DNI
   phone?: string;
   email?: string;
   address?: string;
-  creditLimit?: number;      // Límite de crédito permitido
-  balance: number;           // Por cobrar (ventas a crédito - pagos)
+  creditLimit?: number; // Límite de crédito permitido
+  balance: number; // Por cobrar (ventas a crédito - pagos)
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -60,11 +61,11 @@ interface Supplier {
   id: string;
   storeId: string;
   name: string;
-  rif: string;               // RIF o NIT
+  rif: string; // RIF o NIT
   phone?: string;
   email?: string;
-  contactPerson?: string;    // Nombre del contacto
-  balance: number;           // Por pagar (compras a crédito - pagos)
+  contactPerson?: string; // Nombre del contacto
+  balance: number; // Por pagar (compras a crédito - pagos)
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -85,6 +86,7 @@ interface SupplierFormData {
 ## 🔥 Firestore Collections
 
 ### customers
+
 ```javascript
 {
   storeId: string,          // índice compuesto
@@ -102,6 +104,7 @@ interface SupplierFormData {
 ```
 
 ### suppliers
+
 ```javascript
 {
   storeId: string,          // índice compuesto
@@ -233,7 +236,10 @@ export async function createCustomer(
       updatedAt: Timestamp.now(),
     };
 
-    const docRef = await addDoc(collection(db, CUSTOMERS_COLLECTION), customerData);
+    const docRef = await addDoc(
+      collection(db, CUSTOMERS_COLLECTION),
+      customerData
+    );
 
     return {
       id: docRef.id,
@@ -278,7 +284,9 @@ export async function getCustomers(storeId: string): Promise<Customer[]> {
 /**
  * Obtener cliente por ID
  */
-export async function getCustomerById(customerId: string): Promise<Customer | null> {
+export async function getCustomerById(
+  customerId: string
+): Promise<Customer | null> {
   try {
     const docRef = doc(db, CUSTOMERS_COLLECTION, customerId);
     const docSnap = await getDoc(docRef);
@@ -1192,6 +1200,7 @@ match /suppliers/{supplierId} {
 ## ⚠️ Consideraciones y Validaciones
 
 ### Validaciones Frontend
+
 - Documento único por tienda
 - Email válido (regex)
 - Teléfono formato válido (opcional)
@@ -1199,11 +1208,13 @@ match /suppliers/{supplierId} {
 - Nombre mínimo 2 caracteres
 
 ### Validaciones Backend
+
 - Duplicado de documento en createCustomer
 - StoreId siempre requerido
 - Balance inicial siempre 0
 
 ### Edge Cases
+
 - Cliente sin email/phone (campos opcionales)
 - Eliminar cliente con historial de ventas (¿permitir?)
 - Proveedor con productos asociados (¿bloquear eliminación?)
@@ -1213,22 +1224,22 @@ match /suppliers/{supplierId} {
 
 ## 📊 Estimación de Tiempo
 
-| Tarea | Descripción | Horas |
-|-------|-------------|-------|
-| 1 | Tipos TypeScript | 1 |
-| 2 | Servicios Firestore | 4 |
-| 3 | Store Zustand | 1 |
-| 4 | CustomerForm | 2 |
-| 5 | CustomersTable | 2 |
-| 6 | SupplierForm | 2 |
-| 7 | SuppliersTable | 2 |
-| 8 | Página Clientes | 3 |
-| 9 | Página Proveedores | 3 |
-| 10 | Actualizar Sidebar | 1 |
-| 11 | Integrar POS | 2 |
-| 12 | Tests manuales | 2 |
-| **Buffer** | Imprevistos (15%) | 3 |
-| **TOTAL** | | **28h** |
+| Tarea      | Descripción         | Horas   |
+| ---------- | ------------------- | ------- |
+| 1          | Tipos TypeScript    | 1       |
+| 2          | Servicios Firestore | 4       |
+| 3          | Store Zustand       | 1       |
+| 4          | CustomerForm        | 2       |
+| 5          | CustomersTable      | 2       |
+| 6          | SupplierForm        | 2       |
+| 7          | SuppliersTable      | 2       |
+| 8          | Página Clientes     | 3       |
+| 9          | Página Proveedores  | 3       |
+| 10         | Actualizar Sidebar  | 1       |
+| 11         | Integrar POS        | 2       |
+| 12         | Tests manuales      | 2       |
+| **Buffer** | Imprevistos (15%)   | 3       |
+| **TOTAL**  |                     | **28h** |
 
 ---
 

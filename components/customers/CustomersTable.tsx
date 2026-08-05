@@ -38,7 +38,9 @@ export default function CustomersTable({
         accessorKey: 'name',
         header: 'Nombre',
         cell: (info) => (
-          <span className="font-medium text-gray-900">{info.getValue() as string}</span>
+          <span className="font-medium text-gray-900">
+            {info.getValue() as string}
+          </span>
         ),
       },
       {
@@ -52,14 +54,18 @@ export default function CustomersTable({
         accessorKey: 'phone',
         header: 'Teléfono',
         cell: (info) => (
-          <span className="text-gray-600">{(info.getValue() as string) || '—'}</span>
+          <span className="text-gray-600">
+            {(info.getValue() as string) || '—'}
+          </span>
         ),
       },
       {
         accessorKey: 'email',
         header: 'Email',
         cell: (info) => (
-          <span className="text-gray-600 text-sm">{(info.getValue() as string) || '—'}</span>
+          <span className="text-sm text-gray-600">
+            {(info.getValue() as string) || '—'}
+          </span>
         ),
       },
       {
@@ -70,9 +76,7 @@ export default function CustomersTable({
           return (
             <span
               className={
-                balance > 0
-                  ? 'text-orange-600 font-semibold'
-                  : 'text-gray-600'
+                balance > 0 ? 'font-semibold text-orange-600' : 'text-gray-600'
               }
             >
               ${balance.toFixed(2)}
@@ -99,14 +103,14 @@ export default function CustomersTable({
           <div className="flex gap-2">
             <button
               onClick={() => onView(row.original)}
-              className="text-blue-600 hover:text-blue-800 transition-colors"
+              className="text-blue-600 transition-colors hover:text-blue-800"
               title="Ver historial"
             >
               <Eye size={18} />
             </button>
             <button
               onClick={() => onEdit(row.original)}
-              className="text-blue-600 hover:text-blue-800 transition-colors"
+              className="text-blue-600 transition-colors hover:text-blue-800"
               title="Editar"
             >
               <Edit size={18} />
@@ -117,7 +121,7 @@ export default function CustomersTable({
                   onDelete(row.original.id);
                 }
               }}
-              className="text-red-600 hover:text-red-800 transition-colors"
+              className="text-red-600 transition-colors hover:text-red-800"
               title="Eliminar"
             >
               <Trash2 size={18} />
@@ -152,7 +156,7 @@ export default function CustomersTable({
       {/* Búsqueda */}
       <div className="relative">
         <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"
           size={20}
         />
         <input
@@ -160,7 +164,7 @@ export default function CustomersTable({
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
           placeholder="Buscar por nombre, documento, teléfono o email..."
-          className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-lg border border-gray-300 py-2 pr-4 pl-10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
         />
       </div>
 
@@ -198,10 +202,16 @@ export default function CustomersTable({
               </tr>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={row.id} className="transition-colors hover:bg-gray-50">
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-3 text-sm text-gray-900">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    <td
+                      key={cell.id}
+                      className="px-4 py-3 text-sm text-gray-900"
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </td>
                   ))}
                 </tr>
@@ -222,14 +232,14 @@ export default function CustomersTable({
             <button
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
-              className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="rounded bg-blue-600 px-3 py-1 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300"
             >
               Anterior
             </button>
             <button
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="rounded bg-blue-600 px-3 py-1 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300"
             >
               Siguiente
             </button>

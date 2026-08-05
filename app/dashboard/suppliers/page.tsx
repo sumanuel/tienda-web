@@ -114,7 +114,7 @@ export default function SuppliersPage() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto"></div>
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
           <p className="text-gray-600">Cargando proveedores...</p>
         </div>
       </div>
@@ -127,14 +127,16 @@ export default function SuppliersPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Proveedores</h1>
-          <p className="text-gray-600">{suppliers.length} proveedores registrados</p>
+          <p className="text-gray-600">
+            {suppliers.length} proveedores registrados
+          </p>
         </div>
         <button
           onClick={() => {
             setShowForm(!showForm);
             setEditingSupplier(null);
           }}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
         >
           {showForm || editingSupplier ? (
             <>
@@ -171,7 +173,9 @@ export default function SuppliersPage() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Con Saldo Pendiente</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.withBalance}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.withBalance}
+              </p>
             </div>
           </div>
         </div>
@@ -223,7 +227,7 @@ export default function SuppliersPage() {
 
       {/* Modal de Productos */}
       {viewingSupplier && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
           <div className="max-h-[80vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900">
@@ -255,7 +259,9 @@ export default function SuppliersPage() {
                 {viewingSupplier.contactPerson && (
                   <div>
                     <p className="text-sm text-gray-600">Contacto</p>
-                    <p className="font-medium">{viewingSupplier.contactPerson}</p>
+                    <p className="font-medium">
+                      {viewingSupplier.contactPerson}
+                    </p>
                   </div>
                 )}
                 {viewingSupplier.phone && (
@@ -267,12 +273,12 @@ export default function SuppliersPage() {
               </div>
             </div>
 
-            <h3 className="mb-3 text-lg font-semibold flex items-center gap-2">
+            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold">
               <Package size={20} />
               Productos Asociados
             </h3>
             {supplierProducts.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">
+              <p className="py-8 text-center text-gray-500">
                 No hay productos asociados a este proveedor
               </p>
             ) : (
@@ -293,7 +299,9 @@ export default function SuppliersPage() {
                         <p className="text-lg font-bold">
                           ${product.prices?.USD?.toFixed(2) || 'N/A'}
                         </p>
-                        <p className="text-sm text-gray-600">{product.category}</p>
+                        <p className="text-sm text-gray-600">
+                          {product.category}
+                        </p>
                       </div>
                     </div>
                   </div>

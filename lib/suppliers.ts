@@ -50,7 +50,10 @@ export async function createSupplier(
       updatedAt: Timestamp.now(),
     };
 
-    const docRef = await addDoc(collection(db, SUPPLIERS_COLLECTION), supplierData);
+    const docRef = await addDoc(
+      collection(db, SUPPLIERS_COLLECTION),
+      supplierData
+    );
 
     return {
       id: docRef.id,
@@ -95,7 +98,9 @@ export async function getSuppliers(storeId: string): Promise<Supplier[]> {
 /**
  * Obtener proveedor por ID
  */
-export async function getSupplierById(supplierId: string): Promise<Supplier | null> {
+export async function getSupplierById(
+  supplierId: string
+): Promise<Supplier | null> {
   try {
     const docRef = doc(db, SUPPLIERS_COLLECTION, supplierId);
     const docSnap = await getDoc(docRef);
@@ -225,7 +230,9 @@ export async function updateSupplierBalance(
 /**
  * Obtener proveedores con balance pendiente
  */
-export async function getSuppliersWithBalance(storeId: string): Promise<Supplier[]> {
+export async function getSuppliersWithBalance(
+  storeId: string
+): Promise<Supplier[]> {
   const suppliers = await getSuppliers(storeId);
   return suppliers.filter((s) => s.balance > 0);
 }

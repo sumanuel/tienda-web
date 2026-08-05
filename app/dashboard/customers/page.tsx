@@ -95,7 +95,10 @@ export default function CustomersPage() {
     try {
       if (!profile?.storeId) return;
       setViewingCustomer(customer);
-      const history = await getCustomerSalesHistory(profile.storeId, customer.id);
+      const history = await getCustomerSalesHistory(
+        profile.storeId,
+        customer.id
+      );
       setSalesHistory(history);
     } catch (error) {
       console.error('Error cargando historial:', error);
@@ -114,7 +117,7 @@ export default function CustomersPage() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto"></div>
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
           <p className="text-gray-600">Cargando clientes...</p>
         </div>
       </div>
@@ -127,14 +130,16 @@ export default function CustomersPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
-          <p className="text-gray-600">{customers.length} clientes registrados</p>
+          <p className="text-gray-600">
+            {customers.length} clientes registrados
+          </p>
         </div>
         <button
           onClick={() => {
             setShowForm(!showForm);
             setEditingCustomer(null);
           }}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
         >
           {showForm || editingCustomer ? (
             <>
@@ -171,7 +176,9 @@ export default function CustomersPage() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Con Saldo Pendiente</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.withBalance}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.withBalance}
+              </p>
             </div>
           </div>
         </div>
@@ -223,7 +230,7 @@ export default function CustomersPage() {
 
       {/* Modal de Historial */}
       {viewingCustomer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
           <div className="max-h-[80vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900">
@@ -269,7 +276,7 @@ export default function CustomersPage() {
 
             <h3 className="mb-3 text-lg font-semibold">Historial de Compras</h3>
             {salesHistory.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">
+              <p className="py-8 text-center text-gray-500">
                 Este cliente aún no ha realizado compras
               </p>
             ) : (
@@ -287,7 +294,9 @@ export default function CustomersPage() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold">${sale.total.toFixed(2)}</p>
+                        <p className="text-lg font-bold">
+                          ${sale.total.toFixed(2)}
+                        </p>
                         <p className="text-sm text-gray-600">{sale.currency}</p>
                       </div>
                     </div>

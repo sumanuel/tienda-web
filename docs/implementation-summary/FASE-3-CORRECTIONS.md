@@ -13,6 +13,7 @@
 ### ✅ BUG-101: Race Condition en Transacciones de Inventario
 
 **Problema Original**:
+
 ```typescript
 // ❌ ANTES: Leía producto ANTES de transacción
 const product = await getProductById(data.productId);
@@ -24,6 +25,7 @@ await runTransaction(db, async (transaction) => {
 ```
 
 **Escenario de Falla**:
+
 1. Producto tiene stock = 10
 2. Usuario A registra entrada de +5 (lee stock=10)
 3. Usuario B registra salida de -3 (lee stock=10 simultáneamente)
@@ -31,31 +33,32 @@ await runTransaction(db, async (transaction) => {
 5. Transacción B guarda stock = 7 ❌ (debería ser 12)
 
 **Solución Implementada**:
+
 ```typescript
 // ✅ AHORA: Todo dentro de transacción
 await runTransaction(db, async (transaction) => {
   const productRef = doc(db, 'products', data.productId);
   const productDoc = await transaction.get(productRef);
-  
+
   if (!productDoc.exists()) {
     throw new Error('Producto no encontrado');
   }
-  
+
   const product = productDoc.data() as any;
   const quantityChange = data.type === 'entry' ? data.quantity : -data.quantity;
   const newStock = product.stock + quantityChange;
-  
+
   // Validación dentro de transacción
   if (newStock < 0) {
     throw new Error('Stock insuficiente para la salida');
   }
-  
+
   // Actualización atómica
   transaction.update(productRef, {
     stock: newStock,
     updatedAt: Timestamp.now(),
   });
-  
+
   // Crear movimiento dentro de transacción
   const movementRef = doc(collection(db, MOVEMENTS_COLLECTION));
   transaction.set(movementRef, movementData);
@@ -63,17 +66,19 @@ await runTransaction(db, async (transaction) => {
 ```
 
 **Impacto de la Corrección**:
+
 - ✅ Garantiza atomicidad completa
 - ✅ Previene race conditions entre movimientos simultáneos
 - ✅ Exactitud del inventario asegurada
 - ✅ No requiere cambios en UI o componentes
 
 **Testing Recomendado**:
+
 ```typescript
 test('debe prevenir race conditions con movimientos simultáneos', async () => {
   // Crear producto con stock = 10
   const productId = 'test-product';
-  
+
   // Ejecutar 2 movimientos simultáneamente
   await Promise.all([
     registerInventoryMovement(storeId, user1, 'User 1', {
@@ -87,7 +92,7 @@ test('debe prevenir race conditions con movimientos simultáneos', async () => {
       quantity: 3,
     }),
   ]);
-  
+
   // Verificar que stock final es correcto: 10 + 5 - 3 = 12
   const product = await getProductById(productId);
   expect(product.stock).toBe(12);
@@ -99,6 +104,7 @@ test('debe prevenir race conditions con movimientos simultáneos', async () => {
 ### ✅ BUG-102: checkStockAlert Fallaba Silenciosamente
 
 **Problema Original**:
+
 ```typescript
 // ❌ ANTES: Error tragado silenciosamente
 async function checkStockAlert(...) {
@@ -112,6 +118,7 @@ async function checkStockAlert(...) {
 ```
 
 **Escenario de Falla**:
+
 1. Movimiento registrado exitosamente (stock actualizado)
 2. checkStockAlert intenta crear alerta
 3. Firestore rules bloquean escritura en `stock_alerts`
@@ -119,6 +126,7 @@ async function checkStockAlert(...) {
 5. Movimiento guardado ✅, pero alerta NO creada ❌
 
 **Solución Implementada**:
+
 ```typescript
 // ✅ AHORA: Lanza error para manejo apropiado
 async function checkStockAlert(...) {
@@ -153,22 +161,24 @@ try {
 ```
 
 **Impacto de la Corrección**:
+
 - ✅ Errores de alertas ahora visibles en logs
 - ✅ Operación principal (movimiento) no se bloquea
 - ✅ Logging mejorado con ✅/⚠️ para auditoría
 - ✅ Condición corregida: `<` en vez de `<=`
 
 **Testing Recomendado**:
+
 ```typescript
 test('debe crear alerta cuando stock cae bajo mínimo', async () => {
   const product = { stock: 5, stockMin: 10 };
-  
+
   await registerInventoryMovement(storeId, userId, userName, {
     productId: product.id,
     type: 'exit',
     quantity: 2, // Stock queda en 3 < 10
   });
-  
+
   const alerts = await getStockAlerts(storeId);
   expect(alerts.length).toBe(1);
   expect(alerts[0].productId).toBe(product.id);
@@ -178,13 +188,13 @@ test('debe crear alerta cuando stock cae bajo mínimo', async () => {
 test('debe resolver alerta cuando stock sube', async () => {
   // Alerta preexistente
   const alertId = 'existing-alert';
-  
+
   await registerInventoryMovement(storeId, userId, userName, {
     productId: product.id,
     type: 'entry',
     quantity: 20, // Stock sube por encima de stockMin
   });
-  
+
   const alert = await getStockAlert(alertId);
   expect(alert.status).toBe('resolved');
   expect(alert.resolvedAt).toBeDefined();
@@ -198,6 +208,7 @@ test('debe resolver alerta cuando stock sube', async () => {
 ### ✅ BUG-103: Double Reverse Innecesario en Kardex
 
 **Problema Original**:
+
 ```typescript
 // ❌ ANTES: Mutaba array original con doble reverse
 const movements = await getInventoryMovements(storeId, productId);
@@ -209,6 +220,7 @@ return kardex.reverse(); // ❌ Segundo reverse innecesario
 ```
 
 **Solución Implementada**:
+
 ```typescript
 // ✅ AHORA: No muta, un solo reverse
 const movements = await getInventoryMovements(storeId, productId);
@@ -222,6 +234,7 @@ return kardex; // ✅ Ya está en orden correcto
 ```
 
 **Beneficios**:
+
 - ✅ No muta arrays externos
 - ✅ Más eficiente (un reverse en vez de dos)
 - ✅ Código más claro y predecible
@@ -231,6 +244,7 @@ return kardex; // ✅ Ya está en orden correcto
 ### ✅ BUG-104: Valorización No Validaba Categoría
 
 **Problema Original**:
+
 ```typescript
 // ❌ ANTES: Crash si product.category es undefined
 byCategory[product.category] += value;
@@ -238,6 +252,7 @@ byCategory[product.category] += value;
 ```
 
 **Solución Implementada**:
+
 ```typescript
 // ✅ AHORA: Valida categoría con fallback
 const category = product.category || 'Sin Categoría';
@@ -249,6 +264,7 @@ byCategory[category] += value;
 ```
 
 **Beneficios**:
+
 - ✅ No crashea con productos sin categoría
 - ✅ Agrega categoría "Sin Categoría" para productos no clasificados
 - ✅ Más resiliente ante datos inconsistentes
@@ -260,6 +276,7 @@ byCategory[category] += value;
 ### ✅ BUG-107: Condición de Alerta Incorrecta
 
 **Cambio**:
+
 ```typescript
 // ❌ ANTES
 if (currentStock <= minStock) {
@@ -273,6 +290,7 @@ if (currentStock < minStock) {
 ```
 
 **Justificación**:
+
 - Alerta cuando `stock < stockMin`: stock BAJO el mínimo (crítico)
 - No alerta cuando `stock == stockMin`: stock IGUAL al mínimo (warning, no crítico aún)
 
@@ -283,13 +301,15 @@ if (currentStock < minStock) {
 ### ✅ BUG-109: Referencias de Kardex Mejoradas
 
 **Cambio**:
+
 ```typescript
 // ❌ ANTES
-reference: movement.reference || movement.id.substring(0, 8)
+reference: movement.reference || movement.id.substring(0, 8);
 // Resultado: "a3f4d5e6" (minúsculas, confuso)
 
 // ✅ AHORA
-reference: movement.reference || `MOV-${movement.id.substring(0, 8).toUpperCase()}`
+reference: movement.reference ||
+  `MOV-${movement.id.substring(0, 8).toUpperCase()}`;
 // Resultado: "MOV-A3F4D5E6" (claro, estandarizado)
 ```
 
@@ -298,6 +318,7 @@ reference: movement.reference || `MOV-${movement.id.substring(0, 8).toUpperCase(
 ## 📊 Resultado Final
 
 ### Build Validation
+
 ```bash
 npm run build
 ✓ Compiled successfully in 10.0s
@@ -308,7 +329,7 @@ npm run build
 ### Bugs Corregidos
 
 | Severidad | Total | Corregidos | Pendientes |
-|-----------|-------|------------|------------|
+| --------- | ----- | ---------- | ---------- |
 | Críticos  | 2     | ✅ 2       | 0          |
 | Altos     | 4     | ✅ 2       | 2          |
 | Medios    | 3     | ✅ 1       | 2          |
@@ -317,14 +338,17 @@ npm run build
 ### Bugs Pendientes para Siguiente Sprint
 
 **BUG-105: MovementForm No Valida Stock en Frontend** (ALTO)
+
 - Validación Zod con `.refine()` para verificar stock disponible
 - Mejora UX al prevenir error antes de submit
 
 **BUG-106: getInventoryMovements Sin Límite** (ALTO)
+
 - Agregar parámetro `limit` con default 100
 - Implementar paginación server-side
 
 **BUG-108: Paginación Server-Side** (MEDIO)
+
 - Usar `startAfter()` y cursors de Firestore
 - Componente con botones "Cargar más"
 
@@ -333,6 +357,7 @@ npm run build
 ## 🎯 Próximos Pasos
 
 ### Inmediato (Antes de Fase 4)
+
 1. ✅ Corregir bugs críticos (BUG-101, BUG-102) - **COMPLETADO**
 2. ✅ Validar build exitoso - **COMPLETADO**
 3. ⏳ Testing manual de concurrencia - **PENDIENTE**
@@ -340,11 +365,13 @@ npm run build
 5. ⏳ Implementar Firestore rules - **PENDIENTE**
 
 ### Sprint Siguiente
+
 6. ⏳ Corregir BUG-105 y BUG-106 (altos pendientes)
 7. ⏳ Agregar tests unitarios para transacciones
 8. ⏳ Implementar paginación server-side
 
 ### Fase 4
+
 - Proceder con Clientes y Proveedores
 - Aplicar mismas buenas prácticas de transacciones
 - Testing incremental desde el inicio

@@ -50,7 +50,10 @@ export async function createCustomer(
       updatedAt: Timestamp.now(),
     };
 
-    const docRef = await addDoc(collection(db, CUSTOMERS_COLLECTION), customerData);
+    const docRef = await addDoc(
+      collection(db, CUSTOMERS_COLLECTION),
+      customerData
+    );
 
     return {
       id: docRef.id,
@@ -95,7 +98,9 @@ export async function getCustomers(storeId: string): Promise<Customer[]> {
 /**
  * Obtener cliente por ID
  */
-export async function getCustomerById(customerId: string): Promise<Customer | null> {
+export async function getCustomerById(
+  customerId: string
+): Promise<Customer | null> {
   try {
     const docRef = doc(db, CUSTOMERS_COLLECTION, customerId);
     const docSnap = await getDoc(docRef);
@@ -228,7 +233,9 @@ export async function updateCustomerBalance(
 /**
  * Obtener clientes con balance pendiente
  */
-export async function getCustomersWithBalance(storeId: string): Promise<Customer[]> {
+export async function getCustomersWithBalance(
+  storeId: string
+): Promise<Customer[]> {
   const customers = await getCustomers(storeId);
   return customers.filter((c) => c.balance > 0);
 }
