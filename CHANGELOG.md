@@ -5,6 +5,7 @@
 ### 🐛 Bugs Críticos Corregidos
 
 **BUG-112: Query Ineficiente en getTransactionById**
+
 - **Ubicación**: `lib/customerTransactions.ts`, `lib/supplierTransactions.ts`
 - **Problema**: Usaba `getDocs(query(...))` con `where('__name__', '==', id)` en lugar de `getDoc()` directo
 - **Impacto**: 10-50x más lento, alto costo en Firestore reads
@@ -12,6 +13,7 @@
 - **Mejora**: Performance 10-50x más rápida, reducción significativa de costos
 
 **BUG-113: Venta a Crédito No Atómica**
+
 - **Ubicación**: `lib/sales.ts` función `processSale()`
 - **Problema**: Creación de venta y cargo del cliente en transacciones separadas (riesgo de inconsistencia)
 - **Impacto**: Si fallaba cargo, venta quedaba creada sin actualizar balance del cliente

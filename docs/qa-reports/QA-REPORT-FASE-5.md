@@ -11,21 +11,27 @@
 ## ✅ CORRECCIONES APLICADAS (2026-08-08)
 
 ### BUG-112: Query Ineficiente - ✅ CORREGIDO
+
 **Archivos modificados**:
+
 - `lib/customerTransactions.ts` líneas 1-11 (import getDoc), líneas 154-189 (función)
 - `lib/supplierTransactions.ts` líneas 1-11 (import getDoc), líneas 147-182 (función)
 
 **Cambios**:
+
 - Reemplazado `getDocs(query(...))` por `getDoc(docRef)` directo
 - Performance mejorada: 10-50x más rápido
 - Reducción de costo en Firestore reads
 
 ### BUG-113: Venta a Crédito No Atómica - ✅ CORREGIDO
+
 **Archivos modificados**:
+
 - `lib/sales.ts` líneas 1-15 (removido import createCustomerCharge)
 - `lib/sales.ts` líneas 131-198 (refactorización de processSale)
 
 **Cambios**:
+
 - Integrada creación de cargo dentro de runTransaction() de processSale()
 - Ahora TODO es atómico: venta + stock + balance + cargo
 - Si falla cualquier paso, rollback completo automático
@@ -40,6 +46,7 @@
 ### Puntaje de Calidad: 82/100 ⬆️ (+10)
 
 **Distribución**:
+
 - ✅ Funcionalidad Implementada: 25/25 (100%) ⬆️ +1
 - ✅ Calidad de Código: 23/25 (92%) ⬆️ +5
 - ⚠️ Manejo de Errores: 15/20 (75%)
@@ -50,22 +57,24 @@
 
 | Severidad  | Cantidad |
 | ---------- | -------- |
-| 🔴 Crítica | 0        | ⬇️ -2
-| 🟠 Alta    | 1        | ⬇️ -1
+| 🔴 Crítica | 0        | ⬇️ -2 |
+| 🟠 Alta    | 1        | ⬇️ -1 |
 | 🟡 Media   | 2        |
 | 🔵 Baja    | 1        |
-| **TOTAL**  | **4**    | ⬇️ -3
+| **TOTAL**  | **4**    | ⬇️ -3 |
 
 ### Estado
 
 ✅ **APROBAR PARA PRODUCCIÓN**
 
 **Condiciones cumplidas**:
+
 1. ✅ BUG-112 corregido (query optimizado)
 2. ✅ BUG-113 corregido (atomicidad completa)
 3. ⚠️ BUG-115 pendiente (no crítico para deploy)
 
 **Bugs restantes** (pueden corregirse post-deploy):
+
 - 🟠 BUG-115: calculateAging no resta pagos (ALTA prioridad - próximo sprint)
 - 🟡 BUG-116: Floating point precision en validación
 - 🟡 BUG-117: currentAmount puede ser negativo
@@ -164,6 +173,7 @@ describe('Flujo de venta a crédito', () => {
 ### ✅ BUG-112: Query Ineficiente en getTransactionById - CORREGIDO
 
 **Ubicación**:
+
 - `lib/customerTransactions.ts` líneas 154-189
 - `lib/supplierTransactions.ts` líneas 147-182
 
@@ -171,10 +181,12 @@ describe('Flujo de venta a crédito', () => {
 Los métodos `getCustomerTransactionById()` y `getSupplierTransactionById()` usaban `getDocs()` con un query `where('__name__', '==', id)` en lugar de usar `getDoc()` directo.
 
 **Problema Original**:
+
 1. **Performance**: Query completo de colección vs lectura directa
 2. **Costo**: 10-50x más reads en Firestore
 
 **Solución Implementada**:
+
 ```typescript
 // ANTES (INCORRECTO)
 const docSnap = await getDocs(
@@ -190,6 +202,7 @@ const docSnap = await getDoc(docRef);
 ```
 
 **Cambios aplicados**:
+
 1. Agregado `getDoc` a imports de firebase/firestore
 2. Reemplazado `getDocs(query(...))` por `getDoc(docRef)`
 3. Cambiado `docSnap.empty` por `!docSnap.exists()`
@@ -207,6 +220,7 @@ const docSnap = await getDoc(docRef);
 
 **Descripción**:  
 Cuando se procesaba una venta a crédito, el código:
+
 1. Creaba la venta dentro de `runTransaction()` ✅
 2. Salía de la transacción
 3. Llamaba a `createCustomerCharge()` en operación separada ❌
@@ -233,7 +247,7 @@ const saleId = await runTransaction(db, async (transaction) => {
     // 3a. Leer cliente
     const customerRef = doc(db, 'customers', customerId);
     const customerDoc = await transaction.get(customerRef);
-    
+
     // 3b. Actualizar balance
     const currentBalance = customerDoc.data().balance || 0;
     const newBalance = currentBalance + total;
@@ -263,12 +277,14 @@ const saleId = await runTransaction(db, async (transaction) => {
 ```
 
 **Cambios aplicados**:
+
 1. Removido import de `createCustomerCharge`
 2. Movida lógica completa dentro de `runTransaction()`
 3. TODO ahora es atómico: venta + stock + balance cliente + cargo
 4. Si falla CUALQUIER paso → rollback automático completo
 
 **Beneficios**:
+
 - ✅ Garantía 100% de integridad de datos
 - ✅ Imposible tener venta sin cargo correspondiente
 - ✅ Balance siempre consistente
@@ -283,6 +299,7 @@ const saleId = await runTransaction(db, async (transaction) => {
 ## Bugs Restantes (No Críticos)
 
 ### BUG-115: calculateAging No Resta Pagos 🟠 ALTA
+
 3. **Ineficiencia**: Define `docRef` pero no lo usa
 
 **Comportamiento Esperado**:
@@ -338,14 +355,17 @@ async function getCustomerTransactionById(
 5. Aplicar en ambos archivos (customerTransactions.ts y supplierTransactions.ts)
 
 ### BUG-115: calculateAging No Resta Pagos 🟠 ALTA
+
     toast.success('Abono registrado correctamente');
     onSuccess();
-  } catch (error: any) {
-    // No actualiza store si falla
-    toast.error(error.message || 'Error al registrar abono');
-  }
+
+} catch (error: any) {
+// No actualiza store si falla
+toast.error(error.message || 'Error al registrar abono');
 }
-```
+}
+
+````
 
 **Impacto**:
 
@@ -366,7 +386,7 @@ const transaction = await createCustomerPayment(...);  // Espera resultado
 // ↓ Solo llega aquí si fue exitoso
 const newBalance = customer.balance - data.amount;
 updateCustomer(customer.id, { balance: newBalance });
-```
+````
 
 **Re-evaluación**: ✅ **NO ES UN BUG**
 
@@ -1153,22 +1173,26 @@ export async function getCustomerTransactions(
 ### ✅ APROBAR PARA PRODUCCIÓN
 
 **Bugs Críticos Corregidos**:
+
 1. ✅ BUG-112 (query ineficiente) - CORREGIDO
 2. ✅ BUG-113 (atomicidad ventas a crédito) - CORREGIDO
 
 **Build Status**: ✅ Compilado exitosamente sin errores
 
 **Condiciones Cumplidas**:
+
 - ✅ Performance optimizada (10-50x mejora en queries)
 - ✅ Integridad de datos garantizada (100% atomicidad)
 - ✅ Zero errores TypeScript
 - ✅ Arquitectura de transacciones robusta
 
 ⚠️ **RECOMENDADO** (primer sprint post-deploy):
+
 1. Corregir BUG-115 (aging inflado) ← 4 horas
 2. Corregir BUG-116 y BUG-117 ← 1.5 horas
 
 ℹ️ **OPCIONAL** (backlog):
+
 1. Configurar testing automatizado
 2. Implementar optimizaciones de performance
 3. Agregar validación de permisos
