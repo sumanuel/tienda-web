@@ -31,11 +31,15 @@ export interface Sale {
   }; // Snapshot de tasas al momento de la venta
 
   paymentMethod: 'cash' | 'card' | 'transfer' | 'credit';
-  paymentStatus: 'paid' | 'pending' | 'partial';
+  paymentStatus: 'paid' | 'pending' | 'partial' | 'credit';
 
   // Detalles de pago en efectivo
   amountReceived?: number;
   change?: number;
+
+  // Detalles de venta a crédito (NUEVO - Fase 5)
+  creditDueDate?: Date; // Fecha de vencimiento (si paymentStatus = 'credit')
+  amountDue?: number; // Monto pendiente (si paymentStatus = 'credit' o 'partial')
 
   status: 'completed' | 'cancelled';
 

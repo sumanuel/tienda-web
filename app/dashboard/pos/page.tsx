@@ -3,11 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useCartStore } from '@/store/cartStore';
 import { useProductsStore } from '@/store/productsStore';
+import { useCustomersStore } from '@/store/customersStore';
 import { useAuth } from '@/hooks/useAuth';
 import { getProducts, searchProducts } from '@/lib/products';
+import { getCustomers } from '@/lib/customers';
 import { processSale } from '@/lib/sales';
 import { generateReceiptPDF } from '@/lib/receipt';
 import { Product } from '@/types/product';
+import { Customer } from '@/types/customer';
 import { CartItem } from '@/types/sale';
 import { Search, ShoppingCart, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -15,6 +18,7 @@ import toast from 'react-hot-toast';
 export default function POSPage() {
   const { profile } = useAuth();
   const { products, setProducts } = useProductsStore();
+  const { customers, setCustomers } = useCustomersStore();
   const {
     items,
     currency,
@@ -31,9 +35,17 @@ export default function POSPage() {
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Cargar productos al montar
+  // Estados para venta a crédito (NUEVO - Fase 5)
+  const [paymentMethod, setPaymentMethod] = useState<
+    'cash' | 'card' | 'transfer' | 'credit'
+  >('cash');
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+  const [creditDueDate, setCreditDueDate] = useState<string>('');
+
+  // Cargar productos y clientes al montar
   useEffect(() => {
     loadProducts();
+    loadCustomers();
   }, []);
 
   const loadProducts = async () => {
@@ -43,6 +55,16 @@ export default function POSPage() {
       setProducts(data);
     } catch (error) {
       toast.error('Error al cargar productos');
+    }
+  };
+
+  const loadCustomers = async () => {
+    try {
+      if (!profile?.storeId) return;
+      const data = await getCustomers(profile.storeId);
+      setCustomers(data);
+    } catch (error) {
+      console.error('Error al cargar clientes:', error);
     }
   };
 
@@ -117,23 +139,48 @@ export default function POSPage() {
       return;
     }
 
+    // Validar venta a crédito
+    if (paymentMethod === 'credit') {
+      if (!selectedCustomerId) {
+        toast.error('Debe seleccionar un cliente para ventas a crédito');
+        return;
+      }
+      if (!creditDueDate) {
+        toast.error('Debe especificar fecha de vencimiento');
+        return;
+      }
+    }
+
     setLoading(true);
     try {
+      const selectedCustomer = customers.find(
+        (c) => c.id === selectedCustomerId
+      );
+
       const sale = await processSale(
         profile.storeId,
         profile.id,
         profile.name,
         items,
         currency,
-        'cash'
+        paymentMethod,
+        undefined, // amountReceived
+        selectedCustomerId || undefined,
+        selectedCustomer?.name || undefined,
+        creditDueDate ? new Date(creditDueDate) : undefined
       );
 
       toast.success(`Venta #${sale.saleNumber} procesada`);
 
-      // Generar PDF
-      generateReceiptPDF(sale, 'TiendaWeb');
+      // Generar PDF solo si no es crédito
+      if (paymentMethod !== 'credit') {
+        generateReceiptPDF(sale, 'TiendaWeb');
+      }
 
       clearCart();
+      setPaymentMethod('cash');
+      setSelectedCustomerId('');
+      setCreditDueDate('');
 
       // Recargar productos para actualizar stock
       await loadProducts();
@@ -287,10 +334,67 @@ export default function POSPage() {
           )}
         </div>
 
-        {/* Totales */}
+        {/* Método de Pago */}
         {items.length > 0 && (
           <>
-            <div className="space-y-2 border-t pt-4">
+            <div className="space-y-3 border-t pt-4">
+              <label className="block text-sm font-medium">
+                Método de Pago
+              </label>
+              <select
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value as any)}
+                className="w-full rounded border p-2"
+              >
+                <option value="cash">Efectivo</option>
+                <option value="card">Tarjeta</option>
+                <option value="transfer">Transferencia</option>
+                <option value="credit">Crédito</option>
+              </select>
+
+              {/* Campos adicionales si es venta a crédito */}
+              {paymentMethod === 'credit' && (
+                <div className="space-y-3 rounded-lg border border-yellow-300 bg-yellow-50 p-3">
+                  <p className="text-xs font-medium text-yellow-800">
+                    ⚠️ Venta a Crédito
+                  </p>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      Cliente *
+                    </label>
+                    <select
+                      value={selectedCustomerId}
+                      onChange={(e) => setSelectedCustomerId(e.target.value)}
+                      className="w-full rounded border p-2"
+                    >
+                      <option value="">Seleccionar cliente...</option>
+                      {customers.map((customer) => (
+                        <option key={customer.id} value={customer.id}>
+                          {customer.name} ({customer.document})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      Fecha de Vencimiento *
+                    </label>
+                    <input
+                      type="date"
+                      value={creditDueDate}
+                      onChange={(e) => setCreditDueDate(e.target.value)}
+                      className="w-full rounded border p-2"
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Totales */}
+            <div className="mt-4 space-y-2 border-t pt-4">
               <div className="flex justify-between text-sm">
                 <span>Subtotal:</span>
                 <span>

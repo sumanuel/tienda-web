@@ -1,5 +1,149 @@
 # Changelog - TiendaWeb
 
+## [0.5.0] - 2026-08-08 - Fase 5: Cuentas por Cobrar y Pagar
+
+### ✨ Nuevas Funcionalidades
+
+**Cuentas por Cobrar**
+
+- Dashboard completo con 3 KPIs: Total por Cobrar, Saldo Vencido, Saldo Vigente
+- 3 Tabs: Clientes con Saldo, Cuentas Vencidas, Aging de Cartera (gráfico)
+- Registro de abonos de clientes (valida monto ≤ balance actual)
+- Estados de cuenta con historial completo de transacciones
+- Exportación a PDF de estados de cuenta
+- Aging de cartera visual con Recharts (0-30, 31-60, 61-90, 90+ días)
+
+**Cuentas por Pagar**
+
+- Dashboard con 3 KPIs: Total por Pagar, Por Vencer (7 días), Saldo Vencido
+- 2 Tabs: Proveedores con Saldo, Por Vencer (próximos 7 días)
+- Registro de pagos a proveedores
+- Estados de cuenta de proveedores con historial
+- Alertas de urgencia (HOY, Mañana, 3 días o menos)
+
+**Ventas a Crédito (POS)**
+
+- Nuevo método de pago "Crédito" en Punto de Venta
+- Selector de cliente obligatorio para ventas a crédito
+- Fecha de vencimiento configurable
+- Creación automática de cargo en cuenta del cliente
+- Actualización automática de balance del cliente
+
+### 📁 Nuevos Archivos (14 archivos + 10 componentes UI)
+
+**Types y Modelos**
+
+- `types/transaction.ts` (CustomerTransaction, SupplierTransaction, AccountStatus, AgingData)
+
+**Servicios**
+
+- `lib/customerTransactions.ts` (createCustomerPayment, createCustomerCharge, getCustomerAccountStatus, getOverdueCustomers)
+- `lib/supplierTransactions.ts` (createSupplierPayment, createSupplierCharge, getSupplierAccountStatus, getUpcomingPayables)
+- `lib/accountsReceivable.ts` (calculateAging, getReceivablesSummary, getPayablesSummary)
+
+**Stores Zustand**
+
+- `store/customerTransactionsStore.ts`
+- `store/supplierTransactionsStore.ts`
+
+**Componentes**
+
+- `components/transactions/CustomerPaymentForm.tsx` (formulario de abonos)
+- `components/transactions/SupplierPaymentForm.tsx` (formulario de pagos)
+- `components/transactions/CustomerTransactionsList.tsx` (historial de cliente)
+- `components/transactions/SupplierTransactionsList.tsx` (historial de proveedor)
+- `components/transactions/AccountStatusPDF.tsx` (generador de PDF con jsPDF)
+
+**Páginas**
+
+- `app/dashboard/accounts-receivable/page.tsx`
+- `app/dashboard/accounts-payable/page.tsx`
+
+**Componentes UI shadcn/ui**
+
+- `components/ui/badge.tsx`
+- `components/ui/card.tsx`
+- `components/ui/dialog.tsx`
+- `components/ui/form.tsx`
+- `components/ui/input.tsx`
+- `components/ui/label.tsx`
+- `components/ui/select.tsx`
+- `components/ui/skeleton.tsx`
+- `components/ui/table.tsx`
+- `components/ui/tabs.tsx`
+
+### 🔧 Modificaciones
+
+**types/sale.ts**
+
+- Agregado `paymentStatus: 'paid' | 'pending' | 'partial' | 'credit'`
+- Agregados campos `creditDueDate?: Date`, `amountDue?: number`
+
+**lib/sales.ts**
+
+- Agregado import `createCustomerCharge` de `lib/customerTransactions`
+- `processSale()` ahora acepta parámetro opcional `creditDueDate?: Date`
+- Validación: ventas a crédito requieren customerId y creditDueDate
+- Si paymentStatus es 'credit', llama a `createCustomerCharge()` automáticamente
+
+**app/dashboard/pos/page.tsx**
+
+- Agregado selector de método de pago (cash, card, transfer, credit)
+- Si es "Crédito": muestra selector de cliente + fecha de vencimiento
+- Validación: no permite procesar venta a crédito sin cliente o fecha
+- Resetea método de pago después de venta exitosa
+
+**components/layout/Sidebar.tsx**
+
+- Agregada sección expandible "Finanzas" con DollarSign icon
+- 2 nuevos enlaces: "Cuentas x Cobrar", "Cuentas x Pagar"
+- Sección expandida por defecto
+
+### 📦 Nuevas Dependencias
+
+```bash
+npm install --save recharts class-variance-authority
+npm install --save @radix-ui/react-dialog @radix-ui/react-tabs
+npm install --save @radix-ui/react-select @radix-ui/react-label
+npm install --save @hookform/resolvers
+```
+
+### 🛡️ Seguridad y Consistencia
+
+**Uso de runTransaction() en todas las operaciones financieras**
+
+- `createCustomerPayment()`: valida balance + crea transacción + actualiza balance atómicamente
+- `createSupplierPayment()`: valida balance + crea transacción + actualiza balance atómicamente
+- Previene race conditions aprendidas de BUG-108 y BUG-109 de Fase 4
+- Todas las operaciones de dinero son transaccionales (ACID)
+
+**Validaciones**
+
+- Pago/abono no puede exceder balance actual
+- Ventas a crédito requieren cliente y fecha de vencimiento
+- Fechas de vencimiento no pueden ser en el pasado
+
+### 📊 Métricas
+
+- **Archivos creados**: 14 archivos de negocio + 10 componentes UI = 24 archivos totales
+- **Archivos modificados**: 4 archivos (sale.ts, sales.ts, pos/page.tsx, Sidebar.tsx)
+- **Líneas de código**: ~2,800 líneas nuevas
+- **Tiempo estimado**: 40 horas (según PLAN-005)
+- **Build**: ✅ Compilación exitosa, 0 errores TypeScript
+
+### ✅ Criterios de Aceptación Cumplidos
+
+- ✅ Registro de abonos de clientes con validación de saldo
+- ✅ Registro de pagos a proveedores con validación de saldo
+- ✅ Dashboard de Cuentas x Cobrar con KPIs y aging
+- ✅ Dashboard de Cuentas x Pagar con alertas de vencimiento
+- ✅ Ventas a crédito desde POS
+- ✅ Estados de cuenta exportables a PDF
+- ✅ Historial completo de transacciones financieras
+- ✅ Integración con sidebar de navegación
+
+---
+
 ## [0.4.1] - 2026-08-07 - Correcciones Críticas de Fase 4
 
 ### 🐛 Bugs Corregidos (3 bugs críticos/altos)

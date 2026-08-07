@@ -17,6 +17,8 @@ import {
   DollarSign,
   ChevronDown,
   ChevronRight,
+  Receipt,
+  CreditCard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -36,6 +38,16 @@ const menuItems = [
   },
   { href: '/dashboard/customers', icon: Users, label: 'Clientes' },
   { href: '/dashboard/suppliers', icon: TruckIcon, label: 'Proveedores' },
+  // Finanzas como sección expandible (NUEVO - Fase 5)
+  {
+    label: 'Finanzas',
+    icon: DollarSign,
+    submenu: [
+      { href: '/dashboard/accounts-receivable', label: 'Cuentas x Cobrar' },
+      { href: '/dashboard/accounts-payable', label: 'Cuentas x Pagar' },
+    ],
+    Finanzas: true, // Expandido por defecto (NUEVO - Fase 5)
+  },
   { href: '/dashboard/reports', icon: BarChart3, label: 'Reportes' },
   { href: '/dashboard/settings', icon: Settings, label: 'Configuración' },
 ];

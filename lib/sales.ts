@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Sale, SaleItem } from '@/types/sale';
+import { createCustomerCharge } from './customerTransactions';
 
 const SALES_COLLECTION = 'sales';
 
@@ -64,9 +65,22 @@ export async function processSale(
   paymentMethod: 'cash' | 'card' | 'transfer' | 'credit',
   amountReceived?: number,
   customerId?: string,
-  customerName?: string
+  customerName?: string,
+  creditDueDate?: Date // NUEVO - Fase 5
 ): Promise<Sale> {
   try {
+    // Validar venta a crédito
+    if (paymentMethod === 'credit') {
+      if (!customerId) {
+        throw new Error('Debe seleccionar un cliente para ventas a crédito');
+      }
+      if (!creditDueDate) {
+        throw new Error(
+          'Debe especificar fecha de vencimiento para ventas a crédito'
+        );
+      }
+    }
+
     // Calcular totales
     const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
     const discount = items.reduce((sum, item) => {
@@ -82,6 +96,9 @@ export async function processSale(
 
     // Generar número de venta
     const saleNumber = await generateSaleNumber(storeId);
+
+    // Determinar paymentStatus
+    const paymentStatus = paymentMethod === 'credit' ? 'credit' : 'paid';
 
     // Crear venta
     const saleData = {
@@ -99,9 +116,12 @@ export async function processSale(
       currency,
       exchangeRateSnapshot: {},
       paymentMethod,
-      paymentStatus: 'paid' as const,
-      amountReceived: amountReceived || total,
+      paymentStatus,
+      amountReceived:
+        amountReceived || (paymentMethod === 'credit' ? 0 : total),
       change,
+      creditDueDate: creditDueDate ? Timestamp.fromDate(creditDueDate) : null,
+      amountDue: paymentMethod === 'credit' ? total : 0,
       status: 'completed' as const,
       createdAt: serverTimestamp(),
     };
@@ -137,11 +157,24 @@ export async function processSale(
       return saleRef.id;
     });
 
+    // 3. Si es venta a crédito, crear cargo en customer_transactions
+    if (paymentMethod === 'credit' && customerId && creditDueDate) {
+      await createCustomerCharge(
+        storeId,
+        customerId,
+        saleId,
+        total,
+        creditDueDate,
+        cashierId
+      );
+    }
+
     // Devolver venta creada
     const newSale: Sale = {
       id: saleId,
       ...saleData,
       createdAt: new Date(),
+      creditDueDate: creditDueDate || undefined,
     } as Sale;
 
     return newSale;
