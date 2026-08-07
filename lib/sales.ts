@@ -12,7 +12,6 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Sale, SaleItem } from '@/types/sale';
-import { createCustomerCharge } from './customerTransactions';
 
 const SALES_COLLECTION = 'sales';
 
@@ -127,6 +126,7 @@ export async function processSale(
     };
 
     // Usar transacción para asegurar consistencia
+    // FIX BUG-113: Incluir creación de cargo en la misma transacción para atomicidad
     const saleId = await runTransaction(db, async (transaction) => {
       // 1. Crear venta
       const saleRef = doc(collection(db, SALES_COLLECTION));
@@ -154,20 +154,45 @@ export async function processSale(
         }
       }
 
+      // 3. Si es venta a crédito, crear cargo en customer_transactions (ATÓMICO)
+      if (paymentMethod === 'credit' && customerId && creditDueDate) {
+        // 3a. Obtener cliente actual
+        const customerRef = doc(db, 'customers', customerId);
+        const customerDoc = await transaction.get(customerRef);
+
+        if (!customerDoc.exists()) {
+          throw new Error('Cliente no encontrado');
+        }
+
+        const currentBalance = customerDoc.data().balance || 0;
+        const newBalance = currentBalance + total;
+
+        // 3b. Actualizar balance del cliente
+        transaction.update(customerRef, {
+          balance: newBalance,
+          updatedAt: serverTimestamp(),
+        });
+
+        // 3c. Crear registro de transacción
+        const chargeData = {
+          storeId,
+          customerId,
+          type: 'charge' as const,
+          amount: total,
+          balanceBefore: currentBalance,
+          balanceAfter: newBalance,
+          saleId: saleRef.id,
+          dueDate: Timestamp.fromDate(creditDueDate),
+          createdBy: cashierId,
+          createdAt: Timestamp.now(),
+        };
+
+        const chargeRef = doc(collection(db, 'customer_transactions'));
+        transaction.set(chargeRef, chargeData);
+      }
+
       return saleRef.id;
     });
-
-    // 3. Si es venta a crédito, crear cargo en customer_transactions
-    if (paymentMethod === 'credit' && customerId && creditDueDate) {
-      await createCustomerCharge(
-        storeId,
-        customerId,
-        saleId,
-        total,
-        creditDueDate,
-        cashierId
-      );
-    }
 
     // Devolver venta creada
     const newSale: Sale = {

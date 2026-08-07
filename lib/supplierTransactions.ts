@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   query,
   where,
@@ -152,24 +153,22 @@ export async function createSupplierCharge(
 
 /**
  * Obtener transacción por ID
+ * FIX BUG-112: Usa getDoc() directo en lugar de query ineficiente
  */
 async function getSupplierTransactionById(
   id: string
 ): Promise<SupplierTransaction | null> {
   try {
-    const q = query(
-      collection(db, SUPPLIER_TRANSACTIONS_COLLECTION),
-      where('__name__', '==', id)
-    );
-    const docSnap = await getDocs(q);
+    const docRef = doc(db, SUPPLIER_TRANSACTIONS_COLLECTION, id);
+    const docSnap = await getDoc(docRef);
 
-    if (docSnap.empty) {
+    if (!docSnap.exists()) {
       return null;
     }
 
-    const data = docSnap.docs[0].data();
+    const data = docSnap.data();
     return {
-      id: docSnap.docs[0].id,
+      id: docSnap.id,
       storeId: data.storeId,
       supplierId: data.supplierId,
       type: data.type,

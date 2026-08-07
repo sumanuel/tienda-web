@@ -2,6 +2,7 @@ import {
   collection,
   doc,
   addDoc,
+  getDoc,
   getDocs,
   query,
   where,
@@ -153,26 +154,22 @@ export async function createCustomerCharge(
 
 /**
  * Obtener transacción por ID
+ * FIX BUG-112: Usa getDoc() directo en lugar de query ineficiente
  */
 async function getCustomerTransactionById(
   id: string
 ): Promise<CustomerTransaction | null> {
   try {
     const docRef = doc(db, CUSTOMER_TRANSACTIONS_COLLECTION, id);
-    const docSnap = await getDocs(
-      query(
-        collection(db, CUSTOMER_TRANSACTIONS_COLLECTION),
-        where('__name__', '==', id)
-      )
-    );
+    const docSnap = await getDoc(docRef);
 
-    if (docSnap.empty) {
+    if (!docSnap.exists()) {
       return null;
     }
 
-    const data = docSnap.docs[0].data();
+    const data = docSnap.data();
     return {
-      id: docSnap.docs[0].id,
+      id: docSnap.id,
       storeId: data.storeId,
       customerId: data.customerId,
       type: data.type,
