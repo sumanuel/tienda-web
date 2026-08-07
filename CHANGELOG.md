@@ -1,5 +1,72 @@
 # Changelog - TiendaWeb
 
+## [0.4.1] - 2026-08-07 - Correcciones Críticas de Fase 4
+
+### 🐛 Bugs Corregidos (3 bugs críticos/altos)
+
+**BUG-108 (CRÍTICA) - Race Condition en Validación de Unicidad**
+
+- Implementado `runTransaction()` en `createCustomer()` y `createSupplier()`
+- Garantiza validación + creación atómica (previene duplicados simultáneos)
+- Antes: Dos requests simultáneos podían crear clientes con mismo documento
+- Ahora: Solo un request puede crear, el otro falla con "Ya existe"
+
+**BUG-109 (ALTA) - Race Condition en Actualización de Balances**
+
+- Refactorizado `updateCustomerBalance()` y `updateSupplierBalance()`
+- Cambio de API: De balance absoluto a cambio relativo (delta)
+- Uso de `runTransaction()` para leer balance actual + actualizar atómicamente
+- Antes: `updateCustomerBalance(customerId, 150)` (balance absoluto)
+- Ahora: `updateCustomerBalance(customerId, -50)` (cambio relativo)
+- Previene pérdidas de dinero por pagos/abonos simultáneos en Fase 5
+
+**BUG-111 (MEDIA) - Validación Case-Sensitive**
+
+- Normalización de `document` y `rif` a uppercase antes de comparar y guardar
+- Previene duplicados lógicos (V12345678 vs v12345678)
+- Todos los documentos/RIF se guardan en uppercase en Firestore
+
+### 🔧 Cambios Técnicos
+
+**lib/customers.ts**
+
+- Agregado import `runTransaction` de firebase/firestore
+- `createCustomer()`: Validación + creación dentro de transaction
+- `updateCustomerBalance()`: Cambiado a `(customerId, amountChange)` con transaction
+- Retorna `Promise<number>` (nuevo balance) en lugar de `Promise<void>`
+
+**lib/suppliers.ts**
+
+- Agregado import `runTransaction` de firebase/firestore
+- `createSupplier()`: Validación + creación dentro de transaction
+- `updateSupplierBalance()`: Cambiado a `(supplierId, amountChange)` con transaction
+- Retorna `Promise<number>` (nuevo balance) en lugar de `Promise<void>`
+
+### ⚠️ Breaking Changes
+
+**updateCustomerBalance / updateSupplierBalance**
+
+```typescript
+// ❌ Antes (balance absoluto)
+await updateCustomerBalance('customer-1', 150);
+
+// ✅ Ahora (cambio relativo)
+await updateCustomerBalance('customer-1', +150); // Agregar $150
+await updateCustomerBalance('customer-1', -50); // Restar $50 (abono)
+
+// Retorna nuevo balance
+const newBalance = await updateCustomerBalance('customer-1', -50);
+console.log(`Nuevo balance: ${newBalance}`);
+```
+
+### ✅ Validación
+
+- Build exitoso: 0 errores TypeScript
+- 15 rutas generadas correctamente
+- Correcciones preparadas para Fase 5 (cuentas por cobrar/pagar)
+
+---
+
 ## [0.4.0] - 2026-08-05 - Fase 4: Clientes y Proveedores
 
 ### ✨ Nuevas Funcionalidades

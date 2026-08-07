@@ -15,6 +15,7 @@ import {
   where,
   orderBy,
   Timestamp,
+  runTransaction,
 } from 'firebase/firestore';
 import { Supplier, SupplierFormData } from '@/types/supplier';
 
@@ -23,44 +24,55 @@ const PRODUCTS_COLLECTION = 'products';
 
 /**
  * Crear proveedor
+ * FIX BUG-108: Usa runTransaction para validación atómica
+ * FIX BUG-111: Normaliza RIF a uppercase para unicidad case-insensitive
  */
 export async function createSupplier(
   storeId: string,
   data: SupplierFormData
 ): Promise<Supplier> {
   try {
-    // Validar RIF único por tienda
-    const existing = await getDocs(
-      query(
+    // Normalizar RIF a uppercase para unicidad case-insensitive
+    const normalizedRif = data.rif.toUpperCase().trim();
+
+    // Usar transaction para garantizar atomicidad (validación + creación)
+    const newSupplierId = await runTransaction(db, async (transaction) => {
+      // Validar unicidad DENTRO de la transaction
+      const existingQuery = query(
         collection(db, SUPPLIERS_COLLECTION),
         where('storeId', '==', storeId),
-        where('rif', '==', data.rif)
-      )
-    );
+        where('rif', '==', normalizedRif)
+      );
 
-    if (!existing.empty) {
-      throw new Error(`Ya existe un proveedor con RIF ${data.rif}`);
+      const existing = await getDocs(existingQuery);
+
+      if (!existing.empty) {
+        throw new Error(`Ya existe un proveedor con RIF ${normalizedRif}`);
+      }
+
+      // Crear documento dentro de la transaction
+      const supplierData = {
+        storeId,
+        ...data,
+        rif: normalizedRif, // Guardar normalizado
+        balance: 0, // Balance inicial siempre 0
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      };
+
+      const newDocRef = doc(collection(db, SUPPLIERS_COLLECTION));
+      transaction.set(newDocRef, supplierData);
+
+      return newDocRef.id;
+    });
+
+    // Obtener el proveedor recién creado
+    const createdSupplier = await getSupplierById(newSupplierId);
+    if (!createdSupplier) {
+      throw new Error('Error al obtener proveedor creado');
     }
 
-    const supplierData = {
-      storeId,
-      ...data,
-      balance: 0, // Balance inicial siempre 0
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    };
-
-    const docRef = await addDoc(
-      collection(db, SUPPLIERS_COLLECTION),
-      supplierData
-    );
-
-    return {
-      id: docRef.id,
-      ...supplierData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as Supplier;
+    return createdSupplier;
   } catch (error: any) {
     console.error('Error creando proveedor:', error);
     throw new Error(error.message || 'Error al crear proveedor');
@@ -207,23 +219,47 @@ export async function getSupplierProducts(
 /**
  * Actualizar balance del proveedor
  */
+/**
+ * Actualizar balance del proveedor con cambio relativo
+ * FIX BUG-109: Usa runTransaction para prevenir race conditions
+ * @param supplierId - ID del proveedor
+ * @param amountChange - Cambio relativo (positivo para cargo, negativo para abono)
+ * @returns Nuevo balance después del cambio
+ */
 export async function updateSupplierBalance(
   supplierId: string,
-  newBalance: number
-): Promise<void> {
+  amountChange: number
+): Promise<number> {
   try {
-    if (newBalance < 0) {
-      throw new Error('El balance no puede ser negativo');
-    }
+    const newBalance = await runTransaction(db, async (transaction) => {
+      const supplierRef = doc(db, SUPPLIERS_COLLECTION, supplierId);
+      const supplierDoc = await transaction.get(supplierRef);
 
-    const docRef = doc(db, SUPPLIERS_COLLECTION, supplierId);
-    await updateDoc(docRef, {
-      balance: newBalance,
-      updatedAt: Timestamp.now(),
+      if (!supplierDoc.exists()) {
+        throw new Error('Proveedor no encontrado');
+      }
+
+      const currentBalance = supplierDoc.data().balance || 0;
+      const calculatedBalance = currentBalance + amountChange;
+
+      if (calculatedBalance < 0) {
+        throw new Error(
+          `El balance no puede ser negativo. Balance actual: ${currentBalance}, cambio: ${amountChange}`
+        );
+      }
+
+      transaction.update(supplierRef, {
+        balance: calculatedBalance,
+        updatedAt: Timestamp.now(),
+      });
+
+      return calculatedBalance;
     });
-  } catch (error) {
+
+    return newBalance;
+  } catch (error: any) {
     console.error('Error actualizando balance del proveedor:', error);
-    throw error;
+    throw new Error(error.message || 'Error al actualizar balance');
   }
 }
 

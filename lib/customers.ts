@@ -15,6 +15,7 @@ import {
   where,
   orderBy,
   Timestamp,
+  runTransaction,
 } from 'firebase/firestore';
 import { Customer, CustomerFormData } from '@/types/customer';
 
@@ -23,44 +24,57 @@ const SALES_COLLECTION = 'sales';
 
 /**
  * Crear cliente
+ * FIX BUG-108: Usa runTransaction para validación atómica
+ * FIX BUG-111: Normaliza documento a uppercase para unicidad case-insensitive
  */
 export async function createCustomer(
   storeId: string,
   data: CustomerFormData
 ): Promise<Customer> {
   try {
-    // Validar documento único por tienda
-    const existing = await getDocs(
-      query(
+    // Normalizar documento a uppercase para unicidad case-insensitive
+    const normalizedDocument = data.document.toUpperCase().trim();
+
+    // Usar transaction para garantizar atomicidad (validación + creación)
+    const newCustomerId = await runTransaction(db, async (transaction) => {
+      // Validar unicidad DENTRO de la transaction
+      const existingQuery = query(
         collection(db, CUSTOMERS_COLLECTION),
         where('storeId', '==', storeId),
-        where('document', '==', data.document)
-      )
-    );
+        where('document', '==', normalizedDocument)
+      );
 
-    if (!existing.empty) {
-      throw new Error(`Ya existe un cliente con documento ${data.document}`);
+      const existing = await getDocs(existingQuery);
+
+      if (!existing.empty) {
+        throw new Error(
+          `Ya existe un cliente con documento ${normalizedDocument}`
+        );
+      }
+
+      // Crear documento dentro de la transaction
+      const customerData = {
+        storeId,
+        ...data,
+        document: normalizedDocument, // Guardar normalizado
+        balance: 0, // Balance inicial siempre 0
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      };
+
+      const newDocRef = doc(collection(db, CUSTOMERS_COLLECTION));
+      transaction.set(newDocRef, customerData);
+
+      return newDocRef.id;
+    });
+
+    // Obtener el cliente recién creado
+    const createdCustomer = await getCustomerById(newCustomerId);
+    if (!createdCustomer) {
+      throw new Error('Error al obtener cliente creado');
     }
 
-    const customerData = {
-      storeId,
-      ...data,
-      balance: 0, // Balance inicial siempre 0
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    };
-
-    const docRef = await addDoc(
-      collection(db, CUSTOMERS_COLLECTION),
-      customerData
-    );
-
-    return {
-      id: docRef.id,
-      ...customerData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as Customer;
+    return createdCustomer;
   } catch (error: any) {
     console.error('Error creando cliente:', error);
     throw new Error(error.message || 'Error al crear cliente');
@@ -208,25 +222,46 @@ export async function getCustomerSalesHistory(
 }
 
 /**
- * Actualizar balance del cliente
+ * Actualizar balance del cliente con cambio relativo
+ * FIX BUG-109: Usa runTransaction para prevenir race conditions
+ * @param customerId - ID del cliente
+ * @param amountChange - Cambio relativo (positivo para cargo, negativo para abono)
+ * @returns Nuevo balance después del cambio
  */
 export async function updateCustomerBalance(
   customerId: string,
-  newBalance: number
-): Promise<void> {
+  amountChange: number
+): Promise<number> {
   try {
-    if (newBalance < 0) {
-      throw new Error('El balance no puede ser negativo');
-    }
+    const newBalance = await runTransaction(db, async (transaction) => {
+      const customerRef = doc(db, CUSTOMERS_COLLECTION, customerId);
+      const customerDoc = await transaction.get(customerRef);
 
-    const docRef = doc(db, CUSTOMERS_COLLECTION, customerId);
-    await updateDoc(docRef, {
-      balance: newBalance,
-      updatedAt: Timestamp.now(),
+      if (!customerDoc.exists()) {
+        throw new Error('Cliente no encontrado');
+      }
+
+      const currentBalance = customerDoc.data().balance || 0;
+      const calculatedBalance = currentBalance + amountChange;
+
+      if (calculatedBalance < 0) {
+        throw new Error(
+          `El balance no puede ser negativo. Balance actual: ${currentBalance}, cambio: ${amountChange}`
+        );
+      }
+
+      transaction.update(customerRef, {
+        balance: calculatedBalance,
+        updatedAt: Timestamp.now(),
+      });
+
+      return calculatedBalance;
     });
-  } catch (error) {
+
+    return newBalance;
+  } catch (error: any) {
     console.error('Error actualizando balance del cliente:', error);
-    throw error;
+    throw new Error(error.message || 'Error al actualizar balance');
   }
 }
 
