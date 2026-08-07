@@ -1,5 +1,120 @@
 # Changelog - TiendaWeb
 
+## [0.6.0] - 2026-08-08 - Fase 6: Reportes y Dashboard Final
+
+### ✨ Nuevas Funcionalidades
+
+**Hub de Reportes**
+
+- Centro de reportes con 4 tipos disponibles
+- Navegación visual con iconos y descripciones
+- Diseño responsive con grid 2 columnas
+
+**Reporte de Ventas**
+
+- KPIs: Total ventas, transacciones, ticket promedio, top producto
+- Gráfico LineChart: Ventas por día
+- Gráfico BarChart: Top 5 productos más vendidos
+- Gráfico PieChart: Ventas por método de pago
+- Gráfico BarChart: Ventas por hora del día
+- Tabla detallada de ventas por producto
+- Filtros de rango de fechas personalizado
+- Exportación a Excel con 4 hojas (Resumen, Ventas por Día, Productos, Métodos de Pago)
+
+**Reporte de Inventario**
+
+- KPIs: Valor total, total productos, stock bajo, sin stock
+- Gráfico BarChart: Valor por categoría
+- Gráfico PieChart: Distribución de stock por categoría
+- Tabla de valorización por categoría
+- Exportación a Excel con 2 hojas (Resumen, Valor por Categoría)
+
+**Reporte Financiero**
+
+- KPIs: Ingresos totales, egresos, utilidad bruta, margen de utilidad
+- Tarjetas: Cuentas por cobrar, cuentas por pagar (integrado con Fase 5)
+- Gráfico PieChart: Distribución de ingresos por método de pago
+- Panel de resumen financiero con desglose
+- Filtros de rango de fechas
+- Exportación a Excel con 2 hojas (Resumen, Distribución Ingresos)
+
+### 📁 Nuevos Archivos (14 archivos)
+
+**Types**
+
+- `types/reports.ts` (DateRange, SalesReportData, InventoryReportData, FinancialReportData, CashFlowReportData)
+
+**Stores Zustand**
+
+- `store/reportsStore.ts` (gestión de rango de fechas)
+
+**Servicios de Reportes**
+
+- `lib/reports/salesReports.ts` (getSalesReport)
+- `lib/reports/inventoryReports.ts` (getInventoryReport)
+- `lib/reports/financialReports.ts` (getFinancialReport)
+
+**Exportación**
+
+- `lib/export/excelExporter.ts` (exportToExcel, exportSalesReportToExcel, exportInventoryReportToExcel, exportFinancialReportToExcel)
+
+**Componentes UI**
+
+- `components/reports/DateRangePicker.tsx` (selector de rango de fechas)
+- `components/reports/ExportButtons.tsx` (botones Excel/PDF)
+
+**Páginas**
+
+- `app/dashboard/reports/page.tsx` (hub principal)
+- `app/dashboard/reports/sales/page.tsx` (reporte de ventas)
+- `app/dashboard/reports/inventory/page.tsx` (reporte de inventario)
+- `app/dashboard/reports/financial/page.tsx` (reporte financiero)
+
+**Documentación**
+
+- `docs/plans/PLAN-006-fase-6-reportes-dashboard.md`
+- `docs/implementation-summary/FASE-6-IMPLEMENTATION.md`
+
+### 📦 Dependencias Nuevas
+
+```bash
+npm install xlsx
+npm install --save-dev @types/xlsx
+```
+
+### 🔧 Integraciones
+
+**Con Fase 5 (Cuentas por Cobrar/Pagar)**
+
+- Reporte Financiero muestra cuentas por cobrar y pagar
+- Usa `getReceivablesSummary()` y `getPayablesSummary()`
+
+**Con Fase 3 (Inventario)**
+
+- Reporte de Inventario usa `lib/products.ts`
+- Calcula valorización por categoría
+
+**Con Fase 2 (Ventas)**
+
+- Reporte de Ventas lee directamente de Firestore `sales` collection
+- Analiza `sale.items[]` para productos más vendidos
+
+### 📊 Métricas
+
+- **Archivos creados**: 14
+- **Líneas de código**: ~2,400 LOC
+- **Build status**: ✅ Compilado exitosamente en 8.8s
+- **Errores TypeScript**: 0
+
+### ⏳ Pendiente
+
+- Exportación a PDF (funcionalidad base ya existe en Fase 5)
+- Reporte de flujo de caja completo
+- Estado de resultados mensual (requiere módulo de gastos)
+- Rotación de inventario (requiere histórico de ventas)
+
+---
+
 ## [0.5.1] - 2026-08-08 - Correcciones Críticas Post-QA
 
 ### 🐛 Bugs Críticos Corregidos
