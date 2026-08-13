@@ -138,3 +138,24 @@ export async function getSupplierAccountStatus(supplierId: string) {
     throw new Error('Error al obtener estado de cuenta');
   }
 }
+
+/**
+ * Obtener cuentas por pagar próximas
+ * Nota: Esta funcionalidad requiere un endpoint backend específico
+ */
+export async function getUpcomingPayables(storeId: string) {
+  try {
+    console.warn(
+      'getUpcomingPayables requiere endpoint backend - retornando vacío'
+    );
+
+    // TODO: Implementar endpoint en backend para obtener pagos próximos
+    return {
+      payables: [],
+      totalUpcoming: 0,
+    };
+  } catch (error: any) {
+    console.error('Error obteniendo pagos próximos:', error);
+    throw new Error('Error al obtener pagos próximos');
+  }
+}

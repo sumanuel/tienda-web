@@ -140,3 +140,24 @@ export async function getCustomerAccountStatus(customerId: string) {
     throw new Error('Error al obtener estado de cuenta');
   }
 }
+
+/**
+ * Obtener clientes con cuentas vencidas
+ * Nota: Esta funcionalidad requiere un endpoint backend específico
+ */
+export async function getOverdueCustomers(storeId: string) {
+  try {
+    console.warn(
+      'getOverdueCustomers requiere endpoint backend - retornando vacío'
+    );
+
+    // TODO: Implementar endpoint en backend para obtener clientes con cuentas vencidas
+    return {
+      customers: [],
+      totalOverdue: 0,
+    };
+  } catch (error: any) {
+    console.error('Error obteniendo clientes vencidos:', error);
+    throw new Error('Error al obtener clientes vencidos');
+  }
+}

@@ -136,3 +136,54 @@ export async function updateCustomerBalance(
     'updateCustomerBalance es legacy - usar transacciones en su lugar'
   );
 }
+
+/**
+ * Obtener historial de ventas de un cliente
+ */
+export async function getCustomerSalesHistory(
+  storeId: string,
+  customerId: string
+) {
+  try {
+    const response = await apiClient.getCustomer(customerId);
+
+    return {
+      sales: response.customer.sales.map((sale) => ({
+        id: sale.id,
+        total: sale.total,
+        createdAt: new Date(sale.createdAt),
+      })),
+      totalSales: response.customer._count.sales,
+    };
+  } catch (error: any) {
+    console.error('Error obteniendo historial de ventas:', error);
+    throw new Error('Error al obtener historial de ventas');
+  }
+}
+
+/**
+ * Obtener clientes con balance pendiente
+ */
+export async function getCustomersWithBalance(storeId: string) {
+  try {
+    const response = await apiClient.getCustomers({ storeId, limit: 1000 });
+
+    return response.customers
+      .filter((customer) => customer.balance > 0)
+      .map((customer) => ({
+        id: customer.id,
+        storeId: customer.storeId,
+        name: customer.name,
+        email: customer.email || '',
+        phone: customer.phone || '',
+        document: customer.taxId || '',
+        address: customer.address || '',
+        balance: customer.balance,
+        createdAt: new Date(customer.createdAt),
+        updatedAt: new Date(customer.updatedAt),
+      }));
+  } catch (error: any) {
+    console.error('Error obteniendo clientes con balance:', error);
+    throw new Error('Error al obtener clientes con balance');
+  }
+}

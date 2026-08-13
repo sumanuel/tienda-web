@@ -199,3 +199,46 @@ export async function resolveStockAlert(alertId: string): Promise<void> {
   );
   // No-op: Las alertas se resuelven automáticamente cuando el stock sube
 }
+
+/**
+ * Calcular valoración del inventario
+ */
+export async function calculateInventoryValuation(storeId: string) {
+  try {
+    const response = await apiClient.getStockReport(storeId);
+
+    // Calcular valoración por categoría
+    const categoryValuation = new Map<string, number>();
+
+    response.report.forEach((product) => {
+      const category = product.category || 'Sin Categoría';
+      const currentValue = categoryValuation.get(category) || 0;
+      categoryValuation.set(category, currentValue + product.totalValue);
+    });
+
+    const byCategory = Array.from(categoryValuation.entries())
+      .map(([category, value]) => ({
+        category,
+        value,
+      }))
+      .sort((a, b) => b.value - a.value);
+
+    return {
+      totalValue: response.summary.totalValue,
+      totalProducts: response.summary.totalProducts,
+      byCategory,
+      products: response.report.map((product) => ({
+        id: product.id,
+        code: product.code,
+        name: product.name,
+        category: product.category,
+        stock: product.stock,
+        cost: product.cost,
+        totalValue: product.totalValue,
+      })),
+    };
+  } catch (error: any) {
+    console.error('Error calculando valoración de inventario:', error);
+    throw new Error('Error al calcular valoración de inventario');
+  }
+}

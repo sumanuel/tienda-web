@@ -136,3 +136,52 @@ export async function updateSupplierBalance(
     'updateSupplierBalance es legacy - usar transacciones en su lugar'
   );
 }
+
+/**
+ * Obtener productos asociados a un proveedor
+ * Nota: Esta funcionalidad requiere un endpoint backend específico
+ * Por ahora retorna array vacío hasta que se implemente
+ */
+export async function getSupplierProducts(storeId: string, supplierId: string) {
+  try {
+    console.warn(
+      'getSupplierProducts requiere endpoint backend - retornando vacío'
+    );
+
+    // TODO: Implementar endpoint en backend para obtener productos por proveedor
+    return {
+      products: [],
+      totalProducts: 0,
+    };
+  } catch (error: any) {
+    console.error('Error obteniendo productos del proveedor:', error);
+    throw new Error('Error al obtener productos del proveedor');
+  }
+}
+
+/**
+ * Obtener proveedores con balance pendiente
+ */
+export async function getSuppliersWithBalance(storeId: string) {
+  try {
+    const response = await apiClient.getSuppliers({ storeId, limit: 1000 });
+
+    return response.suppliers
+      .filter((supplier) => supplier.balance > 0)
+      .map((supplier) => ({
+        id: supplier.id,
+        storeId: supplier.storeId,
+        name: supplier.name,
+        email: supplier.email || '',
+        phone: supplier.phone || '',
+        rif: supplier.taxId || '',
+        address: supplier.address || '',
+        balance: supplier.balance,
+        createdAt: new Date(supplier.createdAt),
+        updatedAt: new Date(supplier.updatedAt),
+      }));
+  } catch (error: any) {
+    console.error('Error obteniendo proveedores con balance:', error);
+    throw new Error('Error al obtener proveedores con balance');
+  }
+}

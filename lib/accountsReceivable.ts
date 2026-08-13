@@ -1,7 +1,7 @@
 import { getCustomersWithBalance } from '@/lib/customers';
 import { getSuppliersWithBalance } from '@/lib/suppliers';
-import { getStoreCustomerTransactions } from '@/lib/customerTransactions';
-import { getStoreSupplierTransactions } from '@/lib/supplierTransactions';
+import { getCustomerTransactions } from '@/lib/customerTransactions';
+import { getSupplierTransactions } from '@/lib/supplierTransactions';
 import type {
   CustomerTransaction,
   SupplierTransaction,
@@ -65,8 +65,16 @@ export async function getReceivablesSummary(storeId: string): Promise<{
       0
     );
 
-    // Obtener todas las transacciones
-    const allTransactions = await getStoreCustomerTransactions(storeId);
+    // Obtener transacciones de todos los clientes con balance
+    const allTransactions: CustomerTransaction[] = [];
+    for (const customer of customers) {
+      try {
+        const transactions = await getCustomerTransactions(customer.id);
+        allTransactions.push(...transactions);
+      } catch (error) {
+        console.warn(`Error obteniendo transacciones del cliente ${customer.id}`, error);
+      }
+    }
 
     // Calcular aging
     const agingData = calculateAging(allTransactions);
@@ -113,8 +121,16 @@ export async function getPayablesSummary(storeId: string): Promise<{
       0
     );
 
-    // Obtener todas las transacciones
-    const allTransactions = await getStoreSupplierTransactions(storeId);
+    // Obtener transacciones de todos los proveedores con balance
+    const allTransactions: SupplierTransaction[] = [];
+    for (const supplier of suppliers) {
+      try {
+        const transactions = await getSupplierTransactions(supplier.id);
+        allTransactions.push(...transactions);
+      } catch (error) {
+        console.warn(`Error obteniendo transacciones del proveedor ${supplier.id}`, error);
+      }
+    }
 
     const now = new Date();
     const sevenDaysFromNow = new Date();
