@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { signIn } from '@/lib/auth';
+import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 
 const loginSchema = z.object({
@@ -19,6 +20,7 @@ export function LoginForm() {
   const router = useRouter();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { setProfile } = useAuthStore();
 
   const {
     register,
@@ -33,7 +35,8 @@ export function LoginForm() {
       setLoading(true);
       setError('');
 
-      await signIn(data.email, data.password);
+      const { profile } = await signIn(data.email, data.password);
+      setProfile(profile);
 
       toast.success('¡Bienvenido!');
       router.push('/dashboard');

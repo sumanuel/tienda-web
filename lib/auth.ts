@@ -1,67 +1,76 @@
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  User,
-} from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from './firebase';
+import apiClient from './api';
 import type { UserProfile } from '@/types/user';
 
 export async function signIn(email: string, password: string) {
-  const userCredential = await signInWithEmailAndPassword(
-    auth,
-    email,
-    password
-  );
-  return userCredential.user;
-}
+  const response = await apiClient.login(email, password);
 
-export async function signUp(email: string, password: string, name: string) {
-  const userCredential = await createUserWithEmailAndPassword(
-    auth,
-    email,
-    password
-  );
-  const user = userCredential.user;
-
-  // Crear perfil en Firestore
+  // Convertir a formato UserProfile compatible
   const userProfile: UserProfile = {
-    id: user.uid,
-    email: user.email!,
-    name,
-    role: 'owner', // Primer usuario es owner
-    storeId: '', // Se asigna después de crear tienda
+    id: response.user.id,
+    email: response.user.email,
+    name: response.user.name,
+    role: response.user.role as 'owner' | 'admin' | 'cashier',
+    storeId: response.user.stores[0]?.id || '',
     createdAt: new Date(),
     updatedAt: new Date(),
   };
 
-  await setDoc(doc(db, 'users', user.uid), userProfile);
+  return { user: response.user, profile: userProfile };
+}
 
-  return user;
+export async function signUp(
+  email: string,
+  password: string,
+  name: string,
+  storeName: string,
+  storeAddress?: string
+) {
+  const response = await apiClient.register({
+    email,
+    password,
+    name,
+    storeName,
+    storeAddress,
+  });
+
+  // Convertir a formato UserProfile compatible
+  const userProfile: UserProfile = {
+    id: response.user.id,
+    email: response.user.email,
+    name: response.user.name,
+    role: response.user.role as 'owner' | 'admin' | 'cashier',
+    storeId: response.user.stores[0]?.id || '',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  return { user: response.user, profile: userProfile };
 }
 
 export async function signOut() {
-  await firebaseSignOut(auth);
+  await apiClient.logout();
 }
 
-export async function getUserProfile(uid: string): Promise<UserProfile | null> {
-  const docRef = doc(db, 'users', uid);
-  const docSnap = await getDoc(docRef);
+export async function getUserProfile(): Promise<UserProfile | null> {
+  try {
+    const response = await apiClient.getMe();
 
-  if (docSnap.exists()) {
-    const data = docSnap.data();
     return {
-      ...data,
-      createdAt: data.createdAt?.toDate() || new Date(),
-      updatedAt: data.updatedAt?.toDate() || new Date(),
-    } as UserProfile;
+      id: response.user.id,
+      email: response.user.email,
+      name: response.user.name,
+      role: response.user.role as 'owner' | 'admin' | 'cashier',
+      storeId: response.user.stores[0]?.id || '',
+      createdAt: new Date(response.user.createdAt),
+      updatedAt: new Date(response.user.createdAt),
+    };
+  } catch (error) {
+    console.error('Error getting user profile:', error);
+    return null;
   }
-
-  return null;
 }
 
-export function onAuthChange(callback: (user: User | null) => void) {
-  return onAuthStateChanged(auth, callback);
+export function isAuthenticated(): boolean {
+  if (typeof window === 'undefined') return false;
+  return !!localStorage.getItem('accessToken');
 }

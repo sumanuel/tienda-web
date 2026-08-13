@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { signUp } from '@/lib/auth';
+import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 
 const registerSchema = z
@@ -14,6 +15,10 @@ const registerSchema = z
     email: z.string().email('Email inválido'),
     password: z.string().min(6, 'Contraseña debe tener al menos 6 caracteres'),
     confirmPassword: z.string(),
+    storeName: z
+      .string()
+      .min(2, 'Nombre de tienda debe tener al menos 2 caracteres'),
+    storeAddress: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Las contraseñas no coinciden',
@@ -26,6 +31,7 @@ export function RegisterForm() {
   const router = useRouter();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { setProfile } = useAuthStore();
 
   const {
     register,
@@ -40,7 +46,14 @@ export function RegisterForm() {
       setLoading(true);
       setError('');
 
-      await signUp(data.email, data.password, data.name);
+      const { profile } = await signUp(
+        data.email,
+        data.password,
+        data.name,
+        data.storeName,
+        data.storeAddress
+      );
+      setProfile(profile);
 
       toast.success('¡Cuenta creada exitosamente!');
       router.push('/dashboard');
@@ -73,6 +86,41 @@ export function RegisterForm() {
         {errors.name && (
           <p className="text-sm text-red-500">{errors.name.message}</p>
         )}
+      </div>
+
+      <div className="space-y-2">
+        <label
+          htmlFor="storeName"
+          className="text-sm font-medium text-slate-700"
+        >
+          Nombre de tu Tienda
+        </label>
+        <input
+          id="storeName"
+          type="text"
+          placeholder="Mi Tienda"
+          {...register('storeName')}
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+        />
+        {errors.storeName && (
+          <p className="text-sm text-red-500">{errors.storeName.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <label
+          htmlFor="storeAddress"
+          className="text-sm font-medium text-slate-700"
+        >
+          Dirección de tu Tienda (opcional)
+        </label>
+        <input
+          id="storeAddress"
+          type="text"
+          placeholder="Av. Principal #123"
+          {...register('storeAddress')}
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+        />
       </div>
 
       <div className="space-y-2">

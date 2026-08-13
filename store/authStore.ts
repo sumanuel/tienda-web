@@ -1,25 +1,24 @@
 import { create } from 'zustand';
-import type { User } from 'firebase/auth';
 import type { UserProfile } from '@/types/user';
 
 interface AuthState {
-  user: User | null;
   profile: UserProfile | null;
   loading: boolean;
+  isAuthenticated: boolean;
 
-  setUser: (user: User | null) => void;
   setProfile: (profile: UserProfile | null) => void;
   setLoading: (loading: boolean) => void;
+  setIsAuthenticated: (isAuth: boolean) => void;
   reset: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
   profile: null,
   loading: true,
+  isAuthenticated: false,
 
-  setUser: (user) => set({ user }),
-  setProfile: (profile) => set({ profile }),
+  setProfile: (profile) => set({ profile, isAuthenticated: !!profile }),
   setLoading: (loading) => set({ loading }),
-  reset: () => set({ user: null, profile: null, loading: false }),
+  setIsAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
+  reset: () => set({ profile: null, loading: false, isAuthenticated: false }),
 }));

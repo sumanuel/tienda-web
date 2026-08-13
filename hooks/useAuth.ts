@@ -2,46 +2,63 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { onAuthChange, getUserProfile } from '@/lib/auth';
+import { getUserProfile, isAuthenticated } from '@/lib/auth';
 import { useAuthStore } from '@/store/authStore';
 
 export function useAuth() {
-  const { user, profile, loading, setUser, setProfile, setLoading } =
-    useAuthStore();
+  const {
+    profile,
+    loading,
+    isAuthenticated: isAuth,
+    setProfile,
+    setLoading,
+    setIsAuthenticated,
+  } = useAuthStore();
 
   useEffect(() => {
-    setLoading(true);
+    async function loadUserProfile() {
+      setLoading(true);
 
-    const unsubscribe = onAuthChange(async (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
+      // Verificar si hay token en localStorage
+      if (isAuthenticated()) {
+        try {
+          const userProfile = await getUserProfile();
 
-        // Cargar perfil
-        const userProfile = await getUserProfile(firebaseUser.uid);
-        setProfile(userProfile);
+          if (userProfile) {
+            setProfile(userProfile);
+            setIsAuthenticated(true);
+          } else {
+            setProfile(null);
+            setIsAuthenticated(false);
+          }
+        } catch (error) {
+          console.error('Error loading user profile:', error);
+          setProfile(null);
+          setIsAuthenticated(false);
+        }
       } else {
-        setUser(null);
         setProfile(null);
+        setIsAuthenticated(false);
       }
 
       setLoading(false);
-    });
+    }
 
-    return () => unsubscribe();
-  }, [setUser, setProfile, setLoading]);
+    loadUserProfile();
+  }, [setProfile, setLoading, setIsAuthenticated]);
 
-  return { user, profile, loading };
+  return { profile, loading, isAuthenticated: isAuth };
 }
 
 export function useRequireAuth(redirectUrl = '/login') {
-  const { user, loading } = useAuth();
+  const { profile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !profile) {
       router.push(redirectUrl);
     }
-  }, [user, loading, router, redirectUrl]);
+  }, [profile, loading, router, redirectUrl]);
 
-  return { user, loading };
+  return { user: profile, loading };
 }
