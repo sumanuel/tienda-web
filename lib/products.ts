@@ -1,60 +1,9 @@
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  Timestamp,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { db } from './firebase';
-import { Product, ProductFormData } from '@/types/product';
-import { uploadImage, deleteImage } from './storage';
-
-const PRODUCTS_COLLECTION = 'products';
-
 /**
- * Convierte Firestore Timestamp a Date
+ * Servicio de Productos - Migrado a PostgreSQL
  */
-function convertTimestamps(data: any): any {
-  const converted = { ...data };
-  if (converted.createdAt instanceof Timestamp) {
-    converted.createdAt = converted.createdAt.toDate();
-  }
-  if (converted.updatedAt instanceof Timestamp) {
-    converted.updatedAt = converted.updatedAt.toDate();
-  }
-  return converted;
-}
 
-/**
- * Genera código único de producto
- */
-async function generateProductCode(storeId: string): Promise<string> {
-  const productsRef = collection(db, PRODUCTS_COLLECTION);
-  const q = query(
-    productsRef,
-    where('storeId', '==', storeId),
-    orderBy('code', 'desc')
-  );
-
-  const snapshot = await getDocs(q);
-
-  if (snapshot.empty) {
-    return 'PROD-0001';
-  }
-
-  const lastCode = snapshot.docs[0].data().code as string;
-  const numberPart = parseInt(lastCode.split('-')[1], 10);
-  const newNumber = numberPart + 1;
-
-  return `PROD-${newNumber.toString().padStart(4, '0')}`;
-}
+import { apiClient } from '@/lib/api';
+import type { Product, ProductFormData } from '@/types/product';
 
 /**
  * Crear producto
@@ -64,70 +13,43 @@ export async function createProduct(
   data: ProductFormData
 ): Promise<Product> {
   try {
-    // Generar código si no se proporcionó
-    let code = data.code;
-
-    if (code) {
-      // ✅ Validar que código manual no exista
-      const existingQuery = query(
-        collection(db, PRODUCTS_COLLECTION),
-        where('storeId', '==', storeId),
-        where('code', '==', code)
-      );
-      const existingSnapshot = await getDocs(existingQuery);
-
-      if (!existingSnapshot.empty) {
-        throw new Error(`El código ${code} ya está en uso`);
-      }
-    } else {
-      code = await generateProductCode(storeId);
-    }
-
-    // Subir imagen si existe
-    let imageUrl: string | undefined;
-    if (data.image) {
-      imageUrl = await uploadImage(data.image, `products/${storeId}/${code}`);
-    }
-
-    const productData = {
+    const response = await apiClient.createProduct({
       storeId,
-      code,
-      barcode: data.barcode || null,
+      code: data.code || undefined,
+      barcode: data.barcode || undefined,
       name: data.name,
-      description: data.description || null,
+      description: data.description || undefined,
       category: data.category,
-      prices: {
-        VES: data.priceVES || null,
-        USD: data.priceUSD || null,
-        EUR: data.priceEUR || null,
-      },
       cost: data.cost,
-      costCurrency: data.costCurrency,
-      stock: data.stock,
-      stockMin: data.stockMin,
-      trackInventory: data.trackInventory,
-      supplierId: data.supplierId || null,
-      imageUrl: imageUrl || null,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      priceVES: data.priceVES || 0,
+      priceUSD: data.priceUSD || 0,
+      stock: data.stock || 0,
+      minStock: data.minStock || 0,
+      imageUrl: data.imageUrl || undefined,
+    });
+
+    return {
+      id: response.product.id,
+      storeId: response.product.storeId,
+      code: response.product.code,
+      barcode: response.product.barcode || undefined,
+      name: response.product.name,
+      description: response.product.description || undefined,
+      category: response.product.category,
+      cost: response.product.cost,
+      prices: {
+        VES: response.product.priceVES,
+        USD: response.product.priceUSD,
+      },
+      stock: response.product.stock,
+      minStock: response.product.minStock,
+      imageUrl: response.product.imageUrl || undefined,
+      createdAt: new Date(response.product.createdAt),
+      updatedAt: new Date(response.product.updatedAt),
     };
-
-    const docRef = await addDoc(
-      collection(db, PRODUCTS_COLLECTION),
-      productData
-    );
-
-    const newProduct = {
-      id: docRef.id,
-      ...productData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as Product;
-
-    return newProduct;
-  } catch (error) {
-    console.error('Error creating product:', error);
-    throw new Error('Error al crear producto');
+  } catch (error: any) {
+    console.error('Error creando producto:', error);
+    throw new Error(error.message || 'Error al crear producto');
   }
 }
 
@@ -136,24 +58,29 @@ export async function createProduct(
  */
 export async function getProducts(storeId: string): Promise<Product[]> {
   try {
-    const productsRef = collection(db, PRODUCTS_COLLECTION);
-    const q = query(
-      productsRef,
-      where('storeId', '==', storeId),
-      orderBy('name', 'asc')
-    );
+    const response = await apiClient.getProducts({ storeId, limit: 1000 });
 
-    const snapshot = await getDocs(q);
-
-    return snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...convertTimestamps(data),
-      } as Product;
-    });
-  } catch (error) {
-    console.error('Error getting products:', error);
+    return response.products.map((product) => ({
+      id: product.id,
+      storeId: product.storeId,
+      code: product.code,
+      barcode: product.barcode || undefined,
+      name: product.name,
+      description: product.description || undefined,
+      category: product.category,
+      cost: product.cost,
+      prices: {
+        VES: product.priceVES,
+        USD: product.priceUSD,
+      },
+      stock: product.stock,
+      minStock: product.minStock,
+      imageUrl: product.imageUrl || undefined,
+      createdAt: new Date(product.createdAt),
+      updatedAt: new Date(product.updatedAt),
+    }));
+  } catch (error: any) {
+    console.error('Error obteniendo productos:', error);
     throw new Error('Error al obtener productos');
   }
 }
@@ -161,25 +88,32 @@ export async function getProducts(storeId: string): Promise<Product[]> {
 /**
  * Obtener producto por ID
  */
-export async function getProductById(
-  productId: string
-): Promise<Product | null> {
+export async function getProductById(id: string): Promise<Product | null> {
   try {
-    const docRef = doc(db, PRODUCTS_COLLECTION, productId);
-    const docSnap = await getDoc(docRef);
+    const response = await apiClient.getProduct(id);
 
-    if (!docSnap.exists()) {
-      return null;
-    }
-
-    const data = docSnap.data();
     return {
-      id: docSnap.id,
-      ...convertTimestamps(data),
-    } as Product;
-  } catch (error) {
-    console.error('Error getting product:', error);
-    throw new Error('Error al obtener producto');
+      id: response.product.id,
+      storeId: response.product.storeId,
+      code: response.product.code,
+      barcode: response.product.barcode || undefined,
+      name: response.product.name,
+      description: response.product.description || undefined,
+      category: response.product.category,
+      cost: response.product.cost,
+      prices: {
+        VES: response.product.priceVES,
+        USD: response.product.priceUSD,
+      },
+      stock: response.product.stock,
+      minStock: response.product.minStock,
+      imageUrl: response.product.imageUrl || undefined,
+      createdAt: new Date(response.product.createdAt),
+      updatedAt: new Date(response.product.updatedAt),
+    };
+  } catch (error: any) {
+    console.error('Error obteniendo producto:', error);
+    return null;
   }
 }
 
@@ -187,118 +121,128 @@ export async function getProductById(
  * Actualizar producto
  */
 export async function updateProduct(
-  productId: string,
+  id: string,
   data: Partial<ProductFormData>
 ): Promise<void> {
   try {
-    const docRef = doc(db, PRODUCTS_COLLECTION, productId);
-
-    // Si hay una nueva imagen, subirla
-    let imageUrl: string | undefined;
-    if (data.image) {
-      // Obtener producto actual para eliminar imagen anterior
-      const currentProduct = await getProductById(productId);
-      if (currentProduct?.imageUrl) {
-        await deleteImage(currentProduct.imageUrl);
-      }
-
-      imageUrl = await uploadImage(
-        data.image,
-        `products/${currentProduct?.storeId}/${data.code || currentProduct?.code}`
-      );
-    }
-
-    const updateData: any = {
-      ...(data.name && { name: data.name }),
-      ...(data.description !== undefined && { description: data.description }),
-      ...(data.category && { category: data.category }),
-      ...(data.barcode !== undefined && { barcode: data.barcode }),
-      ...(data.cost !== undefined && { cost: data.cost }),
-      ...(data.costCurrency && { costCurrency: data.costCurrency }),
-      ...(data.stock !== undefined && { stock: data.stock }),
-      ...(data.stockMin !== undefined && { stockMin: data.stockMin }),
-      ...(data.trackInventory !== undefined && {
-        trackInventory: data.trackInventory,
-      }),
-      ...(data.supplierId !== undefined && { supplierId: data.supplierId }),
-      ...(imageUrl && { imageUrl }),
-      updatedAt: serverTimestamp(),
-    };
-
-    // Actualizar precios si se proporcionaron
-    if (
-      data.priceVES !== undefined ||
-      data.priceUSD !== undefined ||
-      data.priceEUR !== undefined
-    ) {
-      updateData.prices = {
-        VES: data.priceVES || null,
-        USD: data.priceUSD || null,
-        EUR: data.priceEUR || null,
-      };
-    }
-
-    await updateDoc(docRef, updateData);
-  } catch (error) {
-    console.error('Error updating product:', error);
-    throw new Error('Error al actualizar producto');
+    await apiClient.updateProduct(id, {
+      code: data.code || undefined,
+      barcode: data.barcode || undefined,
+      name: data.name,
+      description: data.description || undefined,
+      category: data.category,
+      cost: data.cost,
+      priceVES: data.priceVES,
+      priceUSD: data.priceUSD,
+      minStock: data.minStock,
+      imageUrl: data.imageUrl || undefined,
+    });
+  } catch (error: any) {
+    console.error('Error actualizando producto:', error);
+    throw new Error(error.message || 'Error al actualizar producto');
   }
 }
 
 /**
  * Eliminar producto
  */
-export async function deleteProduct(productId: string): Promise<void> {
+export async function deleteProduct(id: string): Promise<void> {
   try {
-    // Obtener producto para eliminar imagen
-    const product = await getProductById(productId);
-
-    if (product?.imageUrl) {
-      await deleteImage(product.imageUrl);
-    }
-
-    const docRef = doc(db, PRODUCTS_COLLECTION, productId);
-    await deleteDoc(docRef);
-  } catch (error) {
-    console.error('Error deleting product:', error);
-    throw new Error('Error al eliminar producto');
+    await apiClient.deleteProduct(id);
+  } catch (error: any) {
+    console.error('Error eliminando producto:', error);
+    throw new Error(error.message || 'Error al eliminar producto');
   }
 }
 
 /**
- * Buscar productos por nombre o código
+ * Obtener productos con bajo stock
+ */
+export async function getLowStockProducts(storeId: string): Promise<Product[]> {
+  try {
+    const response = await apiClient.getLowStock(storeId);
+
+    return response.products.map((product) => ({
+      id: product.id,
+      storeId,
+      code: product.code,
+      name: product.name,
+      category: product.category,
+      stock: product.stock,
+      minStock: product.minStock,
+      cost: 0, // No disponible en este endpoint
+      prices: { VES: 0, USD: 0 }, // No disponible
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
+  } catch (error: any) {
+    console.error('Error obteniendo productos con bajo stock:', error);
+    throw new Error('Error al obtener productos con bajo stock');
+  }
+}
+
+/**
+ * Obtener categorías únicas de productos
+ */
+export async function getProductCategories(storeId: string): Promise<string[]> {
+  try {
+    const response = await apiClient.getCategories(storeId);
+    return response.categories;
+  } catch (error: any) {
+    console.error('Error obteniendo categorías:', error);
+    return [];
+  }
+}
+
+/**
+ * Buscar productos por término
  */
 export async function searchProducts(
   storeId: string,
   searchTerm: string
 ): Promise<Product[]> {
-  const allProducts = await getProducts(storeId);
-  const term = searchTerm.toLowerCase();
+  try {
+    const response = await apiClient.getProducts({
+      storeId,
+      search: searchTerm,
+      limit: 100,
+    });
 
-  return allProducts.filter((product) => {
-    return (
-      product.name.toLowerCase().includes(term) ||
-      product.code.toLowerCase().includes(term) ||
-      product.barcode?.toLowerCase().includes(term)
-    );
-  });
+    return response.products.map((product) => ({
+      id: product.id,
+      storeId: product.storeId,
+      code: product.code,
+      barcode: product.barcode || undefined,
+      name: product.name,
+      description: product.description || undefined,
+      category: product.category,
+      cost: product.cost,
+      prices: {
+        VES: product.priceVES,
+        USD: product.priceUSD,
+      },
+      stock: product.stock,
+      minStock: product.minStock,
+      imageUrl: product.imageUrl || undefined,
+      createdAt: new Date(product.createdAt),
+      updatedAt: new Date(product.updatedAt),
+    }));
+  } catch (error: any) {
+    console.error('Error buscando productos:', error);
+    throw new Error('Error al buscar productos');
+  }
 }
 
 /**
- * Actualizar stock de producto
+ * Actualizar stock de producto (legacy - ya no se usa directamente)
+ * El stock se actualiza automáticamente a través de ventas y movimientos de inventario
  */
 export async function updateProductStock(
   productId: string,
   newStock: number
 ): Promise<void> {
-  try {
-    const docRef = doc(db, PRODUCTS_COLLECTION, productId);
-    await updateDoc(docRef, {
-      stock: newStock,
-      updatedAt: serverTimestamp(),
-    });
-  } catch (error) {
-    console.error('Error updating stock:', error);
-    throw new Error('Error al actualizar stock');
-  }
+  console.warn(
+    'updateProductStock es legacy - usar movimientos de inventario en su lugar'
+  );
+  // No-op: El stock se actualiza automáticamente
 }

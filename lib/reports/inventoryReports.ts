@@ -1,9 +1,9 @@
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { Product } from '@/types/product';
-import { InventoryReportData } from '@/types/reports';
+/**
+ * Servicio de Reportes de Inventario - Migrado a PostgreSQL
+ */
 
-const PRODUCTS_COLLECTION = 'products';
+import { apiClient } from '@/lib/api';
+import type { InventoryReportData } from '@/types/reports';
 
 /**
  * Obtiene el reporte completo de inventario
@@ -11,67 +11,70 @@ const PRODUCTS_COLLECTION = 'products';
 export async function getInventoryReport(
   storeId: string
 ): Promise<InventoryReportData> {
-  const productsQuery = query(
-    collection(db, PRODUCTS_COLLECTION),
-    where('storeId', '==', storeId)
-  );
+  try {
+    const response = await apiClient.getStockReport(storeId);
 
-  const snapshot = await getDocs(productsQuery);
-  const products: Product[] = snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as Product[];
+    // Agrupar valor por categoría
+    const categoryMap = new Map<string, { value: number; quantity: number }>();
 
-  // Valor total
-  const totalValue = products.reduce(
-    (sum, p) => sum + (p.cost || 0) * p.stock,
-    0
-  );
+    response.report.forEach((product) => {
+      const category = product.category || 'Sin Categoría';
+      const existing = categoryMap.get(category) || { value: 0, quantity: 0 };
 
-  const totalProducts = products.length;
-  const lowStockProducts = products.filter(
-    (p) => p.stock < 10 && p.stock >= 5
-  ).length;
-  const outOfStockProducts = products.filter((p) => p.stock < 5).length;
-
-  // Valor por categoría
-  const categoryMap = new Map<string, { value: number; quantity: number }>();
-
-  products.forEach((product) => {
-    const category = product.category || 'Sin Categoría';
-    const existing = categoryMap.get(category) || { value: 0, quantity: 0 };
-
-    categoryMap.set(category, {
-      value: existing.value + (product.cost || 0) * product.stock,
-      quantity: existing.quantity + product.stock,
+      categoryMap.set(category, {
+        value: existing.value + product.totalValue,
+        quantity: existing.quantity + product.stock,
+      });
     });
-  });
 
-  const valueByCategory = Array.from(categoryMap.entries())
-    .map(([category, data]) => ({
-      category,
-      value: data.value,
-      quantity: data.quantity,
-    }))
-    .sort((a, b) => b.value - a.value);
+    const valueByCategory = Array.from(categoryMap.entries())
+      .map(([category, data]) => ({
+        category,
+        value: data.value,
+        quantity: data.quantity,
+      }))
+      .sort((a, b) => b.value - a.value);
 
-  // Distribución de stock
-  const stockDistribution = Array.from(categoryMap.entries())
-    .map(([category, data]) => ({
-      category,
-      count: data.quantity,
-    }))
-    .sort((a, b) => b.count - a.count);
+    // Distribución de stock por categoría
+    const stockDistribution = Array.from(categoryMap.entries())
+      .map(([category, data]) => ({
+        category,
+        count: data.quantity,
+      }))
+      .sort((a, b) => b.count - a.count);
 
-  return {
-    totalValue,
-    totalProducts,
-    lowStockProducts,
-    outOfStockProducts,
-    inventoryTurnover: 0, // TODO: Calcular con histórico de ventas
-    valueByCategory,
-    stockDistribution,
-    recentMovements: [], // TODO: Implementar con histórico
-    topRotation: [], // TODO: Implementar con histórico de ventas
-  };
+    return {
+      totalValue: response.summary.totalValue,
+      totalProducts: response.summary.totalProducts,
+      lowStockProducts: response.summary.lowStockProducts,
+      outOfStockProducts: response.summary.outOfStockProducts,
+      inventoryTurnover: 0, // TODO: Calcular con histórico de ventas
+      valueByCategory,
+      stockDistribution,
+      recentMovements: [], // TODO: Implementar con endpoint de movimientos
+      topRotation: [], // TODO: Implementar con histórico de ventas
+    };
+  } catch (error: any) {
+    console.error('Error generando reporte de inventario:', error);
+    throw new Error('Error al generar reporte de inventario');
+  }
+}
+
+/**
+ * Obtener productos con rotación alta (más vendidos)
+ */
+export async function getTopRotationProducts(storeId: string) {
+  try {
+    console.warn(
+      'getTopRotationProducts requiere análisis de histórico - implementación pendiente'
+    );
+
+    return {
+      products: [],
+      period: { startDate: new Date(), endDate: new Date() },
+    };
+  } catch (error: any) {
+    console.error('Error obteniendo productos de alta rotación:', error);
+    throw new Error('Error al obtener productos de alta rotación');
+  }
 }

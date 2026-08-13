@@ -1,56 +1,9 @@
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  Timestamp,
-  serverTimestamp,
-  runTransaction,
-} from 'firebase/firestore';
-import { db } from './firebase';
-import { Sale, SaleItem } from '@/types/sale';
-
-const SALES_COLLECTION = 'sales';
-
 /**
- * Convertir Firestore Timestamp a Date
+ * Servicio de Ventas - Migrado a PostgreSQL
  */
-function convertTimestamps(data: any): any {
-  const converted = { ...data };
-  if (converted.createdAt instanceof Timestamp) {
-    converted.createdAt = converted.createdAt.toDate();
-  }
-  if (converted.cancelledAt instanceof Timestamp) {
-    converted.cancelledAt = converted.cancelledAt.toDate();
-  }
-  return converted;
-}
 
-/**
- * Generar número de venta correlativo
- */
-async function generateSaleNumber(storeId: string): Promise<string> {
-  const salesRef = collection(db, SALES_COLLECTION);
-  const q = query(
-    salesRef,
-    where('storeId', '==', storeId),
-    orderBy('saleNumber', 'desc')
-  );
-
-  const snapshot = await getDocs(q);
-
-  if (snapshot.empty) {
-    return '000001';
-  }
-
-  const lastNumber = snapshot.docs[0].data().saleNumber as string;
-  const nextNumber = parseInt(lastNumber, 10) + 1;
-
-  return nextNumber.toString().padStart(6, '0');
-}
+import { apiClient } from '@/lib/api';
+import type { Sale, SaleItem } from '@/types/sale';
 
 /**
  * Procesar venta (con actualización de inventario)
@@ -65,7 +18,7 @@ export async function processSale(
   amountReceived?: number,
   customerId?: string,
   customerName?: string,
-  creditDueDate?: Date // NUEVO - Fase 5
+  creditDueDate?: Date
 ): Promise<Sale> {
   try {
     // Validar venta a crédito
@@ -80,134 +33,62 @@ export async function processSale(
       }
     }
 
-    // Calcular totales
-    const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
-    const discount = items.reduce((sum, item) => {
-      const itemDiscount = item.quantity * item.price * (item.discount / 100);
-      return sum + itemDiscount;
-    }, 0);
-    const tax = subtotal * 0.16; // IVA 16% (ajustar según país)
-    const total = subtotal + tax;
-
-    // Calcular cambio si es efectivo
-    const change =
-      paymentMethod === 'cash' && amountReceived ? amountReceived - total : 0;
-
-    // Generar número de venta
-    const saleNumber = await generateSaleNumber(storeId);
-
-    // Determinar paymentStatus
-    const paymentStatus = paymentMethod === 'credit' ? 'credit' : 'paid';
-
-    // Crear venta
-    const saleData = {
+    const response = await apiClient.createSale({
       storeId,
-      saleNumber,
-      customerId: customerId || null,
-      customerName: customerName || null,
-      cashierId,
-      cashierName,
-      items,
-      subtotal,
-      discount,
-      tax,
-      total,
+      customerId: customerId || undefined,
+      customerName: customerName || undefined,
+      items: items.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.price,
+        discount: item.discount || 0,
+      })),
       currency,
-      exchangeRateSnapshot: {},
       paymentMethod,
-      paymentStatus,
-      amountReceived:
-        amountReceived || (paymentMethod === 'credit' ? 0 : total),
-      change,
-      creditDueDate: creditDueDate ? Timestamp.fromDate(creditDueDate) : null,
-      amountDue: paymentMethod === 'credit' ? total : 0,
-      status: 'completed' as const,
-      createdAt: serverTimestamp(),
-    };
-
-    // Usar transacción para asegurar consistencia
-    // FIX BUG-113: Incluir creación de cargo en la misma transacción para atomicidad
-    const saleId = await runTransaction(db, async (transaction) => {
-      // 1. Crear venta
-      const saleRef = doc(collection(db, SALES_COLLECTION));
-      transaction.set(saleRef, saleData);
-
-      // 2. Actualizar stock de productos
-      for (const item of items) {
-        const productRef = doc(db, 'products', item.productId);
-        const productSnap = await transaction.get(productRef);
-
-        if (productSnap.exists()) {
-          const productData = productSnap.data();
-          const newStock = productData.stock - item.quantity;
-
-          if (newStock < 0) {
-            throw new Error(
-              `Stock insuficiente para producto: ${item.productName}`
-            );
-          }
-
-          transaction.update(productRef, {
-            stock: newStock,
-            updatedAt: serverTimestamp(),
-          });
-        }
-      }
-
-      // 3. Si es venta a crédito, crear cargo en customer_transactions (ATÓMICO)
-      if (paymentMethod === 'credit' && customerId && creditDueDate) {
-        // 3a. Obtener cliente actual
-        const customerRef = doc(db, 'customers', customerId);
-        const customerDoc = await transaction.get(customerRef);
-
-        if (!customerDoc.exists()) {
-          throw new Error('Cliente no encontrado');
-        }
-
-        const currentBalance = customerDoc.data().balance || 0;
-        const newBalance = currentBalance + total;
-
-        // 3b. Actualizar balance del cliente
-        transaction.update(customerRef, {
-          balance: newBalance,
-          updatedAt: serverTimestamp(),
-        });
-
-        // 3c. Crear registro de transacción
-        const chargeData = {
-          storeId,
-          customerId,
-          type: 'charge' as const,
-          amount: total,
-          balanceBefore: currentBalance,
-          balanceAfter: newBalance,
-          saleId: saleRef.id,
-          dueDate: Timestamp.fromDate(creditDueDate),
-          createdBy: cashierId,
-          createdAt: Timestamp.now(),
-        };
-
-        const chargeRef = doc(collection(db, 'customer_transactions'));
-        transaction.set(chargeRef, chargeData);
-      }
-
-      return saleRef.id;
+      amountReceived: amountReceived || undefined,
+      notes: undefined,
     });
 
-    // Devolver venta creada
-    const newSale: Sale = {
-      id: saleId,
-      ...saleData,
-      createdAt: new Date(),
-      creditDueDate: creditDueDate || undefined,
-    } as Sale;
-
-    return newSale;
-  } catch (error) {
+    return {
+      id: response.sale.id,
+      storeId: response.sale.storeId,
+      saleNumber: response.sale.saleNumber,
+      customerId: response.sale.customerId || undefined,
+      customerName: response.sale.customerName || undefined,
+      cashierId: response.sale.cashierId,
+      cashierName: response.sale.cashierName,
+      items: response.sale.items.map((item) => ({
+        id: item.id,
+        productId: item.productId,
+        productName: item.productName,
+        productCode: item.productCode,
+        quantity: item.quantity,
+        price: item.unitPrice,
+        discount: item.discount,
+        subtotal: item.subtotal,
+      })),
+      subtotal: response.sale.subtotal,
+      discount: response.sale.discount,
+      tax: response.sale.tax,
+      total: response.sale.total,
+      currency: response.sale.currency,
+      exchangeRateSnapshot: {}, // No disponible en backend actual
+      paymentMethod: response.sale.paymentMethod as
+        | 'cash'
+        | 'card'
+        | 'transfer'
+        | 'credit',
+      paymentStatus: response.sale.paymentStatus as 'paid' | 'credit',
+      amountReceived: response.sale.amountReceived || undefined,
+      change: response.sale.change || undefined,
+      creditDueDate: creditDueDate,
+      amountDue: paymentMethod === 'credit' ? response.sale.total : 0,
+      status: 'completed',
+      createdAt: new Date(response.sale.createdAt),
+    };
+  } catch (error: any) {
     console.error('Error processing sale:', error);
-    throw new Error(
-      error instanceof Error ? error.message : 'Error al procesar venta'
-    );
+    throw new Error(error.message || 'Error al procesar venta');
   }
 }
 
@@ -216,23 +97,34 @@ export async function processSale(
  */
 export async function getSales(storeId: string): Promise<Sale[]> {
   try {
-    const salesRef = collection(db, SALES_COLLECTION);
-    const q = query(
-      salesRef,
-      where('storeId', '==', storeId),
-      orderBy('createdAt', 'desc')
-    );
+    const response = await apiClient.getSales({ storeId, limit: 1000 });
 
-    const snapshot = await getDocs(q);
-
-    return snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...convertTimestamps(data),
-      } as Sale;
-    });
-  } catch (error) {
+    return response.sales.map((sale) => ({
+      id: sale.id,
+      storeId: sale.storeId,
+      saleNumber: sale.saleNumber,
+      customerId: sale.customerId || undefined,
+      customerName: sale.customerName || undefined,
+      cashierId: sale.cashierId,
+      cashierName: sale.cashierName,
+      items: [], // No disponible en listado, se carga en getSaleById
+      subtotal: 0, // No disponible en listado
+      discount: 0, // No disponible en listado
+      tax: 0, // No disponible en listado
+      total: sale.total,
+      currency: sale.currency,
+      exchangeRateSnapshot: {},
+      paymentMethod: sale.paymentMethod as 'cash' | 'card' | 'transfer' | 'credit',
+      paymentStatus: sale.paymentStatus as 'paid' | 'credit',
+      amountReceived: undefined,
+      change: undefined,
+      creditDueDate: undefined,
+      amountDue: 0,
+      status: sale.cancelledAt ? 'cancelled' : 'completed',
+      createdAt: new Date(sale.createdAt),
+      cancelledAt: sale.cancelledAt ? new Date(sale.cancelledAt) : undefined,
+    }));
+  } catch (error: any) {
     console.error('Error getting sales:', error);
     throw new Error('Error al obtener ventas');
   }
@@ -243,69 +135,131 @@ export async function getSales(storeId: string): Promise<Sale[]> {
  */
 export async function getSaleById(saleId: string): Promise<Sale | null> {
   try {
-    const docRef = doc(db, SALES_COLLECTION, saleId);
-    const docSnap = await getDoc(docRef);
+    const response = await apiClient.getSale(saleId);
 
-    if (!docSnap.exists()) {
-      return null;
-    }
-
-    const data = docSnap.data();
     return {
-      id: docSnap.id,
-      ...convertTimestamps(data),
-    } as Sale;
-  } catch (error) {
+      id: response.sale.id,
+      storeId: response.sale.storeId,
+      saleNumber: response.sale.saleNumber,
+      customerId: response.sale.customerId || undefined,
+      customerName: response.sale.customerName || undefined,
+      cashierId: response.sale.cashierId,
+      cashierName: response.sale.cashierName,
+      items: response.sale.items.map((item) => ({
+        id: item.id,
+        productId: item.productId,
+        productName: item.productName,
+        productCode: item.productCode,
+        quantity: item.quantity,
+        price: item.unitPrice,
+        discount: item.discount,
+        subtotal: item.subtotal,
+      })),
+      subtotal: response.sale.subtotal,
+      discount: response.sale.discount,
+      tax: response.sale.tax,
+      total: response.sale.total,
+      currency: response.sale.currency,
+      exchangeRateSnapshot: {},
+      paymentMethod: response.sale.paymentMethod as
+        | 'cash'
+        | 'card'
+        | 'transfer'
+        | 'credit',
+      paymentStatus: response.sale.paymentStatus as 'paid' | 'credit',
+      amountReceived: response.sale.amountReceived || undefined,
+      change: response.sale.change || undefined,
+      creditDueDate: undefined, // No disponible en backend actual
+      amountDue: 0, // No disponible en backend actual
+      status: response.sale.cancelledAt ? 'cancelled' : 'completed',
+      createdAt: new Date(response.sale.createdAt),
+      cancelledAt: response.sale.cancelledAt
+        ? new Date(response.sale.cancelledAt)
+        : undefined,
+      notes: response.sale.notes || undefined,
+    };
+  } catch (error: any) {
     console.error('Error getting sale:', error);
-    throw new Error('Error al obtener venta');
+    return null;
   }
 }
 
 /**
- * Anular venta (solo admin/owner)
+ * Cancelar venta
  */
-export async function cancelSale(
-  saleId: string,
-  userId: string,
-  reason: string
-): Promise<void> {
+export async function cancelSale(saleId: string): Promise<void> {
   try {
-    await runTransaction(db, async (transaction) => {
-      const saleRef = doc(db, SALES_COLLECTION, saleId);
-      const saleSnap = await transaction.get(saleRef);
-
-      if (!saleSnap.exists()) {
-        throw new Error('Venta no encontrada');
-      }
-
-      const saleData = saleSnap.data() as Sale;
-
-      // Revertir stock de productos
-      for (const item of saleData.items) {
-        const productRef = doc(db, 'products', item.productId);
-        const productSnap = await transaction.get(productRef);
-
-        if (productSnap.exists()) {
-          const productData = productSnap.data();
-          const newStock = productData.stock + item.quantity;
-
-          transaction.update(productRef, {
-            stock: newStock,
-            updatedAt: serverTimestamp(),
-          });
-        }
-      }
-
-      // Marcar venta como cancelada
-      transaction.update(saleRef, {
-        status: 'cancelled',
-        cancelledAt: serverTimestamp(),
-        cancelledBy: userId,
-        cancelReason: reason,
-      });
-    });
-  } catch (error) {
+    await apiClient.cancelSale(saleId);
+  } catch (error: any) {
     console.error('Error cancelling sale:', error);
-    throw new Error('Error al anular venta');
+    throw new Error(error.message || 'Error al cancelar venta');
+  }
+}
+
+/**
+ * Obtener estadísticas de ventas
+ */
+export async function getSalesStats(
+  storeId: string,
+  startDate?: Date,
+  endDate?: Date
+) {
+  try {
+    const response = await apiClient.getSalesStats({
+      storeId,
+      startDate: startDate?.toISOString(),
+      endDate: endDate?.toISOString(),
+    });
+
+    return {
+      totalSales: response.stats.totalSales,
+      totalRevenue: response.stats.totalRevenue,
+      averageTicket: response.stats.averageTicket,
+      totalItems: response.stats.totalItems,
+    };
+  } catch (error: any) {
+    console.error('Error getting sales stats:', error);
+    throw new Error('Error al obtener estadísticas de ventas');
+  }
+}
+
+/**
+ * Obtener ventas de un cliente
+ */
+export async function getCustomerSales(
+  storeId: string,
+  customerId: string
+): Promise<Sale[]> {
+  try {
+    const response = await apiClient.getSales({ storeId, customerId, limit: 1000 });
+
+    return response.sales.map((sale) => ({
+      id: sale.id,
+      storeId: sale.storeId,
+      saleNumber: sale.saleNumber,
+      customerId: sale.customerId || undefined,
+      customerName: sale.customerName || undefined,
+      cashierId: sale.cashierId,
+      cashierName: sale.cashierName,
+      items: [],
+      subtotal: 0,
+      discount: 0,
+      tax: 0,
+      total: sale.total,
+      currency: sale.currency,
+      exchangeRateSnapshot: {},
+      paymentMethod: sale.paymentMethod as 'cash' | 'card' | 'transfer' | 'credit',
+      paymentStatus: sale.paymentStatus as 'paid' | 'credit',
+      amountReceived: undefined,
+      change: undefined,
+      creditDueDate: undefined,
+      amountDue: 0,
+      status: sale.cancelledAt ? 'cancelled' : 'completed',
+      createdAt: new Date(sale.createdAt),
+      cancelledAt: sale.cancelledAt ? new Date(sale.cancelledAt) : undefined,
+    }));
+  } catch (error: any) {
+    console.error('Error getting customer sales:', error);
+    throw new Error('Error al obtener ventas del cliente');
   }
 }

@@ -1,40 +1,14 @@
-import { db } from '@/lib/firebase';
-import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  runTransaction,
-  doc,
-  updateDoc,
-  Timestamp,
-} from 'firebase/firestore';
-import {
+/**
+ * Servicio de Inventario - Migrado a PostgreSQL
+ */
+
+import { apiClient } from '@/lib/api';
+import type {
   InventoryMovement,
   InventoryMovementFormData,
   KardexEntry,
   StockAlert,
 } from '@/types/inventory';
-import { getProductById } from './products';
-
-const MOVEMENTS_COLLECTION = 'inventory_movements';
-const ALERTS_COLLECTION = 'stock_alerts';
-
-/**
- * Convierte Firestore Timestamp a Date
- */
-function convertTimestamps(data: any): any {
-  const converted = { ...data };
-  if (converted.createdAt instanceof Timestamp) {
-    converted.createdAt = converted.createdAt.toDate();
-  }
-  if (converted.resolvedAt instanceof Timestamp) {
-    converted.resolvedAt = converted.resolvedAt.toDate();
-  }
-  return converted;
-}
 
 /**
  * Registrar movimiento de inventario con transacción
@@ -46,91 +20,52 @@ export async function registerInventoryMovement(
   data: InventoryMovementFormData
 ): Promise<InventoryMovement> {
   try {
-    let movementId: string = '';
-    let createdMovement: any = null;
+    // Mapear tipo de movimiento: entry -> sale/purchase/adjustment, exit -> damage
+    let type: 'damage' | 'adjustment';
+    let quantity: number;
 
-    // ✅ FIX BUG-101: Usar transacción para TODO, incluyendo lectura inicial
-    await runTransaction(db, async (transaction) => {
-      const productRef = doc(db, 'products', data.productId);
-      const productDoc = await transaction.get(productRef);
-
-      if (!productDoc.exists()) {
-        throw new Error('Producto no encontrado');
+    if (data.type === 'entry') {
+      type = 'adjustment';
+      quantity = data.quantity; // Positivo para entradas
+    } else {
+      // exit -> damage o adjustment negativo
+      if (data.reason === 'damage') {
+        type = 'damage';
+        quantity = data.quantity; // Positivo (el backend lo hace negativo)
+      } else {
+        type = 'adjustment';
+        quantity = -data.quantity; // Negativo para salidas
       }
-
-      const product = productDoc.data() as any;
-
-      // Calcular nueva cantidad
-      const quantityChange =
-        data.type === 'entry' ? data.quantity : -data.quantity;
-      const newStock = product.stock + quantityChange;
-
-      if (newStock < 0) {
-        throw new Error('Stock insuficiente para la salida');
-      }
-
-      // Actualizar stock del producto
-      transaction.update(productRef, {
-        stock: newStock,
-        updatedAt: Timestamp.now(),
-      });
-
-      // Crear movimiento
-      const movementData = {
-        storeId,
-        productId: data.productId,
-        productName: product.name,
-        productCode: product.code,
-        type: data.type,
-        quantity: quantityChange,
-        stockBefore: product.stock,
-        stockAfter: newStock,
-        unitCost: data.unitCost || product.cost,
-        totalCost: (data.unitCost || product.cost) * Math.abs(quantityChange),
-        supplierId: data.supplierId,
-        reason: data.reason,
-        notes: data.notes,
-        userId,
-        userName,
-        createdAt: Timestamp.now(),
-      };
-
-      const movementRef = doc(collection(db, MOVEMENTS_COLLECTION));
-      transaction.set(movementRef, movementData);
-      movementId = movementRef.id;
-
-      // Guardar datos para retornar
-      createdMovement = {
-        id: movementId,
-        ...movementData,
-        createdAt: new Date(),
-      };
-
-      // Guardar datos para verificar alerta después de transacción
-      createdMovement.productName = product.name;
-      createdMovement.productCode = product.code;
-      createdMovement.stockMin = product.stockMin;
-    });
-
-    // ✅ FIX BUG-102: Verificar alerta DESPUÉS de transacción, sin bloquear
-    try {
-      await checkStockAlert(
-        storeId,
-        data.productId,
-        createdMovement.productName,
-        createdMovement.productCode,
-        createdMovement.stockAfter,
-        createdMovement.stockMin
-      );
-    } catch (alertError: any) {
-      // No bloquear operación principal, pero loggear advertencia
-      console.warn(
-        '⚠️ Movimiento guardado pero alerta falló:',
-        alertError.message
-      );
     }
 
-    return createdMovement as InventoryMovement;
+    const response = await apiClient.createInventoryAdjustment({
+      storeId,
+      productId: data.productId,
+      type,
+      quantity: Math.abs(quantity),
+      reason: data.reason || undefined,
+      notes: data.notes || undefined,
+    });
+
+    return {
+      id: response.movement.id,
+      storeId: response.movement.storeId,
+      productId: response.movement.productId,
+      productName: response.movement.productName,
+      productCode: response.movement.productCode,
+      type: data.type, // Mantener tipo original (entry/exit)
+      quantity: quantity,
+      stockBefore: response.movement.stockBefore,
+      stockAfter: response.movement.stockAfter,
+      unitCost: response.movement.unitCost,
+      totalCost: response.movement.totalCost,
+      supplierId: data.supplierId,
+      reason: response.movement.reason || undefined,
+      notes: response.movement.notes || undefined,
+      userId: response.movement.userId,
+      userName: response.movement.userName,
+      createdAt: new Date(response.movement.createdAt),
+    };
   } catch (error: any) {
     console.error('Error registrando movimiento:', error);
     throw new Error(error.message || 'Error al registrar movimiento');
@@ -145,152 +80,60 @@ export async function getInventoryMovements(
   productId?: string
 ): Promise<InventoryMovement[]> {
   try {
-    let q;
+    const response = await apiClient.getInventoryMovements({
+      storeId,
+      productId: productId || undefined,
+      limit: 1000,
+    });
 
-    if (productId) {
-      q = query(
-        collection(db, MOVEMENTS_COLLECTION),
-        where('storeId', '==', storeId),
-        where('productId', '==', productId),
-        orderBy('createdAt', 'desc')
-      );
-    } else {
-      q = query(
-        collection(db, MOVEMENTS_COLLECTION),
-        where('storeId', '==', storeId),
-        orderBy('createdAt', 'desc')
-      );
-    }
-
-    const snapshot = await getDocs(q);
-
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...convertTimestamps(doc.data()),
-    })) as InventoryMovement[];
-  } catch (error) {
+    return response.movements.map((movement) => ({
+      id: movement.id,
+      storeId: movement.storeId,
+      productId: movement.productId,
+      productName: movement.productName,
+      productCode: movement.productCode,
+      type: movement.type === 'sale' ? 'exit' : 'entry', // Mapear tipos
+      quantity: movement.quantity,
+      stockBefore: movement.stockBefore,
+      stockAfter: movement.stockAfter,
+      unitCost: movement.unitCost,
+      totalCost: movement.totalCost,
+      supplierId: undefined,
+      reason: movement.reason || undefined,
+      notes: movement.notes || undefined,
+      userId: movement.userId,
+      userName: movement.userName,
+      createdAt: new Date(movement.createdAt),
+    }));
+  } catch (error: any) {
     console.error('Error obteniendo movimientos:', error);
-    throw error;
+    throw new Error('Error al obtener movimientos');
   }
 }
 
 /**
  * Generar Kardex de producto
- * ✅ FIX BUG-103: Eliminar double reverse innecesario
  */
 export async function generateKardex(
   storeId: string,
   productId: string
 ): Promise<KardexEntry[]> {
   try {
-    const movements = await getInventoryMovements(storeId, productId);
+    const response = await apiClient.getProductMovements(productId);
 
-    const kardex: KardexEntry[] = [];
-
-    // ✅ FIX BUG-103: No mutar array original, usar slice().reverse()
-    const movementsChronological = movements.slice().reverse();
-
-    movementsChronological.forEach((movement) => {
-      const entry: KardexEntry = {
-        date: movement.createdAt,
-        // ✅ FIX BUG-109: Mejorar formato de referencia
-        reference:
-          movement.reference ||
-          `MOV-${movement.id.substring(0, 8).toUpperCase()}`,
-        type: movement.type,
-        quantityIn: movement.quantity > 0 ? movement.quantity : 0,
-        quantityOut: movement.quantity < 0 ? Math.abs(movement.quantity) : 0,
-        balance: movement.stockAfter,
-        unitCost: movement.unitCost,
-        totalCost: movement.totalCost,
-      };
-
-      kardex.push(entry);
-    });
-
-    // ✅ Ya está en orden cronológico, no necesita reverse
-    return kardex;
-  } catch (error) {
-    console.error('Error generando kardex:', error);
-    throw error;
-  }
-}
-
-/**
- * Verificar y crear alerta de stock bajo
- * ✅ FIX BUG-102: Lanza errores en vez de fallar silenciosamente
- */
-async function checkStockAlert(
-  storeId: string,
-  productId: string,
-  productName: string,
-  productCode: string,
-  currentStock: number,
-  minStock: number
-): Promise<void> {
-  try {
-    // ✅ FIX BUG-107: Cambiar <= a < para consistencia
-    if (currentStock < minStock) {
-      // Verificar si ya existe alerta activa
-      const existingAlerts = await getDocs(
-        query(
-          collection(db, ALERTS_COLLECTION),
-          where('storeId', '==', storeId),
-          where('productId', '==', productId),
-          where('status', '==', 'active')
-        )
-      );
-
-      if (existingAlerts.empty) {
-        // Crear nueva alerta
-        await addDoc(collection(db, ALERTS_COLLECTION), {
-          storeId,
-          productId,
-          productName,
-          productCode,
-          currentStock,
-          minStock,
-          status: 'active',
-          createdAt: Timestamp.now(),
-        });
-        console.log(
-          `✅ Alerta creada: ${productCode} (Stock: ${currentStock} < Min: ${minStock})`
-        );
-      } else {
-        // Actualizar stock en alerta existente
-        const alertDoc = existingAlerts.docs[0];
-        await updateDoc(doc(db, ALERTS_COLLECTION, alertDoc.id), {
-          currentStock,
-        });
-        console.log(
-          `✅ Alerta actualizada: ${productCode} (Stock: ${currentStock})`
-        );
-      }
-    } else {
-      // Resolver alertas si stock subió por encima del mínimo
-      const activeAlerts = await getDocs(
-        query(
-          collection(db, ALERTS_COLLECTION),
-          where('storeId', '==', storeId),
-          where('productId', '==', productId),
-          where('status', '==', 'active')
-        )
-      );
-
-      for (const alertDoc of activeAlerts.docs) {
-        await updateDoc(doc(db, ALERTS_COLLECTION, alertDoc.id), {
-          status: 'resolved',
-          resolvedAt: Timestamp.now(),
-        });
-        console.log(
-          `✅ Alerta resuelta: ${productCode} (Stock: ${currentStock})`
-        );
-      }
-    }
+    return response.movements.map((movement) => ({
+      date: new Date(movement.createdAt),
+      reference: `MOV-${movement.id.substring(0, 8).toUpperCase()}`,
+      type: movement.type,
+      quantityIn: movement.quantity > 0 ? movement.quantity : 0,
+      quantityOut: movement.quantity < 0 ? Math.abs(movement.quantity) : 0,
+      balance: movement.stockAfter,
+      unitCost: movement.unitCost,
+      totalCost: movement.totalCost,
+    }));
   } catch (error: any) {
-    console.error('Error verificando alerta de stock:', error);
-    // ✅ FIX BUG-102: Lanzar error para que caller pueda manejarlo
-    throw new Error(`Error al gestionar alerta: ${error.message}`);
+    console.error('Error generando kardex:', error);
+    throw new Error('Error al generar kardex');
   }
 }
 
@@ -299,66 +142,60 @@ async function checkStockAlert(
  */
 export async function getStockAlerts(storeId: string): Promise<StockAlert[]> {
   try {
-    const q = query(
-      collection(db, ALERTS_COLLECTION),
-      where('storeId', '==', storeId),
-      where('status', '==', 'active'),
-      orderBy('createdAt', 'desc')
-    );
+    // Usar el endpoint de low stock
+    const response = await apiClient.getLowStock(storeId);
 
-    const snapshot = await getDocs(q);
-
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...convertTimestamps(doc.data()),
-    })) as StockAlert[];
-  } catch (error) {
+    return response.products.map((product) => ({
+      id: product.id,
+      storeId,
+      productId: product.id,
+      productName: product.name,
+      productCode: product.code,
+      currentStock: product.stock,
+      minStock: product.minStock,
+      status: product.status as 'active' | 'resolved',
+      createdAt: new Date(),
+      resolvedAt: undefined,
+    }));
+  } catch (error: any) {
     console.error('Error obteniendo alertas:', error);
-    throw error;
+    throw new Error('Error al obtener alertas');
   }
 }
 
 /**
- * Calcular valorización de inventario
- * ✅ FIX BUG-104: Validar categoría antes de usar como key
+ * Obtener reporte de stock
  */
-export async function calculateInventoryValuation(storeId: string): Promise<{
-  totalValue: number;
-  totalItems: number;
-  byCategory: Record<string, number>;
-}> {
+export async function getStockReport(storeId: string) {
   try {
-    const products = await getDocs(
-      query(
-        collection(db, 'products'),
-        where('storeId', '==', storeId),
-        where('trackInventory', '==', true)
-      )
-    );
+    const response = await apiClient.getStockReport(storeId);
 
-    let totalValue = 0;
-    let totalItems = 0;
-    const byCategory: Record<string, number> = {};
-
-    products.docs.forEach((doc) => {
-      const product = doc.data();
-      const value = product.stock * product.cost;
-
-      totalValue += value;
-      totalItems += product.stock;
-
-      // ✅ FIX BUG-104: Validar categoría antes de usar como key
-      const category = product.category || 'Sin Categoría';
-
-      if (!byCategory[category]) {
-        byCategory[category] = 0;
-      }
-      byCategory[category] += value;
-    });
-
-    return { totalValue, totalItems, byCategory };
-  } catch (error) {
-    console.error('Error calculando valorización:', error);
-    throw error;
+    return {
+      products: response.report.map((item) => ({
+        id: item.id,
+        code: item.code,
+        name: item.name,
+        category: item.category,
+        stock: item.stock,
+        minStock: item.minStock,
+        cost: item.cost,
+        totalValue: item.totalValue,
+        status: item.status,
+      })),
+      summary: response.summary,
+    };
+  } catch (error: any) {
+    console.error('Error obteniendo reporte de stock:', error);
+    throw new Error('Error al obtener reporte de stock');
   }
+}
+
+/**
+ * Resolver alerta de stock (legacy - ahora se resuelve automáticamente)
+ */
+export async function resolveStockAlert(alertId: string): Promise<void> {
+  console.warn(
+    'resolveStockAlert es legacy - las alertas se resuelven automáticamente'
+  );
+  // No-op: Las alertas se resuelven automáticamente cuando el stock sube
 }

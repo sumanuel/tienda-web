@@ -610,6 +610,470 @@ class ApiClient {
       body: JSON.stringify(data),
     });
   }
+
+  // Métodos de Products (Productos)
+  async getProducts(params: {
+    storeId: string;
+    search?: string;
+    category?: string;
+    minStock?: number;
+    maxStock?: number;
+    page?: number;
+    limit?: number;
+  }) {
+    const queryParams = new URLSearchParams({
+      storeId: params.storeId,
+      ...(params.search && { search: params.search }),
+      ...(params.category && { category: params.category }),
+      ...(params.minStock && { minStock: params.minStock.toString() }),
+      ...(params.maxStock && { maxStock: params.maxStock.toString() }),
+      ...(params.page && { page: params.page.toString() }),
+      ...(params.limit && { limit: params.limit.toString() }),
+    });
+
+    return this.request<{
+      products: Array<{
+        id: string;
+        storeId: string;
+        code: string;
+        barcode: string | null;
+        name: string;
+        description: string | null;
+        category: string;
+        cost: number;
+        priceVES: number;
+        priceUSD: number;
+        stock: number;
+        minStock: number;
+        imageUrl: string | null;
+        createdAt: string;
+        updatedAt: string;
+      }>;
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        pages: number;
+      };
+    }>(`/api/products?${queryParams}`);
+  }
+
+  async getProduct(id: string) {
+    return this.request<{
+      product: {
+        id: string;
+        storeId: string;
+        code: string;
+        barcode: string | null;
+        name: string;
+        description: string | null;
+        category: string;
+        cost: number;
+        priceVES: number;
+        priceUSD: number;
+        stock: number;
+        minStock: number;
+        imageUrl: string | null;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }>(`/api/products/${id}`);
+  }
+
+  async createProduct(data: {
+    storeId: string;
+    code?: string;
+    barcode?: string;
+    name: string;
+    description?: string;
+    category: string;
+    cost: number;
+    priceVES: number;
+    priceUSD: number;
+    stock?: number;
+    minStock?: number;
+    imageUrl?: string;
+  }) {
+    return this.request<{
+      message: string;
+      product: {
+        id: string;
+        storeId: string;
+        code: string;
+        barcode: string | null;
+        name: string;
+        description: string | null;
+        category: string;
+        cost: number;
+        priceVES: number;
+        priceUSD: number;
+        stock: number;
+        minStock: number;
+        imageUrl: string | null;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }>('/api/products', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateProduct(
+    id: string,
+    data: {
+      code?: string;
+      barcode?: string;
+      name?: string;
+      description?: string;
+      category?: string;
+      cost?: number;
+      priceVES?: number;
+      priceUSD?: number;
+      minStock?: number;
+      imageUrl?: string;
+    }
+  ) {
+    return this.request<{
+      message: string;
+      product: {
+        id: string;
+        storeId: string;
+        code: string;
+        barcode: string | null;
+        name: string;
+        description: string | null;
+        category: string;
+        cost: number;
+        priceVES: number;
+        priceUSD: number;
+        stock: number;
+        minStock: number;
+        imageUrl: string | null;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }>(`/api/products/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteProduct(id: string) {
+    return this.request<{ message: string }>(`/api/products/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getCategories(storeId: string) {
+    return this.request<{
+      categories: string[];
+    }>(`/api/products/categories?storeId=${storeId}`);
+  }
+
+  // Métodos de Sales (Ventas)
+  async getSales(params: {
+    storeId: string;
+    customerId?: string;
+    paymentStatus?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const queryParams = new URLSearchParams({
+      storeId: params.storeId,
+      ...(params.customerId && { customerId: params.customerId }),
+      ...(params.paymentStatus && { paymentStatus: params.paymentStatus }),
+      ...(params.startDate && { startDate: params.startDate }),
+      ...(params.endDate && { endDate: params.endDate }),
+      ...(params.page && { page: params.page.toString() }),
+      ...(params.limit && { limit: params.limit.toString() }),
+    });
+
+    return this.request<{
+      sales: Array<{
+        id: string;
+        storeId: string;
+        saleNumber: string;
+        customerId: string | null;
+        customerName: string | null;
+        total: number;
+        currency: string;
+        paymentMethod: string;
+        paymentStatus: string;
+        cashierId: string;
+        cashierName: string;
+        createdAt: string;
+        cancelledAt: string | null;
+      }>;
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        pages: number;
+      };
+    }>(`/api/sales?${queryParams}`);
+  }
+
+  async getSale(id: string) {
+    return this.request<{
+      sale: {
+        id: string;
+        storeId: string;
+        saleNumber: string;
+        customerId: string | null;
+        customerName: string | null;
+        total: number;
+        subtotal: number;
+        discount: number;
+        tax: number;
+        currency: string;
+        paymentMethod: string;
+        paymentStatus: string;
+        amountReceived: number | null;
+        change: number | null;
+        cashierId: string;
+        cashierName: string;
+        notes: string | null;
+        createdAt: string;
+        cancelledAt: string | null;
+        items: Array<{
+          id: string;
+          productId: string;
+          productName: string;
+          productCode: string;
+          quantity: number;
+          unitPrice: number;
+          discount: number;
+          subtotal: number;
+        }>;
+      };
+    }>(`/api/sales/${id}`);
+  }
+
+  async createSale(data: {
+    storeId: string;
+    customerId?: string;
+    customerName?: string;
+    items: Array<{
+      productId: string;
+      quantity: number;
+      unitPrice: number;
+      discount?: number;
+    }>;
+    currency: string;
+    paymentMethod: string;
+    amountReceived?: number;
+    notes?: string;
+  }) {
+    return this.request<{
+      message: string;
+      sale: {
+        id: string;
+        storeId: string;
+        saleNumber: string;
+        customerId: string | null;
+        customerName: string | null;
+        total: number;
+        subtotal: number;
+        discount: number;
+        tax: number;
+        currency: string;
+        paymentMethod: string;
+        paymentStatus: string;
+        amountReceived: number | null;
+        change: number | null;
+        cashierId: string;
+        cashierName: string;
+        notes: string | null;
+        createdAt: string;
+        items: Array<{
+          id: string;
+          productId: string;
+          productName: string;
+          productCode: string;
+          quantity: number;
+          unitPrice: number;
+          discount: number;
+          subtotal: number;
+        }>;
+      };
+    }>('/api/sales', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async cancelSale(id: string) {
+    return this.request<{
+      message: string;
+      sale: {
+        id: string;
+        saleNumber: string;
+        cancelledAt: string;
+      };
+    }>(`/api/sales/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getSalesStats(params: {
+    storeId: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams({
+      storeId: params.storeId,
+      ...(params.startDate && { startDate: params.startDate }),
+      ...(params.endDate && { endDate: params.endDate }),
+    });
+
+    return this.request<{
+      stats: {
+        totalSales: number;
+        totalRevenue: number;
+        averageTicket: number;
+        totalItems: number;
+      };
+    }>(`/api/sales/stats/summary?${queryParams}`);
+  }
+
+  // Métodos de Inventory (Inventario)
+  async getInventoryMovements(params: {
+    storeId: string;
+    productId?: string;
+    type?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const queryParams = new URLSearchParams({
+      storeId: params.storeId,
+      ...(params.productId && { productId: params.productId }),
+      ...(params.type && { type: params.type }),
+      ...(params.startDate && { startDate: params.startDate }),
+      ...(params.endDate && { endDate: params.endDate }),
+      ...(params.page && { page: params.page.toString() }),
+      ...(params.limit && { limit: params.limit.toString() }),
+    });
+
+    return this.request<{
+      movements: Array<{
+        id: string;
+        storeId: string;
+        productId: string;
+        productName: string;
+        productCode: string;
+        type: string;
+        quantity: number;
+        stockBefore: number;
+        stockAfter: number;
+        unitCost: number;
+        totalCost: number;
+        reason: string | null;
+        notes: string | null;
+        userId: string;
+        userName: string;
+        createdAt: string;
+      }>;
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        pages: number;
+      };
+    }>(`/api/inventory/movements?${queryParams}`);
+  }
+
+  async getProductMovements(productId: string) {
+    return this.request<{
+      movements: Array<{
+        id: string;
+        type: string;
+        quantity: number;
+        stockBefore: number;
+        stockAfter: number;
+        unitCost: number;
+        totalCost: number;
+        reason: string | null;
+        notes: string | null;
+        userName: string;
+        createdAt: string;
+      }>;
+    }>(`/api/inventory/product/${productId}/movements`);
+  }
+
+  async createInventoryAdjustment(data: {
+    storeId: string;
+    productId: string;
+    type: 'damage' | 'adjustment';
+    quantity: number;
+    reason?: string;
+    notes?: string;
+  }) {
+    return this.request<{
+      message: string;
+      movement: {
+        id: string;
+        storeId: string;
+        productId: string;
+        productName: string;
+        productCode: string;
+        type: string;
+        quantity: number;
+        stockBefore: number;
+        stockAfter: number;
+        unitCost: number;
+        totalCost: number;
+        reason: string | null;
+        notes: string | null;
+        userId: string;
+        userName: string;
+        createdAt: string;
+      };
+    }>('/api/inventory/adjustments', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getStockReport(storeId: string) {
+    return this.request<{
+      report: Array<{
+        id: string;
+        code: string;
+        name: string;
+        category: string;
+        stock: number;
+        minStock: number;
+        cost: number;
+        totalValue: number;
+        status: string;
+      }>;
+      summary: {
+        totalProducts: number;
+        totalValue: number;
+        lowStockProducts: number;
+        outOfStockProducts: number;
+      };
+    }>(`/api/inventory/stock-report?storeId=${storeId}`);
+  }
+
+  async getLowStock(storeId: string) {
+    return this.request<{
+      products: Array<{
+        id: string;
+        code: string;
+        name: string;
+        category: string;
+        stock: number;
+        minStock: number;
+        status: string;
+      }>;
+    }>(`/api/inventory/low-stock?storeId=${storeId}`);
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
