@@ -72,7 +72,10 @@ export async function getReceivablesSummary(storeId: string): Promise<{
         const transactions = await getCustomerTransactions(customer.id);
         allTransactions.push(...transactions);
       } catch (error) {
-        console.warn(`Error obteniendo transacciones del cliente ${customer.id}`, error);
+        console.warn(
+          `Error obteniendo transacciones del cliente ${customer.id}`,
+          error
+        );
       }
     }
 
@@ -128,7 +131,10 @@ export async function getPayablesSummary(storeId: string): Promise<{
         const transactions = await getSupplierTransactions(supplier.id);
         allTransactions.push(...transactions);
       } catch (error) {
-        console.warn(`Error obteniendo transacciones del proveedor ${supplier.id}`, error);
+        console.warn(
+          `Error obteniendo transacciones del proveedor ${supplier.id}`,
+          error
+        );
       }
     }
 

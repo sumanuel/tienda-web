@@ -101,9 +101,7 @@ export async function getSupplierTransactions(
       balanceBefore: 0, // No disponible directamente
       balanceAfter: transaction.balance,
       paymentMethod: undefined,
-      dueDate: transaction.dueDate
-        ? new Date(transaction.dueDate)
-        : undefined,
+      dueDate: transaction.dueDate ? new Date(transaction.dueDate) : undefined,
       notes: transaction.notes || undefined,
       createdBy: '', // No disponible en la respuesta
       createdAt: new Date(transaction.createdAt),

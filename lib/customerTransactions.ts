@@ -103,9 +103,7 @@ export async function getCustomerTransactions(
       balanceAfter: transaction.balance,
       paymentMethod: undefined,
       saleId: transaction.saleId || undefined,
-      dueDate: transaction.dueDate
-        ? new Date(transaction.dueDate)
-        : undefined,
+      dueDate: transaction.dueDate ? new Date(transaction.dueDate) : undefined,
       notes: transaction.notes || undefined,
       createdBy: '', // No disponible en la respuesta
       createdAt: new Date(transaction.createdAt),
