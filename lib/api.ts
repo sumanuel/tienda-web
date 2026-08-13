@@ -253,6 +253,363 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // Métodos de Customers (Clientes)
+  async getCustomers(params: {
+    storeId: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const queryParams = new URLSearchParams({
+      storeId: params.storeId,
+      ...(params.search && { search: params.search }),
+      ...(params.page && { page: params.page.toString() }),
+      ...(params.limit && { limit: params.limit.toString() }),
+    });
+
+    return this.request<{
+      customers: Array<{
+        id: string;
+        storeId: string;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        document: string | null;
+        address: string | null;
+        notes: string | null;
+        balance: number;
+        createdAt: string;
+        updatedAt: string;
+        _count: {
+          sales: number;
+          transactions: number;
+        };
+      }>;
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        pages: number;
+      };
+    }>(`/api/customers?${queryParams}`);
+  }
+
+  async getCustomer(id: string) {
+    return this.request<{
+      customer: {
+        id: string;
+        storeId: string;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        document: string | null;
+        address: string | null;
+        notes: string | null;
+        balance: number;
+        createdAt: string;
+        updatedAt: string;
+        store: {
+          id: string;
+          name: string;
+        };
+        sales: Array<{
+          id: string;
+          total: number;
+          createdAt: string;
+        }>;
+        transactions: Array<{
+          id: string;
+          type: string;
+          amount: number;
+          description: string | null;
+          createdAt: string;
+        }>;
+        _count: {
+          sales: number;
+          transactions: number;
+        };
+      };
+    }>(`/api/customers/${id}`);
+  }
+
+  async createCustomer(data: {
+    storeId: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    taxId?: string;
+    address?: string;
+  }) {
+    return this.request<{
+      message: string;
+      customer: {
+        id: string;
+        storeId: string;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        taxId: string | null;
+        address: string | null;
+        balance: number;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }>('/api/customers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCustomer(
+    id: string,
+    data: {
+      name?: string;
+      email?: string;
+      phone?: string;
+      taxId?: string;
+      address?: string;
+    }
+  ) {
+    return this.request<{
+      message: string;
+      customer: {
+        id: string;
+        storeId: string;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        taxId: string | null;
+        address: string | null;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }>(`/api/customers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteCustomer(id: string) {
+    return this.request<{ message: string }>(`/api/customers/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getCustomerTransactions(id: string, limit?: number) {
+    const queryParams = limit ? `?limit=${limit}` : '';
+    return this.request<{
+      transactions: Array<{
+        id: string;
+        customerId: string;
+        type: string;
+        amount: number;
+        description: string | null;
+        createdAt: string;
+      }>;
+      balance: number;
+    }>(`/api/customers/${id}/transactions${queryParams}`);
+  }
+
+  async createCustomerTransaction(
+    id: string,
+    data: {
+      type: 'credit' | 'payment';
+      amount: number;
+      description?: string;
+    }
+  ) {
+    return this.request<{
+      message: string;
+      transaction: {
+        id: string;
+        customerId: string;
+        type: string;
+        amount: number;
+        description: string | null;
+        createdAt: string;
+      };
+      balance: number;
+    }>(`/api/customers/${id}/transactions`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Métodos de Suppliers (Proveedores)
+  async getSuppliers(params: {
+    storeId: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const queryParams = new URLSearchParams({
+      storeId: params.storeId,
+      ...(params.search && { search: params.search }),
+      ...(params.page && { page: params.page.toString() }),
+      ...(params.limit && { limit: params.limit.toString() }),
+    });
+
+    return this.request<{
+      suppliers: Array<{
+        id: string;
+        storeId: string;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        document: string | null;
+        address: string | null;
+        notes: string | null;
+        balance: number;
+        createdAt: string;
+        updatedAt: string;
+        _count: {
+          transactions: number;
+        };
+      }>;
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        pages: number;
+      };
+    }>(`/api/suppliers?${queryParams}`);
+  }
+
+  async getSupplier(id: string) {
+    return this.request<{
+      supplier: {
+        id: string;
+        storeId: string;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        document: string | null;
+        address: string | null;
+        notes: string | null;
+        balance: number;
+        createdAt: string;
+        updatedAt: string;
+        store: {
+          id: string;
+          name: string;
+        };
+        transactions: Array<{
+          id: string;
+          type: string;
+          amount: number;
+          description: string | null;
+          createdAt: string;
+        }>;
+        _count: {
+          transactions: number;
+        };
+      };
+    }>(`/api/suppliers/${id}`);
+  }
+
+  async createSupplier(data: {
+    storeId: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    taxId?: string;
+    address?: string;
+  }) {
+    return this.request<{
+      message: string;
+      supplier: {
+        id: string;
+        storeId: string;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        taxId: string | null;
+        address: string | null;
+        balance: number;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }>('/api/suppliers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSupplier(
+    id: string,
+    data: {
+      name?: string;
+      email?: string;
+      phone?: string;
+      taxId?: string;
+      address?: string;
+    }
+  ) {
+    return this.request<{
+      message: string;
+      supplier: {
+        id: string;
+        storeId: string;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        taxId: string | null;
+        address: string | null;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }>(`/api/suppliers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteSupplier(id: string) {
+    return this.request<{ message: string }>(`/api/suppliers/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getSupplierTransactions(id: string, limit?: number) {
+    const queryParams = limit ? `?limit=${limit}` : '';
+    return this.request<{
+      transactions: Array<{
+        id: string;
+        supplierId: string;
+        type: string;
+        amount: number;
+        description: string | null;
+        createdAt: string;
+      }>;
+      balance: number;
+    }>(`/api/suppliers/${id}/transactions${queryParams}`);
+  }
+
+  async createSupplierTransaction(
+    id: string,
+    data: {
+      type: 'purchase' | 'payment';
+      amount: number;
+      description?: string;
+    }
+  ) {
+    return this.request<{
+      message: string;
+      transaction: {
+        id: string;
+        supplierId: string;
+        type: string;
+        amount: number;
+        description: string | null;
+        createdAt: string;
+      };
+      balance: number;
+    }>(`/api/suppliers/${id}/transactions`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
