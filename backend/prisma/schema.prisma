@@ -1,0 +1,258 @@
+// Prisma Schema para tienda-web
+// PostgreSQL Database
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// 1. USUARIOS Y AUTENTICACIÓN
+// ============================================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String // Hasheado con bcrypt
+  name      String
+  role      String   @default("owner") // owner, admin, cashier
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stores Store[]
+  
+  @@map("users")
+}
+
+model Store {
+  id          String   @id @default(uuid())
+  name        String
+  address     String?
+  phone       String?
+  email       String?
+  logo        String? // URL de la imagen
+  currency    String   @default("DOP") // DOP, USD, EUR
+  userId      String // Owner
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products               Product[]
+  sales                  Sale[]
+  customers              Customer[]
+  suppliers              Supplier[]
+  inventoryMovements     InventoryMovement[]
+  
+  @@map("stores")
+}
+
+// ============================================
+// 2. PRODUCTOS
+// ============================================
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  sku         String?
+  barcode     String?
+  category    String
+  price       Float
+  cost        Float    @default(0)
+  stock       Int      @default(0)
+  minStock    Int      @default(10)
+  image       String? // URL de la imagen
+  storeId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  store              Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  saleItems          SaleItem[]
+  inventoryMovements InventoryMovement[]
+
+  @@unique([sku, storeId])
+  @@unique([barcode, storeId])
+  @@index([storeId])
+  @@index([category])
+  @@map("products")
+}
+
+// ============================================
+// 3. VENTAS
+// ============================================
+
+model Sale {
+  id            String   @id @default(uuid())
+  total         Float
+  subtotal      Float
+  tax           Float    @default(0)
+  discount      Float    @default(0)
+  paymentMethod String // cash, card, transfer, credit
+  currency      String   @default("DOP")
+  customerId    String? // Opcional, null si es venta genérica
+  storeId       String
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  store    Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items    SaleItem[]
+
+  @@index([storeId])
+  @@index([customerId])
+  @@index([createdAt])
+  @@index([paymentMethod])
+  @@map("sales")
+}
+
+model SaleItem {
+  id        String   @id @default(uuid())
+  saleId    String
+  productId String
+  quantity  Int
+  price     Float // Precio al momento de la venta
+  cost      Float    @default(0) // Costo al momento de la venta
+  discount  Float    @default(0)
+  subtotal  Float // quantity * price - discount
+  createdAt DateTime @default(now())
+
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([saleId])
+  @@index([productId])
+  @@map("sale_items")
+}
+
+// ============================================
+// 4. CLIENTES
+// ============================================
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  taxId     String? // RNC/Cédula
+  balance   Float    @default(0) // Saldo pendiente
+  storeId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store        Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sales        Sale[]
+  transactions CustomerTransaction[]
+
+  @@index([storeId])
+  @@map("customers")
+}
+
+model CustomerTransaction {
+  id         String   @id @default(uuid())
+  customerId String
+  type       String // charge (venta a crédito), payment (abono)
+  amount     Float
+  balance    Float // Balance después de la transacción
+  saleId     String? // Si es un cargo por venta
+  dueDate    DateTime? // Para ventas a crédito
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([dueDate])
+  @@map("customer_transactions")
+}
+
+// ============================================
+// 5. PROVEEDORES
+// ============================================
+
+model Supplier {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  taxId     String? // RNC
+  balance   Float    @default(0) // Saldo pendiente
+  storeId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store        Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  transactions SupplierTransaction[]
+
+  @@index([storeId])
+  @@map("suppliers")
+}
+
+model SupplierTransaction {
+  id         String   @id @default(uuid())
+  supplierId String
+  type       String // charge (compra a crédito), payment (pago)
+  amount     Float
+  balance    Float // Balance después de la transacción
+  dueDate    DateTime? // Para compras a crédito
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([dueDate])
+  @@map("supplier_transactions")
+}
+
+// ============================================
+// 6. INVENTARIO
+// ============================================
+
+model InventoryMovement {
+  id        String   @id @default(uuid())
+  productId String
+  type      String // entry (entrada), exit (salida), adjustment (ajuste)
+  quantity  Int // Positivo para entradas, negativo para salidas
+  reason    String? // sale, purchase, adjustment, return, damage
+  notes     String?
+  storeId   String
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  store   Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([storeId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("inventory_movements")
+}
+
+// ============================================
+// 7. TASAS DE CAMBIO (Multi-moneda)
+// ============================================
+
+model ExchangeRate {
+  id           String   @id @default(uuid())
+  fromCurrency String // DOP, USD, EUR
+  toCurrency   String
+  rate         Float
+  source       String   @default("manual") // manual, api
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([fromCurrency, toCurrency])
+  @@index([fromCurrency])
+  @@map("exchange_rates")
+}
