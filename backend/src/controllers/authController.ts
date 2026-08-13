@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/prisma';
 import { hashPassword, comparePassword } from '../utils/bcrypt';
 import {
   generateAccessToken,
@@ -7,8 +7,6 @@ import {
   verifyRefreshToken,
 } from '../utils/jwt';
 import { AuthRequest } from '../middleware/authMiddleware';
-
-const prisma = new PrismaClient();
 
 // POST /api/auth/register
 export async function register(req: Request, res: Response) {
