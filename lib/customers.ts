@@ -1,80 +1,39 @@
 /**
- * Servicio de Clientes - CRUD y operaciones de negocio
+ * Servicio de Clientes - Migrado a PostgreSQL
  */
 
-import { db } from '@/lib/firebase';
-import {
-  collection,
-  addDoc,
-  getDocs,
-  getDoc,
-  doc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  Timestamp,
-  runTransaction,
-} from 'firebase/firestore';
-import { Customer, CustomerFormData } from '@/types/customer';
-
-const CUSTOMERS_COLLECTION = 'customers';
-const SALES_COLLECTION = 'sales';
+import { apiClient } from '@/lib/api';
+import type { Customer, CustomerFormData } from '@/types/customer';
 
 /**
  * Crear cliente
- * FIX BUG-108: Usa runTransaction para validación atómica
- * FIX BUG-111: Normaliza documento a uppercase para unicidad case-insensitive
  */
 export async function createCustomer(
   storeId: string,
   data: CustomerFormData
 ): Promise<Customer> {
   try {
-    // Normalizar documento a uppercase para unicidad case-insensitive
-    const normalizedDocument = data.document.toUpperCase().trim();
-
-    // Usar transaction para garantizar atomicidad (validación + creación)
-    const newCustomerId = await runTransaction(db, async (transaction) => {
-      // Validar unicidad DENTRO de la transaction
-      const existingQuery = query(
-        collection(db, CUSTOMERS_COLLECTION),
-        where('storeId', '==', storeId),
-        where('document', '==', normalizedDocument)
-      );
-
-      const existing = await getDocs(existingQuery);
-
-      if (!existing.empty) {
-        throw new Error(
-          `Ya existe un cliente con documento ${normalizedDocument}`
-        );
-      }
-
-      // Crear documento dentro de la transaction
-      const customerData = {
-        storeId,
-        ...data,
-        document: normalizedDocument, // Guardar normalizado
-        balance: 0, // Balance inicial siempre 0
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      };
-
-      const newDocRef = doc(collection(db, CUSTOMERS_COLLECTION));
-      transaction.set(newDocRef, customerData);
-
-      return newDocRef.id;
+    const response = await apiClient.createCustomer({
+      storeId,
+      name: data.name,
+      email: data.email || undefined,
+      phone: data.phone || undefined,
+      taxId: data.document || undefined, // document → taxId
+      address: data.address || undefined,
     });
 
-    // Obtener el cliente recién creado
-    const createdCustomer = await getCustomerById(newCustomerId);
-    if (!createdCustomer) {
-      throw new Error('Error al obtener cliente creado');
-    }
-
-    return createdCustomer;
+    return {
+      id: response.customer.id,
+      storeId: response.customer.storeId,
+      name: response.customer.name,
+      email: response.customer.email || '',
+      phone: response.customer.phone || '',
+      document: response.customer.taxId || '', // taxId → document
+      address: response.customer.address || '',
+      balance: response.customer.balance,
+      createdAt: new Date(response.customer.createdAt),
+      updatedAt: new Date(response.customer.updatedAt),
+    };
   } catch (error: any) {
     console.error('Error creando cliente:', error);
     throw new Error(error.message || 'Error al crear cliente');
@@ -86,53 +45,48 @@ export async function createCustomer(
  */
 export async function getCustomers(storeId: string): Promise<Customer[]> {
   try {
-    const q = query(
-      collection(db, CUSTOMERS_COLLECTION),
-      where('storeId', '==', storeId),
-      orderBy('name', 'asc')
-    );
+    const response = await apiClient.getCustomers({ storeId, limit: 1000 });
 
-    const snapshot = await getDocs(q);
-
-    return snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate(),
-        updatedAt: data.updatedAt?.toDate(),
-      } as Customer;
-    });
-  } catch (error) {
+    return response.customers.map((customer) => ({
+      id: customer.id,
+      storeId: customer.storeId,
+      name: customer.name,
+      email: customer.email || '',
+      phone: customer.phone || '',
+      document: customer.taxId || '', // taxId → document
+      address: customer.address || '',
+      balance: customer.balance,
+      createdAt: new Date(customer.createdAt),
+      updatedAt: new Date(customer.updatedAt),
+    }));
+  } catch (error: any) {
     console.error('Error obteniendo clientes:', error);
-    throw error;
+    throw new Error('Error al obtener clientes');
   }
 }
 
 /**
  * Obtener cliente por ID
  */
-export async function getCustomerById(
-  customerId: string
-): Promise<Customer | null> {
+export async function getCustomerById(id: string): Promise<Customer | null> {
   try {
-    const docRef = doc(db, CUSTOMERS_COLLECTION, customerId);
-    const docSnap = await getDoc(docRef);
+    const response = await apiClient.getCustomer(id);
 
-    if (!docSnap.exists()) {
-      return null;
-    }
-
-    const data = docSnap.data();
     return {
-      id: docSnap.id,
-      ...data,
-      createdAt: data.createdAt?.toDate(),
-      updatedAt: data.updatedAt?.toDate(),
-    } as Customer;
-  } catch (error) {
+      id: response.customer.id,
+      storeId: response.customer.storeId,
+      name: response.customer.name,
+      email: response.customer.email || '',
+      phone: response.customer.phone || '',
+      document: response.customer.taxId || '', // taxId → document
+      address: response.customer.address || '',
+      balance: response.customer.balance,
+      createdAt: new Date(response.customer.createdAt),
+      updatedAt: new Date(response.customer.updatedAt),
+    };
+  } catch (error: any) {
     console.error('Error obteniendo cliente:', error);
-    throw error;
+    return null;
   }
 }
 
@@ -140,137 +94,45 @@ export async function getCustomerById(
  * Actualizar cliente
  */
 export async function updateCustomer(
-  customerId: string,
+  id: string,
   data: Partial<CustomerFormData>
 ): Promise<void> {
   try {
-    const docRef = doc(db, CUSTOMERS_COLLECTION, customerId);
-    await updateDoc(docRef, {
-      ...data,
-      updatedAt: Timestamp.now(),
+    await apiClient.updateCustomer(id, {
+      name: data.name,
+      email: data.email || undefined,
+      phone: data.phone || undefined,
+      taxId: data.document || undefined, // document → taxId
+      address: data.address || undefined,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error actualizando cliente:', error);
-    throw error;
+    throw new Error(error.message || 'Error al actualizar cliente');
   }
 }
 
 /**
  * Eliminar cliente
  */
-export async function deleteCustomer(customerId: string): Promise<void> {
+export async function deleteCustomer(id: string): Promise<void> {
   try {
-    await deleteDoc(doc(db, CUSTOMERS_COLLECTION, customerId));
-  } catch (error) {
+    await apiClient.deleteCustomer(id);
+  } catch (error: any) {
     console.error('Error eliminando cliente:', error);
-    throw error;
+    throw new Error(error.message || 'Error al eliminar cliente');
   }
 }
 
 /**
- * Buscar clientes por término (nombre, documento, teléfono, email)
- */
-export async function searchCustomers(
-  storeId: string,
-  searchTerm: string
-): Promise<Customer[]> {
-  const customers = await getCustomers(storeId);
-
-  if (!searchTerm.trim()) {
-    return customers;
-  }
-
-  const term = searchTerm.toLowerCase().trim();
-  return customers.filter(
-    (customer) =>
-      customer.name.toLowerCase().includes(term) ||
-      customer.document.toLowerCase().includes(term) ||
-      customer.phone?.toLowerCase().includes(term) ||
-      customer.email?.toLowerCase().includes(term)
-  );
-}
-
-/**
- * Obtener historial de compras del cliente
- */
-export async function getCustomerSalesHistory(
-  storeId: string,
-  customerId: string
-): Promise<any[]> {
-  try {
-    const salesQuery = query(
-      collection(db, SALES_COLLECTION),
-      where('storeId', '==', storeId),
-      where('customerId', '==', customerId),
-      orderBy('createdAt', 'desc')
-    );
-
-    const snapshot = await getDocs(salesQuery);
-
-    return snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate(),
-      };
-    });
-  } catch (error) {
-    console.error('Error obteniendo historial del cliente:', error);
-    throw error;
-  }
-}
-
-/**
- * Actualizar balance del cliente con cambio relativo
- * FIX BUG-109: Usa runTransaction para prevenir race conditions
- * @param customerId - ID del cliente
- * @param amountChange - Cambio relativo (positivo para cargo, negativo para abono)
- * @returns Nuevo balance después del cambio
+ * Actualizar balance del cliente (legacy - ya no se usa directamente)
+ * El balance se actualiza automáticamente a través de transacciones
  */
 export async function updateCustomerBalance(
   customerId: string,
-  amountChange: number
-): Promise<number> {
-  try {
-    const newBalance = await runTransaction(db, async (transaction) => {
-      const customerRef = doc(db, CUSTOMERS_COLLECTION, customerId);
-      const customerDoc = await transaction.get(customerRef);
-
-      if (!customerDoc.exists()) {
-        throw new Error('Cliente no encontrado');
-      }
-
-      const currentBalance = customerDoc.data().balance || 0;
-      const calculatedBalance = currentBalance + amountChange;
-
-      if (calculatedBalance < 0) {
-        throw new Error(
-          `El balance no puede ser negativo. Balance actual: ${currentBalance}, cambio: ${amountChange}`
-        );
-      }
-
-      transaction.update(customerRef, {
-        balance: calculatedBalance,
-        updatedAt: Timestamp.now(),
-      });
-
-      return calculatedBalance;
-    });
-
-    return newBalance;
-  } catch (error: any) {
-    console.error('Error actualizando balance del cliente:', error);
-    throw new Error(error.message || 'Error al actualizar balance');
-  }
-}
-
-/**
- * Obtener clientes con balance pendiente
- */
-export async function getCustomersWithBalance(
-  storeId: string
-): Promise<Customer[]> {
-  const customers = await getCustomers(storeId);
-  return customers.filter((c) => c.balance > 0);
+  amount: number
+): Promise<void> {
+  // No-op: El balance se calcula automáticamente en el backend
+  console.warn(
+    'updateCustomerBalance es legacy - usar transacciones en su lugar'
+  );
 }
