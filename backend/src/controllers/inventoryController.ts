@@ -159,6 +159,10 @@ export const createAdjustment = async (req: Request, res: Response) => {
 
     // Crear ajuste y actualizar stock en una transacción
     const result = await prisma.$transaction(async (tx) => {
+      // Calcular stock antes y después
+      const stockBefore = product.stock;
+      const stockAfter = newStock;
+      
       // Actualizar stock
       const updatedProduct = await tx.product.update({
         where: { id: productId },
@@ -167,13 +171,27 @@ export const createAdjustment = async (req: Request, res: Response) => {
         },
       });
 
+      // Obtener información del usuario
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { name: true },
+      });
+
       // Crear movimiento
       const movement = await tx.inventoryMovement.create({
         data: {
           productId,
+          productName: product.name,
+          productCode: product.sku || product.barcode || productId.slice(0, 8),
           storeId,
           type,
           quantity: quantityNum,
+          stockBefore,
+          stockAfter,
+          unitCost: product.cost || 0,
+          totalCost: (product.cost || 0) * Math.abs(quantityNum),
+          userId,
+          userName: user?.name || 'Usuario desconocido',
           reason: reason || null,
           notes: notes || null,
         },

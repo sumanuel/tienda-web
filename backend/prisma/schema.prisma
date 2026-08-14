@@ -49,6 +49,9 @@ model Product {
   barcode            String?
   category           String
   price              Float
+  priceVES           Float               @default(0)
+  priceUSD           Float               @default(0)
+  priceEUR           Float               @default(0)
   cost               Float               @default(0)
   stock              Int                 @default(0)
   minStock           Int                 @default(10)
@@ -68,26 +71,34 @@ model Product {
 }
 
 model Sale {
-  id            String     @id @default(uuid())
-  total         Float
-  subtotal      Float
-  tax           Float      @default(0)
-  discount      Float      @default(0)
-  paymentMethod String
-  currency      String     @default("DOP")
-  customerId    String?
-  storeId       String
-  notes         String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  items         SaleItem[]
-  customer      Customer?  @relation(fields: [customerId], references: [id])
-  store         Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  id             String     @id @default(uuid())
+  saleNumber     String?    @unique
+  total          Float
+  subtotal       Float
+  tax            Float      @default(0)
+  discount       Float      @default(0)
+  paymentMethod  String
+  paymentStatus  String     @default("paid")
+  amountReceived Float?
+  change         Float?
+  currency       String     @default("DOP")
+  customerId     String?
+  cashierId      String?
+  cashierName    String?
+  storeId        String
+  notes          String?
+  cancelledAt    DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  items          SaleItem[]
+  customer       Customer?  @relation(fields: [customerId], references: [id])
+  store          Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@index([storeId])
   @@index([customerId])
   @@index([createdAt])
   @@index([paymentMethod])
+  @@index([saleNumber])
   @@map("sales")
 }
 
@@ -184,16 +195,24 @@ model SupplierTransaction {
 }
 
 model InventoryMovement {
-  id        String   @id @default(uuid())
-  productId String
-  type      String
-  quantity  Int
-  reason    String?
-  notes     String?
-  storeId   String
-  createdAt DateTime @default(now())
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  id          String   @id @default(uuid())
+  productId   String
+  productName String?
+  productCode String?
+  type        String
+  quantity    Int
+  stockBefore Int?
+  stockAfter  Int?
+  unitCost    Float    @default(0)
+  totalCost   Float    @default(0)
+  userId      String?
+  userName    String?
+  reason      String?
+  notes       String?
+  storeId     String
+  createdAt   DateTime @default(now())
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@index([productId])
   @@index([storeId])

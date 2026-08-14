@@ -51,6 +51,9 @@ export async function listProducts(req: AuthRequest, res: Response) {
         barcode: true,
         category: true,
         price: true,
+        priceVES: true,
+        priceUSD: true,
+        priceEUR: true,
         cost: true,
         stock: true,
         storeId: true,
@@ -90,6 +93,9 @@ export async function getProduct(req: AuthRequest, res: Response) {
         barcode: true,
         category: true,
         price: true,
+        priceVES: true,
+        priceUSD: true,
+        priceEUR: true,
         cost: true,
         stock: true,
         storeId: true,
@@ -116,7 +122,7 @@ export async function createProduct(req: AuthRequest, res: Response) {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
-    const { name, sku, barcode, category, price, cost, stock, storeId } =
+    const { name, sku, barcode, category, price, priceVES, priceUSD, priceEUR, cost, stock, storeId } =
       req.body;
 
     // Validaciones
@@ -199,6 +205,9 @@ export async function createProduct(req: AuthRequest, res: Response) {
         barcode: barcode ? barcode.trim() : null,
         category: category || 'General',
         price: parseFloat(price),
+        priceVES: priceVES !== undefined ? parseFloat(priceVES) : 0,
+        priceUSD: priceUSD !== undefined ? parseFloat(priceUSD) : 0,
+        priceEUR: priceEUR !== undefined ? parseFloat(priceEUR) : 0,
         cost: cost !== undefined ? parseFloat(cost) : 0,
         stock: stock !== undefined ? parseInt(stock) : 0,
         storeId,
@@ -210,6 +219,9 @@ export async function createProduct(req: AuthRequest, res: Response) {
         barcode: true,
         category: true,
         price: true,
+        priceVES: true,
+        priceUSD: true,
+        priceEUR: true,
         cost: true,
         stock: true,
         storeId: true,
@@ -233,7 +245,7 @@ export async function updateProduct(req: AuthRequest, res: Response) {
     }
 
     const { id } = req.params;
-    const { name, sku, barcode, category, price, cost, stock } = req.body;
+    const { name, sku, barcode, category, price, priceVES, priceUSD, priceEUR, cost, stock } = req.body;
 
     // Verificar que el producto existe y pertenece al usuario
     const existingProduct = await prisma.product.findFirst({
@@ -322,6 +334,9 @@ export async function updateProduct(req: AuthRequest, res: Response) {
         }),
         ...(category !== undefined && { category }),
         ...(price !== undefined && { price: parseFloat(price) }),
+        ...(priceVES !== undefined && { priceVES: parseFloat(priceVES) }),
+        ...(priceUSD !== undefined && { priceUSD: parseFloat(priceUSD) }),
+        ...(priceEUR !== undefined && { priceEUR: parseFloat(priceEUR) }),
         ...(cost !== undefined && { cost: parseFloat(cost) }),
         ...(stock !== undefined && { stock: parseInt(stock) }),
       },
@@ -332,6 +347,9 @@ export async function updateProduct(req: AuthRequest, res: Response) {
         barcode: true,
         category: true,
         price: true,
+        priceVES: true,
+        priceUSD: true,
+        priceEUR: true,
         cost: true,
         stock: true,
         storeId: true,

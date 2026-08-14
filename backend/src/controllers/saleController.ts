@@ -2,6 +2,29 @@ import { Response } from 'express';
 import { prisma } from '../config/prisma';
 import { AuthRequest } from '../types/auth';
 
+// Función auxiliar para generar número de venta único
+async function generateSaleNumber(storeId: string): Promise<string> {
+  const today = new Date();
+  const prefix = `VT-${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+  
+  // Buscar la última venta del día para este store
+  const lastSale = await prisma.sale.findFirst({
+    where: {
+      storeId,
+      saleNumber: { startsWith: prefix },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  let sequence = 1;
+  if (lastSale && lastSale.saleNumber) {
+    const lastSequence = parseInt(lastSale.saleNumber.split('-')[3] || '0');
+    sequence = lastSequence + 1;
+  }
+
+  return `${prefix}-${String(sequence).padStart(4, '0')}`;
+}
+
 // GET /api/sales
 export async function listSales(req: AuthRequest, res: Response) {
   try {
@@ -139,7 +162,7 @@ export async function createSale(req: AuthRequest, res: Response) {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
-    const { storeId, items, paymentMethod, customerId } = req.body;
+    const { storeId, items, paymentMethod, customerId, cashierId, cashierName, amountReceived, change, notes } = req.body;
 
     // Validaciones
     if (!storeId) {
@@ -231,16 +254,26 @@ export async function createSale(req: AuthRequest, res: Response) {
 
     // Crear venta y actualizar stock en una transacción
     const sale = await prisma.$transaction(async (tx) => {
+      // Generar número de venta
+      const saleNumber = await generateSaleNumber(storeId);
+      
       // Crear venta
       const newSale = await tx.sale.create({
         data: {
           storeId,
+          saleNumber,
           subtotal: total,
           tax: 0,
           discount: 0,
           total,
           paymentMethod,
+          paymentStatus: 'paid',
           customerId: customerId || null,
+          cashierId: cashierId || null,
+          cashierName: cashierName || null,
+          amountReceived: amountReceived !== undefined ? parseFloat(amountReceived) : null,
+          change: change !== undefined ? parseFloat(change) : null,
+          notes: notes || null,
           items: {
             create: items.map((item: any) => {
               const product = products.find((p) => p.id === item.productId)!;
@@ -287,6 +320,10 @@ export async function createSale(req: AuthRequest, res: Response) {
 
       // Actualizar stock de productos
       for (const item of items) {
+        const product = products.find((p) => p.id === item.productId)!;
+        const stockBefore = product.stock;
+        const stockAfter = product.stock - item.quantity;
+        
         await tx.product.update({
           where: { id: item.productId },
           data: {
@@ -300,10 +337,18 @@ export async function createSale(req: AuthRequest, res: Response) {
         await tx.inventoryMovement.create({
           data: {
             productId: item.productId,
+            productName: product.name,
+            productCode: product.sku || product.barcode || product.id.slice(0, 8),
             storeId: storeId,
             type: 'sale',
             quantity: -item.quantity,
-            notes: `Venta #${newSale.id}`,
+            stockBefore,
+            stockAfter,
+            unitCost: product.cost || 0,
+            totalCost: (product.cost || 0) * item.quantity,
+            userId: req.user!.userId,
+            userName: req.user!.name || 'Cajero',
+            notes: `Venta ${saleNumber}`,
           },
         });
       }
@@ -348,6 +393,24 @@ export async function cancelSale(req: AuthRequest, res: Response) {
     await prisma.$transaction(async (tx) => {
       // Restaurar stock de productos
       for (const item of existingSale.items) {
+        // Obtener información del producto
+        const product = await tx.product.findUnique({
+          where: { id: item.productId },
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+            barcode: true,
+            stock: true,
+            cost: true,
+          },
+        });
+
+        if (!product) continue;
+
+        const stockBefore = product.stock;
+        const stockAfter = product.stock + item.quantity;
+
         await tx.product.update({
           where: { id: item.productId },
           data: {
@@ -361,22 +424,28 @@ export async function cancelSale(req: AuthRequest, res: Response) {
         await tx.inventoryMovement.create({
           data: {
             productId: item.productId,
+            productName: product.name,
+            productCode: product.sku || product.barcode || product.id.slice(0, 8),
             storeId: existingSale.storeId,
             type: 'adjustment',
             quantity: item.quantity,
-            notes: `Cancelación de venta #${id}`,
+            stockBefore,
+            stockAfter,
+            unitCost: product.cost || 0,
+            totalCost: (product.cost || 0) * item.quantity,
+            userId: req.user!.userId,
+            userName: req.user!.name || 'Usuario',
+            notes: `Cancelación de venta ${existingSale.saleNumber || id}`,
           },
         });
       }
 
-      // Eliminar items de venta
-      await tx.saleItem.deleteMany({
-        where: { saleId: id },
-      });
-
-      // Eliminar venta
-      await tx.sale.delete({
+      // Marcar venta como cancelada en lugar de eliminarla
+      await tx.sale.update({
         where: { id },
+        data: {
+          cancelledAt: new Date(),
+        },
       });
     });
 
