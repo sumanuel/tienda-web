@@ -139,18 +139,41 @@ export async function getSupplierAccountStatus(supplierId: string) {
 
 /**
  * Obtener cuentas por pagar próximas
- * Nota: Esta funcionalidad requiere un endpoint backend específico
  */
 export async function getUpcomingPayables(storeId: string) {
   try {
-    console.warn(
-      'getUpcomingPayables requiere endpoint backend - retornando vacío'
-    );
+    const response = await apiClient.request<{
+      payables: Array<{
+        supplier: {
+          id: string;
+          name: string;
+          email?: string;
+          phone?: string;
+        };
+        totalAmount: number;
+        earliestDueDate: string;
+        transactions: any[];
+      }>;
+      total: number;
+      count: number;
+      daysAhead: number;
+    }>(`/suppliers/upcoming-payables/list?storeId=${storeId}&days=7`);
 
-    // TODO: Implementar endpoint en backend para obtener pagos próximos
+    const payables = response.payables.map((item) => ({
+      id: item.supplier.id,
+      storeId,
+      name: item.supplier.name,
+      email: item.supplier.email,
+      phone: item.supplier.phone,
+      balance: -item.totalAmount, // Negativo porque es lo que debemos
+      dueDate: item.earliestDueDate,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
+
     return {
-      payables: [],
-      totalUpcoming: 0,
+      payables,
+      totalUpcoming: response.total,
     };
   } catch (error: any) {
     console.error('Error obteniendo pagos próximos:', error);

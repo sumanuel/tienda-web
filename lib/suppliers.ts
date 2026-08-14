@@ -139,19 +139,36 @@ export async function updateSupplierBalance(
 
 /**
  * Obtener productos asociados a un proveedor
- * Nota: Esta funcionalidad requiere un endpoint backend específico
- * Por ahora retorna array vacío hasta que se implemente
  */
 export async function getSupplierProducts(storeId: string, supplierId: string) {
   try {
-    console.warn(
-      'getSupplierProducts requiere endpoint backend - retornando vacío'
-    );
+    const response = await apiClient.request<{
+      products: any[];
+      supplierId: string;
+      note?: string;
+    }>(`/suppliers/${supplierId}/products`);
 
-    // TODO: Implementar endpoint en backend para obtener productos por proveedor
+    const products = response.products.map((product) => ({
+      id: product.id,
+      storeId: product.storeId || storeId,
+      code: product.sku || '',
+      barcode: product.barcode,
+      name: product.name,
+      category: product.category,
+      cost: product.cost,
+      prices: {
+        VES: product.priceVES || 0,
+        USD: product.priceUSD || product.price || 0,
+      },
+      stock: product.stock,
+      minStock: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
+
     return {
-      products: [],
-      totalProducts: 0,
+      products,
+      totalProducts: products.length,
     };
   } catch (error: any) {
     console.error('Error obteniendo productos del proveedor:', error);

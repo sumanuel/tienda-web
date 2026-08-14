@@ -14,13 +14,40 @@ const productSchema = z.object({
   name: z.string().min(1, 'Nombre es requerido'),
   description: z.string().optional(),
   category: z.string().min(1, 'Categoría es requerida'),
-  priceVES: z.number().min(0, 'Precio debe ser mayor o igual a 0').optional(),
-  priceUSD: z.number().min(0, 'Precio debe ser mayor o igual a 0').optional(),
-  priceEUR: z.number().min(0, 'Precio debe ser mayor o igual a 0').optional(),
-  cost: z.number().min(0, 'Costo debe ser mayor o igual a 0'),
+  priceVES: z
+    .number()
+    .min(0, 'Precio debe ser mayor o igual a 0')
+    .or(z.nan())
+    .transform((val) => (isNaN(val) ? undefined : val))
+    .optional(),
+  priceUSD: z
+    .number()
+    .min(0, 'Precio debe ser mayor o igual a 0')
+    .or(z.nan())
+    .transform((val) => (isNaN(val) ? undefined : val))
+    .optional(),
+  priceEUR: z
+    .number()
+    .min(0, 'Precio debe ser mayor o igual a 0')
+    .or(z.nan())
+    .transform((val) => (isNaN(val) ? undefined : val))
+    .optional(),
+  cost: z
+    .number()
+    .min(0, 'Costo debe ser mayor o igual a 0')
+    .or(z.nan())
+    .transform((val) => (isNaN(val) ? 0 : val)),
   costCurrency: z.enum(['VES', 'USD', 'EUR']),
-  stock: z.number().min(0, 'Stock debe ser mayor o igual a 0'),
-  stockMin: z.number().min(0, 'Stock mínimo debe ser mayor o igual a 0'),
+  stock: z
+    .number()
+    .min(0, 'Stock debe ser mayor o igual a 0')
+    .or(z.nan())
+    .transform((val) => (isNaN(val) ? 0 : val)),
+  stockMin: z
+    .number()
+    .min(0, 'Stock mínimo debe ser mayor o igual a 0')
+    .or(z.nan())
+    .transform((val) => (isNaN(val) ? 0 : val)),
   trackInventory: z.boolean(),
 });
 
@@ -220,6 +247,11 @@ export default function ProductForm({
               step="0.01"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
             />
+            {errors.priceUSD && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.priceUSD.message}
+              </p>
+            )}
           </div>
         </div>
       </div>

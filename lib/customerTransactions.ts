@@ -141,18 +141,41 @@ export async function getCustomerAccountStatus(customerId: string) {
 
 /**
  * Obtener clientes con cuentas vencidas
- * Nota: Esta funcionalidad requiere un endpoint backend específico
  */
 export async function getOverdueCustomers(storeId: string) {
   try {
-    console.warn(
-      'getOverdueCustomers requiere endpoint backend - retornando vacío'
-    );
+    const response = await apiClient.request<{
+      customers: Array<{
+        customer: {
+          id: string;
+          name: string;
+          email?: string;
+          phone?: string;
+        };
+        totalOverdue: number;
+        daysOverdue: number;
+        oldestDueDate: string;
+        transactions: any[];
+      }>;
+      total: number;
+      count: number;
+    }>(`/customers/overdue/list?storeId=${storeId}`);
 
-    // TODO: Implementar endpoint en backend para obtener clientes con cuentas vencidas
+    const customers = response.customers.map((item) => ({
+      id: item.customer.id,
+      storeId,
+      name: item.customer.name,
+      email: item.customer.email,
+      phone: item.customer.phone,
+      balance: item.totalOverdue,
+      daysOverdue: item.daysOverdue,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
+
     return {
-      customers: [],
-      totalOverdue: 0,
+      customers,
+      totalOverdue: response.total,
     };
   } catch (error: any) {
     console.error('Error obteniendo clientes vencidos:', error);

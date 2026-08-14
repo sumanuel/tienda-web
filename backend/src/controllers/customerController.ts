@@ -466,3 +466,117 @@ export const createCustomerTransaction = async (
     res.status(500).json({ error: 'Error al crear transacción' });
   }
 };
+
+/**
+ * Obtener clientes con saldo vencido
+ * GET /api/customers/overdue
+ */
+export const getOverdueCustomers = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const { storeId } = req.query;
+
+    if (!storeId) {
+      return res.status(400).json({ error: 'storeId es requerido' });
+    }
+
+    // Verificar acceso a la tienda
+    const store = await prisma.store.findFirst({
+      where: {
+        id: storeId as string,
+        userId,
+      },
+    });
+
+    if (!store) {
+      return res.status(404).json({ error: 'Tienda no encontrada' });
+    }
+
+    const today = new Date();
+
+    // Obtener transacciones vencidas (con dueDate pasado)
+    const overdueTransactions = await prisma.customerTransaction.findMany({
+      where: {
+        customer: {
+          storeId: storeId as string,
+        },
+        dueDate: {
+          lt: today,
+        },
+        amount: {
+          gt: 0, // Solo créditos, no pagos
+        },
+      },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        dueDate: 'asc',
+      },
+    });
+
+    // Agrupar por cliente y calcular totales
+    const overdueByCustomer = overdueTransactions.reduce(
+      (acc, transaction) => {
+        const customerId = transaction.customerId;
+        if (!acc[customerId]) {
+          acc[customerId] = {
+            customer: transaction.customer,
+            totalOverdue: 0,
+            transactions: [],
+            oldestDueDate: transaction.dueDate,
+            daysOverdue: 0,
+          };
+        }
+        acc[customerId].totalOverdue += transaction.amount;
+        acc[customerId].transactions.push({
+          id: transaction.id,
+          amount: transaction.amount,
+          dueDate: transaction.dueDate,
+          notes: transaction.notes,
+          createdAt: transaction.createdAt,
+        });
+
+        // Calcular días vencidos de la transacción más antigua
+        if (
+          transaction.dueDate &&
+          (!acc[customerId].oldestDueDate ||
+            transaction.dueDate < acc[customerId].oldestDueDate)
+        ) {
+          acc[customerId].oldestDueDate = transaction.dueDate;
+          const diffTime =
+            today.getTime() - new Date(transaction.dueDate).getTime();
+          acc[customerId].daysOverdue = Math.floor(
+            diffTime / (1000 * 60 * 60 * 24)
+          );
+        }
+
+        return acc;
+      },
+      {} as Record<string, any>
+    );
+
+    const overdueCustomers = Object.values(overdueByCustomer);
+
+    res.json({
+      customers: overdueCustomers,
+      total: overdueCustomers.reduce(
+        (sum: number, c: any) => sum + c.totalOverdue,
+        0
+      ),
+      count: overdueCustomers.length,
+    });
+  } catch (error) {
+    console.error('Get overdue customers error:', error);
+    res
+      .status(500)
+      .json({ error: 'Error al obtener clientes con saldo vencido' });
+  }
+};

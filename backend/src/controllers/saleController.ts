@@ -6,7 +6,7 @@ import { AuthRequest } from '../types/auth';
 async function generateSaleNumber(storeId: string): Promise<string> {
   const today = new Date();
   const prefix = `VT-${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
-  
+
   // Buscar la última venta del día para este store
   const lastSale = await prisma.sale.findFirst({
     where: {
@@ -162,7 +162,17 @@ export async function createSale(req: AuthRequest, res: Response) {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
-    const { storeId, items, paymentMethod, customerId, cashierId, cashierName, amountReceived, change, notes } = req.body;
+    const {
+      storeId,
+      items,
+      paymentMethod,
+      customerId,
+      cashierId,
+      cashierName,
+      amountReceived,
+      change,
+      notes,
+    } = req.body;
 
     // Validaciones
     if (!storeId) {
@@ -256,7 +266,7 @@ export async function createSale(req: AuthRequest, res: Response) {
     const sale = await prisma.$transaction(async (tx) => {
       // Generar número de venta
       const saleNumber = await generateSaleNumber(storeId);
-      
+
       // Crear venta
       const newSale = await tx.sale.create({
         data: {
@@ -271,7 +281,8 @@ export async function createSale(req: AuthRequest, res: Response) {
           customerId: customerId || null,
           cashierId: cashierId || null,
           cashierName: cashierName || null,
-          amountReceived: amountReceived !== undefined ? parseFloat(amountReceived) : null,
+          amountReceived:
+            amountReceived !== undefined ? parseFloat(amountReceived) : null,
           change: change !== undefined ? parseFloat(change) : null,
           notes: notes || null,
           items: {
@@ -323,7 +334,7 @@ export async function createSale(req: AuthRequest, res: Response) {
         const product = products.find((p) => p.id === item.productId)!;
         const stockBefore = product.stock;
         const stockAfter = product.stock - item.quantity;
-        
+
         await tx.product.update({
           where: { id: item.productId },
           data: {
@@ -338,7 +349,8 @@ export async function createSale(req: AuthRequest, res: Response) {
           data: {
             productId: item.productId,
             productName: product.name,
-            productCode: product.sku || product.barcode || product.id.slice(0, 8),
+            productCode:
+              product.sku || product.barcode || product.id.slice(0, 8),
             storeId: storeId,
             type: 'sale',
             quantity: -item.quantity,
@@ -425,7 +437,8 @@ export async function cancelSale(req: AuthRequest, res: Response) {
           data: {
             productId: item.productId,
             productName: product.name,
-            productCode: product.sku || product.barcode || product.id.slice(0, 8),
+            productCode:
+              product.sku || product.barcode || product.id.slice(0, 8),
             storeId: existingSale.storeId,
             type: 'adjustment',
             quantity: item.quantity,

@@ -7,6 +7,7 @@ import {
   deleteCustomer,
   getCustomerTransactions,
   createCustomerTransaction,
+  getOverdueCustomers,
 } from '../controllers/customerController';
 import { authMiddleware } from '../middleware/authMiddleware';
 
@@ -25,5 +26,8 @@ router.delete('/:id', deleteCustomer); // DELETE /api/customers/:id
 // Transacciones de clientes
 router.get('/:id/transactions', getCustomerTransactions); // GET /api/customers/:id/transactions?limit=20
 router.post('/:id/transactions', createCustomerTransaction); // POST /api/customers/:id/transactions
+
+// Clientes con saldo vencido
+router.get('/overdue/list', getOverdueCustomers); // GET /api/customers/overdue/list?storeId=xxx
 
 export default router;

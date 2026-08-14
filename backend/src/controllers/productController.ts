@@ -122,8 +122,19 @@ export async function createProduct(req: AuthRequest, res: Response) {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
-    const { name, sku, barcode, category, price, priceVES, priceUSD, priceEUR, cost, stock, storeId } =
-      req.body;
+    const {
+      name,
+      sku,
+      barcode,
+      category,
+      price,
+      priceVES,
+      priceUSD,
+      priceEUR,
+      cost,
+      stock,
+      storeId,
+    } = req.body;
 
     // Validaciones
     if (!name || name.trim().length === 0) {
@@ -136,13 +147,39 @@ export async function createProduct(req: AuthRequest, res: Response) {
       return res.status(400).json({ error: 'El ID de la tienda es requerido' });
     }
 
-    if (price === undefined || price < 0) {
+    // Validar que al menos un precio esté definido
+    if (
+      priceVES === undefined &&
+      priceUSD === undefined &&
+      priceEUR === undefined
+    ) {
       return res
         .status(400)
-        .json({ error: 'El precio debe ser mayor o igual a 0' });
+        .json({
+          error: 'Debe proporcionar al menos un precio (VES, USD o EUR)',
+        });
     }
 
-    if (cost !== undefined && cost < 0) {
+    // Validar precios si están definidos
+    if (priceVES !== undefined && (isNaN(priceVES) || priceVES < 0)) {
+      return res
+        .status(400)
+        .json({ error: 'El precio VES debe ser mayor o igual a 0' });
+    }
+
+    if (priceUSD !== undefined && (isNaN(priceUSD) || priceUSD < 0)) {
+      return res
+        .status(400)
+        .json({ error: 'El precio USD debe ser mayor o igual a 0' });
+    }
+
+    if (priceEUR !== undefined && (isNaN(priceEUR) || priceEUR < 0)) {
+      return res
+        .status(400)
+        .json({ error: 'El precio EUR debe ser mayor o igual a 0' });
+    }
+
+    if (cost !== undefined && (isNaN(cost) || cost < 0)) {
       return res
         .status(400)
         .json({ error: 'El costo debe ser mayor o igual a 0' });
@@ -204,7 +241,12 @@ export async function createProduct(req: AuthRequest, res: Response) {
         sku: sku ? sku.trim() : null,
         barcode: barcode ? barcode.trim() : null,
         category: category || 'General',
-        price: parseFloat(price),
+        price:
+          price !== undefined
+            ? parseFloat(price)
+            : priceUSD !== undefined
+              ? parseFloat(priceUSD)
+              : 0,
         priceVES: priceVES !== undefined ? parseFloat(priceVES) : 0,
         priceUSD: priceUSD !== undefined ? parseFloat(priceUSD) : 0,
         priceEUR: priceEUR !== undefined ? parseFloat(priceEUR) : 0,
@@ -245,7 +287,18 @@ export async function updateProduct(req: AuthRequest, res: Response) {
     }
 
     const { id } = req.params;
-    const { name, sku, barcode, category, price, priceVES, priceUSD, priceEUR, cost, stock } = req.body;
+    const {
+      name,
+      sku,
+      barcode,
+      category,
+      price,
+      priceVES,
+      priceUSD,
+      priceEUR,
+      cost,
+      stock,
+    } = req.body;
 
     // Verificar que el producto existe y pertenece al usuario
     const existingProduct = await prisma.product.findFirst({

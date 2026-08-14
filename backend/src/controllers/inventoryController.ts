@@ -162,7 +162,7 @@ export const createAdjustment = async (req: Request, res: Response) => {
       // Calcular stock antes y después
       const stockBefore = product.stock;
       const stockAfter = newStock;
-      
+
       // Actualizar stock
       const updatedProduct = await tx.product.update({
         where: { id: productId },
