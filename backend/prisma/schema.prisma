@@ -8,14 +8,15 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      String   @default("owner")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  stores    Store[]
+  id                   String         @id @default(uuid())
+  email                String         @unique
+  password             String
+  name                 String
+  role                 String         @default("owner")
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  stores               Store[]
+  exchangeRatesCreated ExchangeRate[]
 
   @@map("users")
 }
@@ -37,6 +38,7 @@ model Store {
   sales              Sale[]
   user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   suppliers          Supplier[]
+  exchangeRates      ExchangeRate[]
 
   @@map("stores")
 }
@@ -53,6 +55,10 @@ model Product {
   priceUSD           Float               @default(0)
   priceEUR           Float               @default(0)
   cost               Float               @default(0)
+  costCurrency       String?             @default("USD")
+  additionalCost     Float?              @default(0)
+  margin             Float?              @default(30)
+  iva                Float?              @default(0)
   stock              Int                 @default(0)
   minStock           Int                 @default(10)
   image              String?
@@ -67,6 +73,7 @@ model Product {
   @@unique([barcode, storeId])
   @@index([storeId])
   @@index([category])
+  @@index([margin])
   @@map("products")
 }
 
@@ -223,14 +230,19 @@ model InventoryMovement {
 
 model ExchangeRate {
   id           String   @id @default(uuid())
-  fromCurrency String
-  toCurrency   String
+  storeId      String
+  fromCurrency String   @default("USD")
+  toCurrency   String   @default("VES")
   rate         Float
-  source       String   @default("manual")
+  source       String   @default("MANUAL")
+  isActive     Boolean  @default(true)
+  createdBy    String?
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  store        Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  creator      User?    @relation(fields: [createdBy], references: [id], onDelete: SetNull)
 
-  @@unique([fromCurrency, toCurrency])
-  @@index([fromCurrency])
+  @@index([storeId])
+  @@index([storeId, isActive])
+  @@index([createdAt(sort: Desc)])
   @@map("exchange_rates")
 }

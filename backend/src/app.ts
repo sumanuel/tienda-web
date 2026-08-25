@@ -8,6 +8,7 @@ import saleRoutes from './routes/sale.routes';
 import inventoryRoutes from './routes/inventory.routes';
 import customerRoutes from './routes/customer.routes';
 import supplierRoutes from './routes/supplier.routes';
+import exchangeRateRoutes from './routes/exchangeRateRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
@@ -61,6 +62,7 @@ app.use('/api/sales', saleRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/suppliers', supplierRoutes);
+app.use('/api/exchange-rates', exchangeRateRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

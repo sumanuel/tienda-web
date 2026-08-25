@@ -1,6 +1,6 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -39,6 +39,15 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-dark: var(--brand-primary-dark);
+  --color-brand-primary-light: var(--brand-primary-light);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-secondary-light: var(--brand-secondary-light);
+  --color-success: var(--success);
+  --color-error: var(--error);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -81,6 +90,15 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --brand-primary: #2d7a5b;
+  --brand-primary-dark: #1f5540;
+  --brand-primary-light: #e5f7ed;
+  --brand-secondary: #2f5ae0;
+  --brand-secondary-light: #edf3f8;
+  --success: #2e7d32;
+  --error: #c62828;
+  --warning: #f57c00;
+  --info: #2196f3;
 }
 
 .dark {
@@ -115,6 +133,15 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --brand-primary: #2d7a5b;
+  --brand-primary-dark: #1f5540;
+  --brand-primary-light: #e5f7ed;
+  --brand-secondary: #2f5ae0;
+  --brand-secondary-light: #edf3f8;
+  --success: #2e7d32;
+  --error: #c62828;
+  --warning: #f57c00;
+  --info: #2196f3;
 }
 
 @layer base {

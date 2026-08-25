@@ -1,6 +1,10 @@
 import { Response } from 'express';
 import { prisma } from '../config/prisma';
 import { AuthRequest } from '../types/auth';
+import {
+  calculateProductPrices,
+  getActiveExchangeRates,
+} from '../utils/priceCalculator';
 
 // GET /api/products
 export async function listProducts(req: AuthRequest, res: Response) {
@@ -132,6 +136,10 @@ export async function createProduct(req: AuthRequest, res: Response) {
       priceUSD,
       priceEUR,
       cost,
+      costCurrency = 'USD',
+      additionalCost = 0,
+      margin,
+      iva = 0,
       stock,
       storeId,
     } = req.body;
@@ -145,50 +153,6 @@ export async function createProduct(req: AuthRequest, res: Response) {
 
     if (!storeId) {
       return res.status(400).json({ error: 'El ID de la tienda es requerido' });
-    }
-
-    // Validar que al menos un precio esté definido
-    if (
-      priceVES === undefined &&
-      priceUSD === undefined &&
-      priceEUR === undefined
-    ) {
-      return res
-        .status(400)
-        .json({
-          error: 'Debe proporcionar al menos un precio (VES, USD o EUR)',
-        });
-    }
-
-    // Validar precios si están definidos
-    if (priceVES !== undefined && (isNaN(priceVES) || priceVES < 0)) {
-      return res
-        .status(400)
-        .json({ error: 'El precio VES debe ser mayor o igual a 0' });
-    }
-
-    if (priceUSD !== undefined && (isNaN(priceUSD) || priceUSD < 0)) {
-      return res
-        .status(400)
-        .json({ error: 'El precio USD debe ser mayor o igual a 0' });
-    }
-
-    if (priceEUR !== undefined && (isNaN(priceEUR) || priceEUR < 0)) {
-      return res
-        .status(400)
-        .json({ error: 'El precio EUR debe ser mayor o igual a 0' });
-    }
-
-    if (cost !== undefined && (isNaN(cost) || cost < 0)) {
-      return res
-        .status(400)
-        .json({ error: 'El costo debe ser mayor o igual a 0' });
-    }
-
-    if (stock !== undefined && stock < 0) {
-      return res
-        .status(400)
-        .json({ error: 'El stock debe ser mayor o igual a 0' });
     }
 
     // Verificar que la tienda pertenece al usuario
@@ -235,6 +199,75 @@ export async function createProduct(req: AuthRequest, res: Response) {
       }
     }
 
+    let finalPriceVES = 0;
+    let finalPriceUSD = 0;
+    let finalPriceEUR = 0;
+
+    // Si se proporciona margen, calcular precios automáticamente
+    if (margin !== undefined && cost !== undefined) {
+      const exchangeRates = await getActiveExchangeRates(storeId, prisma);
+
+      const calculatedPrices = calculateProductPrices({
+        cost: parseFloat(cost),
+        additionalCost: additionalCost ? parseFloat(additionalCost) : 0,
+        costCurrency: costCurrency as 'VES' | 'USD' | 'EUR',
+        margin: parseFloat(margin),
+        iva: iva ? parseFloat(iva) : 0,
+        exchangeRates,
+      });
+
+      finalPriceVES = calculatedPrices.priceVES;
+      finalPriceUSD = calculatedPrices.priceUSD;
+      finalPriceEUR = calculatedPrices.priceEUR;
+    } else {
+      // Modo manual: validar que al menos un precio esté definido
+      if (
+        priceVES === undefined &&
+        priceUSD === undefined &&
+        priceEUR === undefined
+      ) {
+        return res.status(400).json({
+          error:
+            'Debe proporcionar margen y costo, o al menos un precio (VES, USD, EUR)',
+        });
+      }
+
+      // Validar precios manuales
+      if (priceVES !== undefined && (isNaN(priceVES) || priceVES < 0)) {
+        return res
+          .status(400)
+          .json({ error: 'El precio VES debe ser mayor o igual a 0' });
+      }
+
+      if (priceUSD !== undefined && (isNaN(priceUSD) || priceUSD < 0)) {
+        return res
+          .status(400)
+          .json({ error: 'El precio USD debe ser mayor o igual a 0' });
+      }
+
+      if (priceEUR !== undefined && (isNaN(priceEUR) || priceEUR < 0)) {
+        return res
+          .status(400)
+          .json({ error: 'El precio EUR debe ser mayor o igual a 0' });
+      }
+
+      finalPriceVES = priceVES !== undefined ? parseFloat(priceVES) : 0;
+      finalPriceUSD = priceUSD !== undefined ? parseFloat(priceUSD) : 0;
+      finalPriceEUR = priceEUR !== undefined ? parseFloat(priceEUR) : 0;
+    }
+
+    if (cost !== undefined && (isNaN(cost) || cost < 0)) {
+      return res
+        .status(400)
+        .json({ error: 'El costo debe ser mayor o igual a 0' });
+    }
+
+    if (stock !== undefined && stock < 0) {
+      return res
+        .status(400)
+        .json({ error: 'El stock debe ser mayor o igual a 0' });
+    }
+
     const product = await prisma.product.create({
       data: {
         name: name.trim(),
@@ -244,13 +277,17 @@ export async function createProduct(req: AuthRequest, res: Response) {
         price:
           price !== undefined
             ? parseFloat(price)
-            : priceUSD !== undefined
-              ? parseFloat(priceUSD)
+            : finalPriceUSD !== undefined
+              ? finalPriceUSD
               : 0,
-        priceVES: priceVES !== undefined ? parseFloat(priceVES) : 0,
-        priceUSD: priceUSD !== undefined ? parseFloat(priceUSD) : 0,
-        priceEUR: priceEUR !== undefined ? parseFloat(priceEUR) : 0,
+        priceVES: finalPriceVES,
+        priceUSD: finalPriceUSD,
+        priceEUR: finalPriceEUR,
         cost: cost !== undefined ? parseFloat(cost) : 0,
+        costCurrency: costCurrency || 'USD',
+        additionalCost: additionalCost ? parseFloat(additionalCost) : 0,
+        margin: margin !== undefined ? parseFloat(margin) : null,
+        iva: iva !== undefined ? parseFloat(iva) : 0,
         stock: stock !== undefined ? parseInt(stock) : 0,
         storeId,
       },
@@ -265,6 +302,10 @@ export async function createProduct(req: AuthRequest, res: Response) {
         priceUSD: true,
         priceEUR: true,
         cost: true,
+        costCurrency: true,
+        additionalCost: true,
+        margin: true,
+        iva: true,
         stock: true,
         storeId: true,
         createdAt: true,
