@@ -41,20 +41,30 @@ export function useExchangeRates(storeId: string): UseExchangeRatesReturn {
   const fetchRates = async () => {
     if (!storeId) {
       setLoading(false);
+      setRates([]);
+      setActiveRate(null);
+      setError(null);
       return;
     }
 
     try {
       setLoading(true);
-      const response = await apiClient.get(
-        `/exchange-rates?storeId=${storeId}`
-      );
-      setRates(response.data.rates || []);
-      setActiveRate(response.data.activeRate || null);
+      const response = await apiClient.get<{
+        rates: ExchangeRate[];
+        activeRate: ActiveRate;
+      }>(`/api/exchange-rates?storeId=${storeId}`);
+
+      setRates(response.rates || []);
+      setActiveRate(response.activeRate || null);
       setError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching exchange rates:', err);
-      setError('Error al cargar tasas de cambio');
+      // Si es error 403 (sin acceso) o 401 (no autenticado), mostrar error
+      // Si es 200 con array vacío, NO es error
+      const message = err?.message || 'Error al cargar tasas de cambio';
+      setError(message);
+      setRates([]);
+      setActiveRate(null);
     } finally {
       setLoading(false);
     }
@@ -67,7 +77,7 @@ export function useExchangeRates(storeId: string): UseExchangeRatesReturn {
     source?: string;
   }) => {
     try {
-      await apiClient.post('/exchange-rates', {
+      await apiClient.post('/api/exchange-rates', {
         storeId,
         ...data,
       });

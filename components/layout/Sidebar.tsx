@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Receipt,
   CreditCard,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -38,7 +39,7 @@ const menuItems = [
   },
   { href: '/dashboard/customers', icon: Users, label: 'Clientes' },
   { href: '/dashboard/suppliers', icon: TruckIcon, label: 'Proveedores' },
-  // Finanzas como sección expandible (NUEVO - Fase 5)
+  // Finanzas como sección expandible
   {
     label: 'Finanzas',
     icon: DollarSign,
@@ -46,7 +47,12 @@ const menuItems = [
       { href: '/dashboard/accounts-receivable', label: 'Cuentas x Cobrar' },
       { href: '/dashboard/accounts-payable', label: 'Cuentas x Pagar' },
     ],
-    Finanzas: true, // Expandido por defecto (NUEVO - Fase 5)
+    Finanzas: true,
+  },
+  {
+    href: '/dashboard/exchange-rates',
+    icon: ArrowRightLeft,
+    label: 'Tasas de Cambio',
   },
   { href: '/dashboard/reports', icon: BarChart3, label: 'Reportes' },
   { href: '/dashboard/settings', icon: Settings, label: 'Configuración' },
@@ -69,8 +75,8 @@ export function Sidebar() {
     <div className="flex h-screen w-64 flex-col border-r bg-slate-50">
       {/* Logo */}
       <div className="flex h-16 items-center border-b px-6">
-        <Store className="mr-2 h-6 w-6 text-blue-600" />
-        <span className="text-xl font-bold text-slate-900">TiendaWeb</span>
+        <Store className="text-brand-primary mr-2 h-6 w-6" />
+        <span className="text-brand-primary text-xl font-bold">T-Suma</span>
       </div>
 
       {/* Navigation */}
@@ -141,7 +147,7 @@ export function Sidebar() {
               className={cn(
                 'flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-brand-primary text-white'
                   : 'text-slate-700 hover:bg-slate-200'
               )}
             >

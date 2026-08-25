@@ -21,7 +21,7 @@ export function Header() {
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6">
       <div className="flex items-center">
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+        <h1 className="text-brand-primary text-2xl font-bold">T-Suma</h1>
       </div>
 
       <div className="flex items-center space-x-4">

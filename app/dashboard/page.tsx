@@ -5,11 +5,24 @@ import { useAuth } from '@/hooks/useAuth';
 import { useInventoryStore } from '@/store/inventoryStore';
 import { getStockAlerts } from '@/lib/inventory';
 import StockAlertsCard from '@/components/inventory/StockAlertsCard';
-import { DollarSign, Package, ShoppingCart, Users } from 'lucide-react';
+import { TasaActivaCard } from '@/components/dashboard/TasaActivaCard';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
+import {
+  DollarSign,
+  Package,
+  ShoppingCart,
+  Users,
+  TrendingUp,
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { profile } = useAuth();
   const { alerts, setAlerts } = useInventoryStore();
+  const { activeRate, loading: ratesLoading } = useExchangeRates(
+    profile?.storeId || ''
+  );
   const [loadingAlerts, setLoadingAlerts] = useState(false);
 
   useEffect(() => {
@@ -37,6 +50,19 @@ export default function DashboardPage() {
         </h1>
         <p className="text-slate-600">Resumen de tu negocio</p>
       </div>
+
+      {/* Tasa Activa */}
+      {!ratesLoading && activeRate && activeRate.usdToVes > 0 && (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <TasaActivaCard
+            rate={activeRate.usdToVes}
+            fromCurrency="USD"
+            toCurrency="VES"
+            updatedAt={activeRate.updatedAt}
+            onUpdate={() => router.push('/dashboard/exchange-rates')}
+          />
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

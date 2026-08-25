@@ -69,9 +69,9 @@ export default function ProductFormWithCalculations({
   onSubmit,
   onCancel,
 }: ProductFormWithCalculationsProps) {
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const { activeRate, loading: ratesLoading } = useExchangeRates(
-    user?.activeStoreId || ''
+    profile?.storeId || ''
   );
 
   const [imagePreview, setImagePreview] = useState<string | null>(
@@ -204,13 +204,68 @@ export default function ProductFormWithCalculations({
     );
   }
 
-  if (!activeRate) {
+  if (!activeRate || activeRate.usdToVes === 0) {
     return (
-      <div className="border-warning bg-warning/10 rounded-lg border p-6">
-        <p className="text-warning text-sm">
-          No hay tasas de cambio configuradas. Por favor configura la tasa USD →
-          VES antes de crear productos.
-        </p>
+      <div className="space-y-6 p-6">
+        <div className="border-warning bg-warning/10 rounded-lg border-2 p-6">
+          <div className="flex items-start gap-3">
+            <DollarSign className="text-warning h-6 w-6" />
+            <div className="flex-1">
+              <p className="text-warning text-lg font-semibold">
+                ¡Tasa de cambio USD no configurada!
+              </p>
+              <p className="mt-2 text-sm text-gray-700">
+                Para crear productos necesitas configurar la tasa de cambio USD
+                → VES. Esta tasa es <strong>obligatoria</strong> para calcular
+                precios automáticamente y gestionar ventas, cuentas por pagar y
+                cobrar.
+              </p>
+              <a
+                href="/dashboard/exchange-rates"
+                className="bg-brand-primary hover:bg-brand-primary-dark mt-4 inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-medium text-white transition-colors"
+              >
+                <DollarSign className="h-4 w-4" />
+                Configurar Tasa USD → VES Ahora
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-6">
+          <h3 className="mb-3 font-semibold text-gray-700">
+            ¿Por qué es obligatoria la tasa USD?
+          </h3>
+          <ul className="space-y-2 text-sm text-gray-600">
+            <li className="flex items-start gap-2">
+              <span className="text-brand-primary mt-1">•</span>
+              <span>
+                <strong>Precios múltiples monedas:</strong> Los productos tienen
+                precios en VES, USD y EUR calculados automáticamente
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-brand-primary mt-1">•</span>
+              <span>
+                <strong>Ventas en cualquier moneda:</strong> Permite vender y
+                cobrar en VES o USD
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-brand-primary mt-1">•</span>
+              <span>
+                <strong>Cuentas por pagar/cobrar:</strong> Registra deudas y
+                créditos en múltiples monedas
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-brand-primary mt-1">•</span>
+              <span>
+                <strong>Reportes unificados:</strong> Consolida todas las
+                operaciones con tasa actualizada
+              </span>
+            </li>
+          </ul>
+        </div>
       </div>
     );
   }
@@ -316,7 +371,7 @@ export default function ProductFormWithCalculations({
         )}
       </div>
 
-      {/* Cálculo de Precios */}
+      {/* Cálculo de Precios Automático */}
       <div className="border-brand-primary bg-brand-primary-light rounded-lg border-2 p-6">
         <div className="mb-4 flex items-center gap-2">
           <Calculator className="text-brand-primary h-5 w-5" />
@@ -502,7 +557,7 @@ export default function ProductFormWithCalculations({
       <div className="flex gap-3">
         <button
           type="submit"
-          disabled={loading || !calculatedPrices}
+          disabled={loading}
           className="bg-brand-primary hover:bg-brand-primary-dark rounded-lg px-6 py-2 text-white transition-colors disabled:bg-gray-400"
         >
           {loading

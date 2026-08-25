@@ -56,7 +56,7 @@ export default function ProductsPage() {
         </div>
         <Link
           href="/dashboard/products/new"
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+          className="bg-brand-primary hover:bg-brand-primary-dark flex items-center gap-2 rounded-lg px-4 py-2 text-white transition-colors"
         >
           <Plus size={20} />
           Nuevo Producto
