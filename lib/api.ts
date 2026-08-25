@@ -36,12 +36,72 @@ class ApiClient {
     localStorage.removeItem('refreshToken');
   }
 
+  private getFallbackBaseUrls(): string[] {
+    const fallbacks: string[] = [];
+
+    if (this.baseUrl.includes('localhost')) {
+      fallbacks.push(this.baseUrl.replace('localhost', '127.0.0.1'));
+    }
+
+    if (this.baseUrl.includes('127.0.0.1')) {
+      fallbacks.push(this.baseUrl.replace('127.0.0.1', 'localhost'));
+    }
+
+    const envFallbacks = (process.env.NEXT_PUBLIC_API_FALLBACK_URLS || '')
+      .split(',')
+      .map((url) => url.trim())
+      .filter(Boolean);
+
+    return Array.from(new Set([...fallbacks, ...envFallbacks])).filter(
+      (url) => url !== this.baseUrl
+    );
+  }
+
+  private isNetworkError(error: unknown): boolean {
+    if (!(error instanceof Error)) return false;
+    const msg = error.message.toLowerCase();
+    return msg.includes('failed to fetch') || msg.includes('networkerror');
+  }
+
+  private async fetchWithFallback(
+    endpoint: string,
+    options: RequestInit
+  ): Promise<Response> {
+    const primaryUrl = `${this.baseUrl}${endpoint}`;
+
+    try {
+      return await fetch(primaryUrl, options);
+    } catch (error) {
+      if (!this.isNetworkError(error)) {
+        throw error;
+      }
+
+      const fallbackUrls = this.getFallbackBaseUrls();
+
+      for (const fallbackBaseUrl of fallbackUrls) {
+        try {
+          const response = await fetch(
+            `${fallbackBaseUrl}${endpoint}`,
+            options
+          );
+          // Si responde, persistimos la URL funcional para siguientes requests
+          this.baseUrl = fallbackBaseUrl;
+          return response;
+        } catch {
+          // Intentar siguiente fallback
+        }
+      }
+
+      throw error;
+    }
+  }
+
   private async refreshAccessToken(): Promise<string | null> {
     const refreshToken = this.getRefreshToken();
     if (!refreshToken) return null;
 
     try {
-      const response = await fetch(`${this.baseUrl}/api/auth/refresh`, {
+      const response = await this.fetchWithFallback('/api/auth/refresh', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
@@ -70,7 +130,6 @@ class ApiClient {
 
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = this.getToken();
-    const url = `${this.baseUrl}${endpoint}`;
 
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -82,7 +141,7 @@ class ApiClient {
     }
 
     try {
-      const response = await fetch(url, {
+      const response = await this.fetchWithFallback(endpoint, {
         ...options,
         headers,
       });
@@ -94,7 +153,7 @@ class ApiClient {
         if (newToken) {
           // Reintentar con el nuevo token
           headers['Authorization'] = `Bearer ${newToken}`;
-          const retryResponse = await fetch(url, {
+          const retryResponse = await this.fetchWithFallback(endpoint, {
             ...options,
             headers,
           });
