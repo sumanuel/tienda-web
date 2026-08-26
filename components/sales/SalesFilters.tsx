@@ -4,7 +4,13 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { Search, Filter, X } from 'lucide-react';
 
@@ -38,23 +44,23 @@ export function SalesFilters({ filters, onFiltersChange }: SalesFiltersProps) {
       paymentMethod: '',
       status: '',
       page: 1,
-      limit: filters.limit
+      limit: filters.limit,
     };
     setLocalFilters(clearedFilters);
     onFiltersChange(clearedFilters);
   };
 
-  const hasActiveFilters = 
-    localFilters.startDate || 
-    localFilters.endDate || 
-    localFilters.customerId || 
-    localFilters.paymentMethod || 
+  const hasActiveFilters =
+    localFilters.startDate ||
+    localFilters.endDate ||
+    localFilters.customerId ||
+    localFilters.paymentMethod ||
     localFilters.status;
 
   return (
     <Card className="p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Filter className="w-5 h-5 text-gray-600" />
+      <div className="mb-4 flex items-center gap-2">
+        <Filter className="h-5 w-5 text-gray-600" />
         <h3 className="text-lg font-semibold">Filtros</h3>
         {hasActiveFilters && (
           <Button
@@ -63,13 +69,13 @@ export function SalesFilters({ filters, onFiltersChange }: SalesFiltersProps) {
             onClick={handleClearFilters}
             className="ml-auto text-red-600 hover:text-red-700"
           >
-            <X className="w-4 h-4 mr-1" />
+            <X className="mr-1 h-4 w-4" />
             Limpiar
           </Button>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Fecha desde */}
         <div>
           <Label htmlFor="startDate">Desde</Label>
@@ -77,7 +83,9 @@ export function SalesFilters({ filters, onFiltersChange }: SalesFiltersProps) {
             id="startDate"
             type="date"
             value={localFilters.startDate || ''}
-            onChange={(e) => setLocalFilters({ ...localFilters, startDate: e.target.value })}
+            onChange={(e) =>
+              setLocalFilters({ ...localFilters, startDate: e.target.value })
+            }
           />
         </div>
 
@@ -88,7 +96,9 @@ export function SalesFilters({ filters, onFiltersChange }: SalesFiltersProps) {
             id="endDate"
             type="date"
             value={localFilters.endDate || ''}
-            onChange={(e) => setLocalFilters({ ...localFilters, endDate: e.target.value })}
+            onChange={(e) =>
+              setLocalFilters({ ...localFilters, endDate: e.target.value })
+            }
           />
         </div>
 
@@ -97,8 +107,11 @@ export function SalesFilters({ filters, onFiltersChange }: SalesFiltersProps) {
           <Label htmlFor="paymentMethod">Método de Pago</Label>
           <Select
             value={localFilters.paymentMethod || 'all'}
-            onValueChange={(value) => 
-              setLocalFilters({ ...localFilters, paymentMethod: value === 'all' ? '' : value })
+            onValueChange={(value) =>
+              setLocalFilters({
+                ...localFilters,
+                paymentMethod: value === 'all' ? '' : value,
+              })
             }
           >
             <SelectTrigger id="paymentMethod">
@@ -120,8 +133,11 @@ export function SalesFilters({ filters, onFiltersChange }: SalesFiltersProps) {
           <Label htmlFor="status">Estado</Label>
           <Select
             value={localFilters.status || 'all'}
-            onValueChange={(value) => 
-              setLocalFilters({ ...localFilters, status: value === 'all' ? '' : value })
+            onValueChange={(value) =>
+              setLocalFilters({
+                ...localFilters,
+                status: value === 'all' ? '' : value,
+              })
             }
           >
             <SelectTrigger id="status">
@@ -137,7 +153,7 @@ export function SalesFilters({ filters, onFiltersChange }: SalesFiltersProps) {
       </div>
 
       {/* Botones de acción */}
-      <div className="flex justify-end gap-2 mt-4">
+      <div className="mt-4 flex justify-end gap-2">
         <Button
           variant="outline"
           onClick={handleClearFilters}
@@ -149,7 +165,7 @@ export function SalesFilters({ filters, onFiltersChange }: SalesFiltersProps) {
           onClick={handleApplyFilters}
           className="bg-[#2D7A5B] hover:bg-[#236449]"
         >
-          <Search className="w-4 h-4 mr-2" />
+          <Search className="mr-2 h-4 w-4" />
           Aplicar Filtros
         </Button>
       </div>

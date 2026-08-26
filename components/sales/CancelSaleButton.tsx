@@ -2,7 +2,13 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { X, AlertTriangle } from 'lucide-react';
@@ -15,7 +21,11 @@ interface CancelSaleButtonProps {
   onSuccess?: () => void;
 }
 
-export function CancelSaleButton({ saleId, saleNumber, onSuccess }: CancelSaleButtonProps) {
+export function CancelSaleButton({
+  saleId,
+  saleNumber,
+  onSuccess,
+}: CancelSaleButtonProps) {
   const [showDialog, setShowDialog] = useState(false);
   const [reason, setReason] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -48,32 +58,31 @@ export function CancelSaleButton({ saleId, saleNumber, onSuccess }: CancelSaleBu
         size="sm"
         variant="outline"
         onClick={() => setShowDialog(true)}
-        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+        className="text-red-600 hover:bg-red-50 hover:text-red-700"
       >
-        <X className="w-4 h-4" />
+        <X className="h-4 w-4" />
       </Button>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
+              <AlertTriangle className="h-5 w-5 text-red-600" />
               Cancelar Venta {saleNumber}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3">
               <p className="text-sm text-red-800">
-                <strong>Advertencia:</strong> Esta acción revertirá el stock de los productos vendidos
-                y cancelará la cuenta por cobrar asociada (si existe).
+                <strong>Advertencia:</strong> Esta acción revertirá el stock de
+                los productos vendidos y cancelará la cuenta por cobrar asociada
+                (si existe).
               </p>
             </div>
 
             <div>
-              <Label htmlFor="cancel-reason">
-                Razón de la cancelación *
-              </Label>
+              <Label htmlFor="cancel-reason">Razón de la cancelación *</Label>
               <Textarea
                 id="cancel-reason"
                 placeholder="Describe la razón de la cancelación (mínimo 10 caracteres)"
@@ -82,7 +91,7 @@ export function CancelSaleButton({ saleId, saleNumber, onSuccess }: CancelSaleBu
                 rows={4}
                 className="mt-1"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="mt-1 text-xs text-gray-500">
                 {reason.length} / 10 caracteres mínimos
               </p>
             </div>

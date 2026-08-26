@@ -1,10 +1,24 @@
 'use client';
 
 import { useState } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import {
+  Eye,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from 'lucide-react';
 import { SaleDetailModal } from './SaleDetailModal';
 import { CancelSaleButton } from './CancelSaleButton';
 import { formatCurrency, type Currency } from '@/lib/currency';
@@ -27,10 +41,15 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   card: 'Tarjeta',
   transfer: 'Transferencia',
   pago_movil: 'Pago Móvil',
-  por_cobrar: 'Por Cobrar'
+  por_cobrar: 'Por Cobrar',
 };
 
-export function SalesTable({ sales, pagination, onPageChange, onRefresh }: SalesTableProps) {
+export function SalesTable({
+  sales,
+  pagination,
+  onPageChange,
+  onRefresh,
+}: SalesTableProps) {
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
@@ -48,7 +67,9 @@ export function SalesTable({ sales, pagination, onPageChange, onRefresh }: Sales
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-green-100 text-green-800">Completada</Badge>;
+        return (
+          <Badge className="bg-green-100 text-green-800">Completada</Badge>
+        );
       case 'cancelled':
         return <Badge variant="destructive">Cancelada</Badge>;
       default:
@@ -63,21 +84,23 @@ export function SalesTable({ sales, pagination, onPageChange, onRefresh }: Sales
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     }).format(date);
   };
 
   if (sales.length === 0) {
     return (
-      <div className="text-center py-12 bg-white rounded-lg border">
-        <p className="text-gray-500 text-lg">No se encontraron ventas</p>
-        <p className="text-gray-400 text-sm mt-2">Intenta ajustar los filtros de búsqueda</p>
+      <div className="rounded-lg border bg-white py-12 text-center">
+        <p className="text-lg text-gray-500">No se encontraron ventas</p>
+        <p className="mt-2 text-sm text-gray-400">
+          Intenta ajustar los filtros de búsqueda
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border overflow-hidden">
+    <div className="overflow-hidden rounded-lg border bg-white">
       {/* Tabla */}
       <div className="overflow-x-auto">
         <Table>
@@ -102,20 +125,26 @@ export function SalesTable({ sales, pagination, onPageChange, onRefresh }: Sales
                 <TableCell>
                   {sale.customer ? (
                     <div>
-                      <p className="font-medium text-sm">{sale.customer.name}</p>
-                      {sale.customer.documentNumber && sale.customer.documentNumber !== '1' && (
-                        <p className="text-xs text-gray-500">
-                          Doc: {sale.customer.documentNumber}
-                        </p>
-                      )}
+                      <p className="text-sm font-medium">
+                        {sale.customer.name}
+                      </p>
+                      {sale.customer.documentNumber &&
+                        sale.customer.documentNumber !== '1' && (
+                          <p className="text-xs text-gray-500">
+                            Doc: {sale.customer.documentNumber}
+                          </p>
+                        )}
                     </div>
                   ) : (
-                    <span className="text-gray-400 text-sm">Cliente Genérico</span>
+                    <span className="text-sm text-gray-400">
+                      Cliente Genérico
+                    </span>
                   )}
                 </TableCell>
                 <TableCell>
                   <span className="text-sm">
-                    {PAYMENT_METHOD_LABELS[sale.paymentMethod] || sale.paymentMethod}
+                    {PAYMENT_METHOD_LABELS[sale.paymentMethod] ||
+                      sale.paymentMethod}
                   </span>
                   {sale.referenceNumber && (
                     <p className="text-xs text-gray-500">
@@ -143,7 +172,7 @@ export function SalesTable({ sales, pagination, onPageChange, onRefresh }: Sales
                       variant="outline"
                       onClick={() => handleViewDetail(sale)}
                     >
-                      <Eye className="w-4 h-4" />
+                      <Eye className="h-4 w-4" />
                     </Button>
                     {sale.status === 'completed' && (
                       <CancelSaleButton
@@ -161,10 +190,11 @@ export function SalesTable({ sales, pagination, onPageChange, onRefresh }: Sales
       </div>
 
       {/* Paginación */}
-      <div className="flex items-center justify-between px-4 py-3 border-t">
+      <div className="flex items-center justify-between border-t px-4 py-3">
         <div className="text-sm text-gray-600">
           Mostrando {(pagination.page - 1) * pagination.limit + 1} -{' '}
-          {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total} ventas
+          {Math.min(pagination.page * pagination.limit, pagination.total)} de{' '}
+          {pagination.total} ventas
         </div>
 
         <div className="flex items-center gap-2">
@@ -174,7 +204,7 @@ export function SalesTable({ sales, pagination, onPageChange, onRefresh }: Sales
             onClick={() => onPageChange(1)}
             disabled={pagination.page === 1}
           >
-            <ChevronsLeft className="w-4 h-4" />
+            <ChevronsLeft className="h-4 w-4" />
           </Button>
           <Button
             size="sm"
@@ -182,10 +212,10 @@ export function SalesTable({ sales, pagination, onPageChange, onRefresh }: Sales
             onClick={() => onPageChange(pagination.page - 1)}
             disabled={pagination.page === 1}
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="h-4 w-4" />
           </Button>
 
-          <span className="text-sm px-3">
+          <span className="px-3 text-sm">
             Página {pagination.page} de {pagination.pages}
           </span>
 
@@ -195,7 +225,7 @@ export function SalesTable({ sales, pagination, onPageChange, onRefresh }: Sales
             onClick={() => onPageChange(pagination.page + 1)}
             disabled={pagination.page >= pagination.pages}
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="h-4 w-4" />
           </Button>
           <Button
             size="sm"
@@ -203,7 +233,7 @@ export function SalesTable({ sales, pagination, onPageChange, onRefresh }: Sales
             onClick={() => onPageChange(pagination.pages)}
             disabled={pagination.page >= pagination.pages}
           >
-            <ChevronsRight className="w-4 h-4" />
+            <ChevronsRight className="h-4 w-4" />
           </Button>
         </div>
       </div>

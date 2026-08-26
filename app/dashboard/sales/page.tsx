@@ -28,7 +28,7 @@ export default function SalesPage() {
     page: 1,
     limit: 20,
     total: 0,
-    pages: 1
+    pages: 1,
   });
   const [filters, setFilters] = useState<Filters>({
     startDate: '',
@@ -37,7 +37,7 @@ export default function SalesPage() {
     paymentMethod: '',
     status: '',
     page: 1,
-    limit: 20
+    limit: 20,
   });
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export default function SalesPage() {
         paymentMethod: filters.paymentMethod || undefined,
         status: filters.status || undefined,
         page: filters.page,
-        limit: filters.limit
+        limit: filters.limit,
       });
 
       if (response) {
@@ -80,22 +80,24 @@ export default function SalesPage() {
 
   if (!profile) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-[#2D7A5B]" />
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#2D7A5B]" />
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-[#2D7A5B] rounded-lg">
-            <Receipt className="w-6 h-6 text-white" />
+          <div className="rounded-lg bg-[#2D7A5B] p-2">
+            <Receipt className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Historial de Ventas</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Historial de Ventas
+            </h1>
             <p className="text-sm text-gray-600">
               Consulta y administra todas las ventas realizadas
             </p>
@@ -110,7 +112,7 @@ export default function SalesPage() {
       {loading && sales.length === 0 ? (
         <Card className="p-12">
           <div className="flex flex-col items-center justify-center text-gray-500">
-            <Loader2 className="w-8 h-8 animate-spin text-[#2D7A5B] mb-4" />
+            <Loader2 className="mb-4 h-8 w-8 animate-spin text-[#2D7A5B]" />
             <p>Cargando ventas...</p>
           </div>
         </Card>
