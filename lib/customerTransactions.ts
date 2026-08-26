@@ -144,39 +144,58 @@ export async function getCustomerAccountStatus(customerId: string) {
  */
 export async function getOverdueCustomers(storeId: string) {
   try {
-    const response = await apiClient.request<{
-      customers: Array<{
-        customer: {
-          id: string;
-          name: string;
-          email?: string;
-          phone?: string;
+    // Si el endpoint especializado no existe, retornar datos vacíos
+    // En lugar de fallar completamente
+    try {
+      const response = await apiClient.request<{
+        customers: Array<{
+          customer: {
+            id: string;
+            name: string;
+            email?: string;
+            phone?: string;
+          };
+          totalOverdue: number;
+          daysOverdue: number;
+          oldestDueDate: string;
+          transactions: any[];
+        }>;
+        total: number;
+        count: number;
+      }>(`/api/customers/overdue?storeId=${storeId}`);
+
+      const customers = response.customers.map((item) => ({
+        id: item.customer.id,
+        storeId,
+        name: item.customer.name,
+        email: item.customer.email,
+        phone: item.customer.phone,
+        balance: item.totalOverdue,
+        daysOverdue: item.daysOverdue,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+
+      return {
+        customers,
+        totalOverdue: response.total,
+      };
+    } catch (apiError: any) {
+      // Si el endpoint no existe (404) o cliente no encontrado, retornar vacío
+      if (
+        apiError.message?.includes('no encontrado') ||
+        apiError.message?.includes('404')
+      ) {
+        console.warn(
+          'Endpoint /api/customers/overdue no disponible, retornando datos vacíos'
+        );
+        return {
+          customers: [],
+          totalOverdue: 0,
         };
-        totalOverdue: number;
-        daysOverdue: number;
-        oldestDueDate: string;
-        transactions: any[];
-      }>;
-      total: number;
-      count: number;
-    }>(`/api/customers/overdue?storeId=${storeId}`);
-
-    const customers = response.customers.map((item) => ({
-      id: item.customer.id,
-      storeId,
-      name: item.customer.name,
-      email: item.customer.email,
-      phone: item.customer.phone,
-      balance: item.totalOverdue,
-      daysOverdue: item.daysOverdue,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }));
-
-    return {
-      customers,
-      totalOverdue: response.total,
-    };
+      }
+      throw apiError;
+    }
   } catch (error: any) {
     console.error('Error obteniendo clientes vencidos:', error);
     throw new Error('Error al obtener clientes vencidos');

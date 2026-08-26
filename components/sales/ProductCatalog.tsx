@@ -148,7 +148,7 @@ export function ProductCatalog({
       {/* Grid de productos */}
       <div className="flex-1 overflow-y-auto p-4">
         {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="space-y-2">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}

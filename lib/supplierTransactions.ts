@@ -142,39 +142,58 @@ export async function getSupplierAccountStatus(supplierId: string) {
  */
 export async function getUpcomingPayables(storeId: string) {
   try {
-    const response = await apiClient.request<{
-      payables: Array<{
-        supplier: {
-          id: string;
-          name: string;
-          email?: string;
-          phone?: string;
+    // Si el endpoint especializado no existe, retornar datos vacíos
+    // En lugar de fallar completamente
+    try {
+      const response = await apiClient.request<{
+        payables: Array<{
+          supplier: {
+            id: string;
+            name: string;
+            email?: string;
+            phone?: string;
+          };
+          totalAmount: number;
+          earliestDueDate: string;
+          transactions: any[];
+        }>;
+        total: number;
+        count: number;
+        daysAhead: number;
+      }>(`/api/suppliers/upcoming-payables?storeId=${storeId}&days=7`);
+
+      const payables = response.payables.map((item) => ({
+        id: item.supplier.id,
+        storeId,
+        name: item.supplier.name,
+        email: item.supplier.email,
+        phone: item.supplier.phone,
+        balance: -item.totalAmount, // Negativo porque es lo que debemos
+        dueDate: item.earliestDueDate,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+
+      return {
+        payables,
+        totalUpcoming: response.total,
+      };
+    } catch (apiError: any) {
+      // Si el endpoint no existe (404) o proveedor no encontrado, retornar vacío
+      if (
+        apiError.message?.includes('no encontrado') ||
+        apiError.message?.includes('404')
+      ) {
+        console.warn(
+          'Endpoint /api/suppliers/upcoming-payables no disponible, retornando datos vacíos'
+        );
+        return {
+          payables: [],
+          totalUpcoming: 0,
         };
-        totalAmount: number;
-        earliestDueDate: string;
-        transactions: any[];
-      }>;
-      total: number;
-      count: number;
-      daysAhead: number;
-    }>(`/api/suppliers/upcoming-payables?storeId=${storeId}&days=7`);
-
-    const payables = response.payables.map((item) => ({
-      id: item.supplier.id,
-      storeId,
-      name: item.supplier.name,
-      email: item.supplier.email,
-      phone: item.supplier.phone,
-      balance: -item.totalAmount, // Negativo porque es lo que debemos
-      dueDate: item.earliestDueDate,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }));
-
-    return {
-      payables,
-      totalUpcoming: response.total,
-    };
+      }
+      throw apiError;
+    }
   } catch (error: any) {
     console.error('Error obteniendo pagos próximos:', error);
     throw new Error('Error al obtener pagos próximos');

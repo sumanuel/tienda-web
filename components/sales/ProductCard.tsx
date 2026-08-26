@@ -46,81 +46,90 @@ export function ProductCard({ product, currency, onAdd }: ProductCardProps) {
       }`}
       onClick={() => !isOutOfStock && onAdd(product)}
     >
-      <CardContent className="p-4">
-        {/* Imagen del producto */}
-        <div className="relative mb-3 aspect-square overflow-hidden rounded-lg bg-gray-100">
-          {product.image ? (
-            <img
-              src={product.image}
-              alt={product.name}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <Package className="h-12 w-12 text-gray-400" />
-            </div>
-          )}
-
-          {/* Badge de stock */}
-          {product.trackInventory && (
-            <div className="absolute top-2 right-2">
-              {isOutOfStock ? (
-                <Badge variant="destructive" className="text-xs">
-                  Agotado
-                </Badge>
-              ) : isLowStock ? (
-                <Badge
-                  variant="secondary"
-                  className="flex items-center gap-1 bg-yellow-100 text-xs text-yellow-800"
-                >
-                  <AlertTriangle className="h-3 w-3" />
-                  Bajo stock
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="text-xs">
-                  Stock: {product.stock}
-                </Badge>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Información del producto */}
-        <div className="space-y-2">
-          <div>
-            <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold">
-              {product.name}
-            </h3>
-            {product.sku && (
-              <p className="text-xs text-gray-500">SKU: {product.sku}</p>
+      <CardContent className="p-3">
+        <div className="flex items-center gap-3">
+          {/* Imagen del producto */}
+          <div className="flex-shrink-0">
+            {product.image ? (
+              <img
+                src={product.image}
+                alt={product.name}
+                className="h-16 w-16 rounded-lg object-cover"
+              />
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-gray-100">
+                <Package className="h-8 w-8 text-gray-400" />
+              </div>
             )}
           </div>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-lg font-bold text-[#2D7A5B]">
-                {formatCurrency(displayPrice, currency)}
-              </p>
-              <p className="text-xs text-gray-500">{product.category}</p>
+          {/* Información del producto */}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <h3 className="truncate font-semibold text-gray-900">
+                  {product.name}
+                </h3>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  {product.sku && (
+                    <span className="text-xs text-gray-500">
+                      SKU: {product.sku}
+                    </span>
+                  )}
+                  {product.barcode && (
+                    <span className="text-xs text-gray-500">
+                      Código: {product.barcode}
+                    </span>
+                  )}
+                </div>
+                <Badge variant="secondary" className="mt-1 text-xs">
+                  {product.category}
+                </Badge>
+              </div>
+
+              {/* Precio y stock */}
+              <div className="flex flex-col items-end gap-1">
+                <p className="text-lg font-bold text-[#2D7A5B]">
+                  {formatCurrency(displayPrice, currency)}
+                </p>
+                {product.trackInventory && (
+                  <div className="flex items-center gap-1">
+                    {isLowStock && !isOutOfStock && (
+                      <AlertTriangle className="h-3 w-3 text-orange-500" />
+                    )}
+                    <span
+                      className={`text-xs font-medium ${
+                        isOutOfStock
+                          ? 'text-red-600'
+                          : isLowStock
+                            ? 'text-orange-600'
+                            : 'text-green-600'
+                      }`}
+                    >
+                      {isOutOfStock ? 'Agotado' : `Stock: ${product.stock}`}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
+          </div>
+
+          {/* Botón agregar */}
+          <div className="flex-shrink-0">
+            <Button
+              size="sm"
+              disabled={isOutOfStock}
+              className="bg-[#2D7A5B] hover:bg-[#236449]"
+              onClick={(e) => {
+                e.stopPropagation();
+                !isOutOfStock && onAdd(product);
+              }}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </CardContent>
-
-      <CardFooter className="p-3 pt-0">
-        <Button
-          size="sm"
-          className="w-full bg-[#2D7A5B] hover:bg-[#236449]"
-          disabled={isOutOfStock}
-          onClick={(e) => {
-            e.stopPropagation();
-            onAdd(product);
-          }}
-        >
-          <Plus className="mr-1 h-4 w-4" />
-          Agregar
-        </Button>
-      </CardFooter>
     </Card>
   );
 }

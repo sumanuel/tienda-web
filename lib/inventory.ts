@@ -207,24 +207,30 @@ export async function calculateInventoryValuation(storeId: string) {
   try {
     const response = await apiClient.getStockReport(storeId);
 
-    // Validar que response.report existe y es un array
-    if (!response.report || !Array.isArray(response.report)) {
-      throw new Error('Respuesta inválida del servidor');
+    // Validar que response existe
+    if (!response) {
+      throw new Error('No se recibió respuesta del servidor');
     }
 
-    // Calcular valoración por categoría
-    const categoryValuation = new Map<string, number>();
+    // El backend devuelve { byCategory: [...], summary: {...} }
+    // Adaptamos a la estructura esperada por el frontend
+    if (!response.byCategory || !Array.isArray(response.byCategory)) {
+      console.error('Estructura de respuesta inesperada:', response);
+      throw new Error(
+        'La respuesta del servidor no contiene datos de inventario'
+      );
+    }
 
-    response.report.forEach((product) => {
-      const category = product.category || 'Sin Categoría';
-      const currentValue = categoryValuation.get(category) || 0;
-      categoryValuation.set(category, currentValue + product.totalValue);
-    });
+    if (!response.summary) {
+      console.error('Respuesta sin summary:', response);
+      throw new Error('La respuesta del servidor está incompleta');
+    }
 
-    const byCategory = Array.from(categoryValuation.entries())
-      .map(([category, value]) => ({
-        category,
-        value,
+    // Mapear byCategory a la estructura esperada
+    const byCategory = response.byCategory
+      .map((cat: any) => ({
+        category: cat.category,
+        value: cat.totalValue,
       }))
       .sort((a, b) => b.value - a.value);
 
@@ -232,15 +238,7 @@ export async function calculateInventoryValuation(storeId: string) {
       totalValue: response.summary.totalValue,
       totalProducts: response.summary.totalProducts,
       byCategory,
-      products: response.report.map((product) => ({
-        id: product.id,
-        code: product.code,
-        name: product.name,
-        category: product.category,
-        stock: product.stock,
-        cost: product.cost,
-        totalValue: product.totalValue,
-      })),
+      products: [], // El backend no devuelve productos individuales en este endpoint
     };
   } catch (error: any) {
     console.error('Error calculando valoración de inventario:', error);
