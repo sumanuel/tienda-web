@@ -207,6 +207,11 @@ export async function calculateInventoryValuation(storeId: string) {
   try {
     const response = await apiClient.getStockReport(storeId);
 
+    // Validar que response.report existe y es un array
+    if (!response.report || !Array.isArray(response.report)) {
+      throw new Error('Respuesta inválida del servidor');
+    }
+
     // Calcular valoración por categoría
     const categoryValuation = new Map<string, number>();
 

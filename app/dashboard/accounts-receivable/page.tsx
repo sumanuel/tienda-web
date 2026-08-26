@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { getReceivablesSummary } from '@/lib/accountsReceivable';
 import { getCustomersWithBalance } from '@/lib/customers';
@@ -10,6 +11,7 @@ import {
 } from '@/lib/customerTransactions';
 import type { Customer } from '@/types/customer';
 import type { AccountStatus, AgingData } from '@/types/transaction';
+import { PageContainer } from '@/components/common/PageContainer';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -48,7 +50,9 @@ import { es } from 'date-fns/locale';
 
 export default function AccountsReceivablePage() {
   const { profile } = useAuth();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Summary data
   const [summary, setSummary] = useState({
@@ -87,6 +91,7 @@ export default function AccountsReceivablePage() {
 
     try {
       setLoading(true);
+      setError(null);
 
       const [summaryData, customersData, overdueData] = await Promise.all([
         getReceivablesSummary(profile.storeId),
@@ -96,8 +101,20 @@ export default function AccountsReceivablePage() {
 
       setSummary(summaryData);
       setCustomersWithBalance(customersData);
-      setOverdueCustomers(overdueData);
-    } catch (error) {
+      setOverdueCustomers(overdueData.customers || []);
+    } catch (error: any) {
+      console.error('Error cargando datos:', error);
+      const errorMessage = error.message || 'Error al cargar datos';
+      setError(errorMessage);
+      
+      // Si es error de autenticación, redirigir a login
+      if (errorMessage.includes('401') || errorMessage.includes('Token') || errorMessage.includes('Sesión expirada')) {
+        setTimeout(() => router.push('/login'), 2000);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
       console.error('Error cargando datos:', error);
     } finally {
       setLoading(false);
@@ -151,7 +168,13 @@ export default function AccountsReceivablePage() {
   }
 
   return (
-    <div className="space-y-6 p-8">
+    <PageContainer
+      loading={loading}
+      error={error}
+      onRetry={loadData}
+      loadingMessage="Cargando cuentas por cobrar..."
+    >
+      <div className="space-y-6 p-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
           Cuentas por Cobrar
@@ -478,5 +501,6 @@ export default function AccountsReceivablePage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
+  </PageContainer>
+);
 }

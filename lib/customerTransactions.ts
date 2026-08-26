@@ -159,7 +159,7 @@ export async function getOverdueCustomers(storeId: string) {
       }>;
       total: number;
       count: number;
-    }>(`/customers/overdue/list?storeId=${storeId}`);
+    }>(`/api/customers/overdue?storeId=${storeId}`);
 
     const customers = response.customers.map((item) => ({
       id: item.customer.id,

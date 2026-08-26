@@ -157,7 +157,7 @@ export async function getUpcomingPayables(storeId: string) {
       total: number;
       count: number;
       daysAhead: number;
-    }>(`/suppliers/upcoming-payables/list?storeId=${storeId}&days=7`);
+    }>(`/api/suppliers/upcoming-payables?storeId=${storeId}&days=7`);
 
     const payables = response.payables.map((item) => ({
       id: item.supplier.id,

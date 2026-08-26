@@ -96,19 +96,29 @@ export default function POSPage() {
       try {
         const response = await apiClient.get<{
           products: Product[];
-        }>(`/products?storeId=${storeId}&limit=100`);
+        }>(`/api/products?storeId=${storeId}&limit=100`);
 
         setProducts(response.products || []);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error cargando productos:', error);
-        toast.error('Error al cargar productos');
+        const errorMessage = error.message || 'Error al cargar productos';
+        toast.error(errorMessage);
+
+        // Si es error de autenticación, redirigir a login
+        if (
+          errorMessage.includes('401') ||
+          errorMessage.includes('Token') ||
+          errorMessage.includes('Sesión expirada')
+        ) {
+          setTimeout(() => router.push('/login'), 2000);
+        }
       } finally {
         setLoadingProducts(false);
       }
     }
 
     loadProducts();
-  }, [storeId]);
+  }, [storeId, router]);
 
   // Manejar agregar producto al carrito
   const handleAddProduct = useCallback(
