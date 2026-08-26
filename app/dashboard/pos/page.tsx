@@ -1,438 +1,432 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useCartStore } from '@/store/cartStore';
-import { useProductsStore } from '@/store/productsStore';
-import { useCustomersStore } from '@/store/customersStore';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { ProductCatalog } from '@/components/sales/ProductCatalog';
+import { Cart } from '@/components/sales/Cart';
+import { CustomerSelector } from '@/components/sales/CustomerSelector';
+import { PaymentMethodSelector } from '@/components/sales/PaymentMethodSelector';
+import { useCart } from '@/hooks/useCart';
+import { useSales } from '@/hooks/useSales';
 import { useAuth } from '@/hooks/useAuth';
-import { getProducts, searchProducts } from '@/lib/products';
-import { getCustomers } from '@/lib/customers';
-import { processSale } from '@/lib/sales';
-import { generateReceiptPDF } from '@/lib/receipt';
-import { Product } from '@/types/product';
-import { Customer } from '@/types/customer';
-import { CartItem } from '@/types/sale';
-import { Search, ShoppingCart, Trash2 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { apiClient } from '@/lib/api';
+import {
+  ShoppingCart,
+  DollarSign,
+  AlertCircle,
+  CheckCircle2,
+} from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import type { Currency } from '@/lib/currency';
+
+interface Product {
+  id: string;
+  name: string;
+  sku?: string;
+  barcode?: string;
+  category: string;
+  price: number;
+  priceVES?: number;
+  priceUSD?: number;
+  stock: number;
+  minStock: number;
+  image?: string;
+  trackInventory?: boolean;
+}
+
+interface Customer {
+  id: string;
+  name: string;
+  documentNumber?: string;
+  phone?: string;
+  email?: string;
+}
+
+type PaymentMethod = 'cash' | 'card' | 'transfer' | 'pago_movil' | 'por_cobrar';
 
 export default function POSPage() {
+  const router = useRouter();
   const { profile } = useAuth();
-  const { products, setProducts } = useProductsStore();
-  const { customers, setCustomers } = useCustomersStore();
-  const {
-    items,
-    currency,
-    addItem,
-    removeItem,
-    updateQuantity,
-    clearCart,
-    getSubtotal,
-    getTax,
-    getTotal,
-  } = useCartStore();
+  const [currency, setCurrency] = useState<Currency>('VES');
+  const [storeId, setStoreId] = useState<string>('');
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
+  // Productos
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Estados para venta a crédito (NUEVO - Fase 5)
-  const [paymentMethod, setPaymentMethod] = useState<
-    'cash' | 'card' | 'transfer' | 'credit'
-  >('cash');
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
-  const [creditDueDate, setCreditDueDate] = useState<string>('');
+  // Carrito
+  const cart = useCart({ storeId, currency });
 
-  // Cargar productos y clientes al montar
+  // Ventas
+  const sales = useSales();
+
+  // Cliente y pago
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null
+  );
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
+  const [referenceNumber, setReferenceNumber] = useState('');
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
+  const [processing, setProcessing] = useState(false);
+
+  // Cargar storeId del perfil
   useEffect(() => {
+    if (profile?.storeId) {
+      setStoreId(profile.storeId);
+    }
+  }, [profile]);
+
+  // Cargar productos
+  useEffect(() => {
+    if (!storeId) return;
+
+    async function loadProducts() {
+      setLoadingProducts(true);
+      try {
+        const response = await apiClient.get<{
+          products: Product[];
+        }>(`/products?storeId=${storeId}&limit=100`);
+
+        setProducts(response.products || []);
+      } catch (error) {
+        console.error('Error cargando productos:', error);
+        toast.error('Error al cargar productos');
+      } finally {
+        setLoadingProducts(false);
+      }
+    }
+
     loadProducts();
-    loadCustomers();
-  }, []);
+  }, [storeId]);
 
-  const loadProducts = async () => {
+  // Manejar agregar producto al carrito
+  const handleAddProduct = useCallback(
+    (product: Product) => {
+      // Validar stock
+      if (product.trackInventory && product.stock <= 0) {
+        toast.error(`${product.name} está agotado`);
+        return;
+      }
+
+      // Verificar cantidad en carrito
+      const existingItem = cart.items.find((i) => i.productId === product.id);
+      const totalInCart = (existingItem?.quantity || 0) + 1;
+
+      if (product.trackInventory && totalInCart > product.stock) {
+        toast.error(`Stock máximo disponible: ${product.stock}`);
+        return;
+      }
+
+      cart.addItem(product, 1);
+      toast.success(`${product.name} agregado al carrito`);
+    },
+    [cart]
+  );
+
+  // Manejar creación de cliente
+  const handleCreateCustomer = useCallback(
+    async (data: {
+      name: string;
+      documentNumber: string;
+      phone?: string;
+      address?: string;
+    }) => {
+      try {
+        const response = await apiClient.post<{ customer: Customer }>(
+          '/customers',
+          {
+            ...data,
+            storeId,
+          }
+        );
+
+        toast.success('Cliente creado exitosamente');
+        return response.customer;
+      } catch (error: any) {
+        throw new Error(
+          error.response?.data?.error || 'Error al crear cliente'
+        );
+      }
+    },
+    [storeId]
+  );
+
+  // Validar venta antes de procesar
+  const validateSale = useCallback(() => {
+    const errors: string[] = [];
+
+    // Validar carrito no vacío
+    if (cart.isEmpty) {
+      errors.push('El carrito está vacío');
+    }
+
+    // Validar cliente seleccionado
+    if (!selectedCustomer) {
+      errors.push('Debe seleccionar un cliente');
+    }
+
+    // Validar cliente genérico vs por_cobrar
+    if (
+      paymentMethod === 'por_cobrar' &&
+      selectedCustomer?.documentNumber === '1'
+    ) {
+      errors.push('No se puede usar "Por Cobrar" con el cliente genérico');
+    }
+
+    // Validar número de referencia
+    if (
+      ['card', 'transfer', 'pago_movil'].includes(paymentMethod) &&
+      !referenceNumber.trim()
+    ) {
+      errors.push('Debe especificar el número de referencia');
+    }
+
+    return errors;
+  }, [cart.isEmpty, selectedCustomer, paymentMethod, referenceNumber]);
+
+  // Procesar venta
+  const handleProcessSale = async () => {
+    setShowValidationErrors(true);
+
+    const errors = validateSale();
+    if (errors.length > 0) {
+      errors.forEach((error) => toast.error(error));
+      return;
+    }
+
+    setProcessing(true);
+
     try {
-      if (!profile?.storeId) return;
-      const data = await getProducts(profile.storeId);
-      setProducts(data);
-    } catch (error) {
-      toast.error('Error al cargar productos');
+      const cartData = cart.getCartData();
+
+      const saleData = {
+        storeId,
+        customerId:
+          selectedCustomer?.documentNumber !== '1'
+            ? selectedCustomer?.id
+            : undefined,
+        customerDocument: selectedCustomer?.documentNumber || '1',
+        items: cartData.items,
+        paymentMethod,
+        referenceNumber: referenceNumber.trim() || undefined,
+        subtotal: cartData.subtotal,
+        tax: cartData.tax,
+        total: cartData.total,
+        currency,
+        localCurrency: cartData.localCurrency,
+        referenceCurrency: cartData.referenceCurrency,
+        exchangeRate: cartData.exchangeRate,
+        totalReference: cartData.totalReference,
+        paid: cartData.total,
+        change: 0,
+        notes: `Cliente: ${selectedCustomer?.name || 'Genérico'}${
+          referenceNumber ? ` - Ref: ${referenceNumber}` : ''
+        }`,
+      };
+
+      const sale = await sales.createSale(saleData);
+
+      if (sale) {
+        toast.success(`Venta #${sale.saleNumber} procesada exitosamente`);
+
+        // Limpiar formulario
+        cart.clearCart();
+        setSelectedCustomer(null);
+        setPaymentMethod('cash');
+        setReferenceNumber('');
+        setShowValidationErrors(false);
+
+        // Recargar productos para actualizar stock
+        const response = await apiClient.get<{ products: Product[] }>(
+          `/products?storeId=${storeId}&limit=100`
+        );
+        setProducts(response.products || []);
+
+        // Mostrar notificación de éxito con opción de ver venta
+        toast.success(
+          <div>
+            <p className="font-semibold">Venta completada</p>
+            <button
+              onClick={() => router.push(`/dashboard/sales`)}
+              className="mt-1 text-sm underline"
+            >
+              Ver historial de ventas
+            </button>
+          </div>,
+          { duration: 5000 }
+        );
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Error al procesar la venta');
+    } finally {
+      setProcessing(false);
     }
   };
 
-  const loadCustomers = async () => {
-    try {
-      if (!profile?.storeId) return;
-      const data = await getCustomers(profile.storeId);
-      setCustomers(data);
-    } catch (error) {
-      console.error('Error al cargar clientes:', error);
-    }
-  };
-
-  // Búsqueda de productos
-  const handleSearch = async (term: string) => {
-    setSearchTerm(term);
-
-    if (term.trim().length < 2) {
-      setSearchResults([]);
-      return;
-    }
-
-    try {
-      if (!profile?.storeId) return;
-      const results = await searchProducts(profile.storeId, term);
-      setSearchResults(results);
-    } catch (error) {
-      console.error('Error searching:', error);
-    }
-  };
-
-  // Agregar producto al carrito
-  const handleAddProduct = (product: Product) => {
-    const price = product.prices[currency as keyof typeof product.prices] || 0;
-
-    if (price === 0) {
-      toast.error(`Producto no tiene precio en ${currency}`);
-      return;
-    }
-
-    // ✅ VALIDAR STOCK DISPONIBLE
-    if (product.trackInventory && product.stock < 1) {
-      toast.error(`${product.name} sin stock disponible`);
-      return;
-    }
-
-    // ✅ VALIDAR CANTIDAD EN CARRITO
-    const existingItem = items.find((i) => i.productId === product.id);
-    const totalInCart = (existingItem?.quantity || 0) + 1;
-
-    if (product.trackInventory && totalInCart > product.stock) {
-      toast.error(`Stock máximo disponible: ${product.stock}`);
-      return;
-    }
-
-    const cartItem: CartItem = {
-      productId: product.id,
-      productName: product.name,
-      productCode: product.code,
-      quantity: 1,
-      price,
-      discount: 0,
-      subtotal: price,
-      productImage: product.imageUrl,
+  // Atajos de teclado
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // F9: Procesar venta
+      if (e.key === 'F9') {
+        e.preventDefault();
+        handleProcessSale();
+      }
+      // Escape: Limpiar carrito
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (cart.items.length > 0 && confirm('¿Limpiar el carrito?')) {
+          cart.clearCart();
+          setSelectedCustomer(null);
+          setPaymentMethod('cash');
+          setReferenceNumber('');
+        }
+      }
     };
 
-    addItem(cartItem);
-    setSearchTerm('');
-    setSearchResults([]);
-    toast.success(`${product.name} agregado al carrito`);
-  };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [cart, handleProcessSale]);
 
-  // Procesar pago
-  const handleProcessSale = async () => {
-    if (items.length === 0) {
-      toast.error('El carrito está vacío');
-      return;
-    }
-
-    if (!profile) {
-      toast.error('Usuario no autenticado');
-      return;
-    }
-
-    // Validar venta a crédito
-    if (paymentMethod === 'credit') {
-      if (!selectedCustomerId) {
-        toast.error('Debe seleccionar un cliente para ventas a crédito');
-        return;
-      }
-      if (!creditDueDate) {
-        toast.error('Debe especificar fecha de vencimiento');
-        return;
-      }
-    }
-
-    setLoading(true);
-    try {
-      const selectedCustomer = customers.find(
-        (c) => c.id === selectedCustomerId
-      );
-
-      const sale = await processSale(
-        profile.storeId,
-        profile.id,
-        profile.name,
-        items,
-        currency,
-        paymentMethod,
-        undefined, // amountReceived
-        selectedCustomerId || undefined,
-        selectedCustomer?.name || undefined,
-        creditDueDate ? new Date(creditDueDate) : undefined
-      );
-
-      toast.success(`Venta #${sale.saleNumber} procesada`);
-
-      // Generar PDF solo si no es crédito
-      if (paymentMethod !== 'credit') {
-        generateReceiptPDF(sale, 'TiendaWeb');
-      }
-
-      clearCart();
-      setPaymentMethod('cash');
-      setSelectedCustomerId('');
-      setCreditDueDate('');
-
-      // Recargar productos para actualizar stock
-      await loadProducts();
-    } catch (error: any) {
-      toast.error(error.message || 'Error al procesar venta');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const subtotal = getSubtotal();
-  const tax = getTax(16);
-  const total = getTotal(16);
+  if (!profile) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p>Cargando...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] gap-4 p-4">
-      {/* Panel Izquierdo: Búsqueda y Productos */}
-      <div className="flex-1 overflow-auto">
-        <div className="mb-4">
-          <h1 className="mb-4 text-2xl font-bold">Punto de Venta</h1>
+    <div className="flex h-[calc(100vh-4rem)] gap-4 bg-gray-50 p-4">
+      {/* Panel izquierdo: Catálogo de productos (50%) */}
+      <div className="flex-1 overflow-hidden rounded-lg bg-white shadow-lg">
+        <div className="flex h-full flex-col">
+          <div className="border-b bg-white p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="h-6 w-6 text-[#2D7A5B]" />
+                <h1 className="text-2xl font-bold">Punto de Venta</h1>
+              </div>
 
-          {/* Búsqueda */}
-          <div className="relative">
-            <Search className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Buscar producto por nombre o código..."
-              className="w-full rounded-lg border border-gray-300 py-3 pr-4 pl-10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-            />
+              <Select
+                value={currency}
+                onValueChange={(v) => setCurrency(v as Currency)}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="VES">Bs. (VES)</SelectItem>
+                  <SelectItem value="USD">$ (USD)</SelectItem>
+                  <SelectItem value="EUR">€ (EUR)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Resultados de búsqueda */}
-          {searchResults.length > 0 && (
-            <div className="mt-2 max-h-64 overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
-              {searchResults.map((product) => (
-                <button
-                  key={product.id}
-                  onClick={() => handleAddProduct(product)}
-                  className="flex w-full items-center gap-3 border-b p-3 hover:bg-gray-50"
-                >
-                  {product.imageUrl && (
-                    <img
-                      src={product.imageUrl}
-                      alt={product.name}
-                      className="h-12 w-12 rounded object-cover"
-                    />
-                  )}
-                  <div className="flex-1 text-left">
-                    <div className="font-medium">{product.name}</div>
-                    <div className="text-sm text-gray-500">{product.code}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-blue-600">
-                      {currency}{' '}
-                      {product.prices[
-                        currency as keyof typeof product.prices
-                      ]?.toFixed(2)}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      Stock: {product.stock}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Productos Populares (Grid) */}
-        <div className="grid grid-cols-3 gap-4">
-          {products.slice(0, 9).map((product) => (
-            <button
-              key={product.id}
-              onClick={() => handleAddProduct(product)}
-              className="rounded-lg border border-gray-200 p-4 text-left hover:border-blue-500 hover:shadow-md"
-            >
-              {product.imageUrl && (
-                <img
-                  src={product.imageUrl}
-                  alt={product.name}
-                  className="mb-2 h-32 w-full rounded object-cover"
-                />
-              )}
-              <div className="font-medium">{product.name}</div>
-              <div className="text-sm text-gray-500">{product.code}</div>
-              <div className="mt-2 font-semibold text-blue-600">
-                {currency}{' '}
-                {product.prices[
-                  currency as keyof typeof product.prices
-                ]?.toFixed(2)}
-              </div>
-            </button>
-          ))}
+          <ProductCatalog
+            products={products}
+            currency={currency}
+            onAddProduct={handleAddProduct}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+          />
         </div>
       </div>
 
-      {/* Panel Derecho: Carrito */}
-      <div className="w-96 rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
-        <div className="mb-4 flex items-center gap-2">
-          <ShoppingCart />
-          <h2 className="text-xl font-bold">Carrito</h2>
-          <span className="rounded bg-blue-100 px-2 py-1 text-sm text-blue-700">
-            {items.length}
-          </span>
-        </div>
+      {/* Panel derecho: Carrito y checkout (50%) */}
+      <div className="flex flex-1 flex-col gap-4">
+        {/* Carrito */}
+        <Card className="flex flex-1 flex-col overflow-hidden shadow-lg">
+          <Cart
+            items={cart.items}
+            summary={cart.summary}
+            currency={currency}
+            onIncrement={cart.incrementItem}
+            onDecrement={cart.decrementItem}
+            onRemove={cart.removeItem}
+          />
+        </Card>
 
-        {/* Items del carrito */}
-        <div className="mb-4 max-h-96 space-y-2 overflow-auto">
-          {items.map((item) => (
-            <div
-              key={item.productId}
-              className="rounded-lg border border-gray-200 p-3"
+        {/* Panel de checkout */}
+        <Card className="space-y-4 p-4 shadow-lg">
+          <h3 className="flex items-center gap-2 text-lg font-semibold">
+            <DollarSign className="h-5 w-5 text-[#2D7A5B]" />
+            Checkout
+          </h3>
+
+          <Separator />
+
+          {/* Selector de cliente */}
+          <CustomerSelector
+            selectedCustomer={selectedCustomer}
+            onSelectCustomer={setSelectedCustomer}
+            onCreateCustomer={handleCreateCustomer}
+            storeId={storeId}
+          />
+
+          {/* Selector de método de pago */}
+          <PaymentMethodSelector
+            paymentMethod={paymentMethod}
+            onPaymentMethodChange={(method) =>
+              setPaymentMethod(method as PaymentMethod)
+            }
+            referenceNumber={referenceNumber}
+            onReferenceNumberChange={setReferenceNumber}
+            customerDocument={selectedCustomer?.documentNumber}
+            showError={showValidationErrors}
+          />
+
+          <Separator />
+
+          {/* Botones de acción */}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => {
+                if (cart.items.length > 0 && confirm('¿Limpiar el carrito?')) {
+                  cart.clearCart();
+                  setSelectedCustomer(null);
+                  setPaymentMethod('cash');
+                  setReferenceNumber('');
+                  setShowValidationErrors(false);
+                }
+              }}
+              disabled={cart.isEmpty || processing}
             >
-              <div className="mb-2 flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="font-medium">{item.productName}</div>
-                  <div className="text-sm text-gray-500">
-                    {item.productCode}
-                  </div>
-                </div>
-                <button
-                  onClick={() => removeItem(item.productId)}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </div>
+              Limpiar (ESC)
+            </Button>
 
-              <div className="flex items-center gap-2">
-                <label className="text-sm">Cant:</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={item.quantity}
-                  onChange={(e) =>
-                    updateQuantity(item.productId, parseInt(e.target.value, 10))
-                  }
-                  className="w-20 rounded border border-gray-300 px-2 py-1 text-center"
-                />
-                <span className="ml-auto font-semibold">
-                  {currency} {item.subtotal.toFixed(2)}
-                </span>
-              </div>
-            </div>
-          ))}
-
-          {items.length === 0 && (
-            <div className="py-8 text-center text-gray-500">Carrito vacío</div>
-          )}
-        </div>
-
-        {/* Método de Pago */}
-        {items.length > 0 && (
-          <>
-            <div className="space-y-3 border-t pt-4">
-              <label className="block text-sm font-medium">
-                Método de Pago
-              </label>
-              <select
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as any)}
-                className="w-full rounded border p-2"
-              >
-                <option value="cash">Efectivo</option>
-                <option value="card">Tarjeta</option>
-                <option value="transfer">Transferencia</option>
-                <option value="credit">Crédito</option>
-              </select>
-
-              {/* Campos adicionales si es venta a crédito */}
-              {paymentMethod === 'credit' && (
-                <div className="space-y-3 rounded-lg border border-yellow-300 bg-yellow-50 p-3">
-                  <p className="text-xs font-medium text-yellow-800">
-                    ⚠️ Venta a Crédito
-                  </p>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">
-                      Cliente *
-                    </label>
-                    <select
-                      value={selectedCustomerId}
-                      onChange={(e) => setSelectedCustomerId(e.target.value)}
-                      className="w-full rounded border p-2"
-                    >
-                      <option value="">Seleccionar cliente...</option>
-                      {customers.map((customer) => (
-                        <option key={customer.id} value={customer.id}>
-                          {customer.name} ({customer.document})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">
-                      Fecha de Vencimiento *
-                    </label>
-                    <input
-                      type="date"
-                      value={creditDueDate}
-                      onChange={(e) => setCreditDueDate(e.target.value)}
-                      className="w-full rounded border p-2"
-                      min={new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
-                </div>
+            <Button
+              className="flex-1 bg-[#2D7A5B] hover:bg-[#236449]"
+              onClick={handleProcessSale}
+              disabled={cart.isEmpty || processing}
+            >
+              {processing ? (
+                <>
+                  <AlertCircle className="mr-2 h-4 w-4 animate-spin" />
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Procesar Venta (F9)
+                </>
               )}
-            </div>
-
-            {/* Totales */}
-            <div className="mt-4 space-y-2 border-t pt-4">
-              <div className="flex justify-between text-sm">
-                <span>Subtotal:</span>
-                <span>
-                  {currency} {subtotal.toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>IVA (16%):</span>
-                <span>
-                  {currency} {tax.toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between text-lg font-bold">
-                <span>TOTAL:</span>
-                <span>
-                  {currency} {total.toFixed(2)}
-                </span>
-              </div>
-            </div>
-
-            {/* Botones */}
-            <div className="mt-4 space-y-2">
-              <button
-                onClick={handleProcessSale}
-                disabled={loading}
-                className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 disabled:bg-gray-400"
-              >
-                {loading ? 'Procesando...' : 'Procesar Venta (F4)'}
-              </button>
-              <button
-                onClick={() => clearCart()}
-                className="w-full rounded-lg border border-gray-300 py-2 hover:bg-gray-50"
-              >
-                Limpiar Carrito
-              </button>
-            </div>
-          </>
-        )}
+            </Button>
+          </div>
+        </Card>
       </div>
     </div>
   );

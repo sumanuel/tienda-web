@@ -17,6 +17,7 @@ model User {
   updatedAt            DateTime       @updatedAt
   stores               Store[]
   exchangeRatesCreated ExchangeRate[]
+  salesCreated         Sale[]         @relation("SalesCashier")
 
   @@map("users")
 }
@@ -39,6 +40,7 @@ model Store {
   user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   suppliers          Supplier[]
   exchangeRates      ExchangeRate[]
+  receivables        Receivable[]
 
   @@map("stores")
 }
@@ -61,6 +63,7 @@ model Product {
   iva                Float?              @default(0)
   stock              Int                 @default(0)
   minStock           Int                 @default(10)
+  trackInventory     Boolean             @default(true)
   image              String?
   storeId            String
   createdAt          DateTime            @default(now())
@@ -78,49 +81,62 @@ model Product {
 }
 
 model Sale {
-  id             String     @id @default(uuid())
-  saleNumber     String?    @unique
-  total          Float
-  subtotal       Float
-  tax            Float      @default(0)
-  discount       Float      @default(0)
-  paymentMethod  String
-  paymentStatus  String     @default("paid")
-  amountReceived Float?
-  change         Float?
-  currency       String     @default("DOP")
-  customerId     String?
-  cashierId      String?
-  cashierName    String?
-  storeId        String
-  notes          String?
-  cancelledAt    DateTime?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  items          SaleItem[]
-  customer       Customer?  @relation(fields: [customerId], references: [id])
-  store          Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  id                   String       @id @default(uuid())
+  saleNumber           String       @unique
+  storeId              String
+  customerId           String?
+  userId               String
+  subtotal             Float
+  tax                  Float
+  discount             Float        @default(0)
+  total                Float
+  currency             String       @default("VES")
+  localCurrency        String       @default("VES")
+  referenceCurrency    String       @default("USD")
+  exchangeRate         Float        @default(0)
+  totalReference       Float?
+  paymentMethod        String
+  referenceNumber      String?
+  paid                 Float        @default(0)
+  change               Float        @default(0)
+  status               String       @default("completed")
+  notes                String?
+  cancelReason         String?
+  cancelledAt          DateTime?
+  cancelledBy          String?
+  monetarySnapshot     Json?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  store                Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer             Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  cashier              User         @relation("SalesCashier", fields: [userId], references: [id], onDelete: Restrict)
+  items                SaleItem[]
+  receivable           Receivable?
 
-  @@index([storeId])
-  @@index([customerId])
-  @@index([createdAt])
-  @@index([paymentMethod])
+  @@index([storeId, createdAt(sort: Desc)])
+  @@index([storeId, customerId])
+  @@index([storeId, status])
   @@index([saleNumber])
   @@map("sales")
 }
 
 model SaleItem {
-  id        String   @id @default(uuid())
-  saleId    String
-  productId String
-  quantity  Int
-  price     Float
-  cost      Float    @default(0)
-  discount  Float    @default(0)
-  subtotal  Float
-  createdAt DateTime @default(now())
-  product   Product  @relation(fields: [productId], references: [id])
-  sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  id                   String   @id @default(uuid())
+  saleId               String
+  productId            String
+  productName          String
+  quantity             Float
+  price                Float
+  localPrice           Float
+  referencePrice       Float
+  subtotal             Float
+  subtotalLocal        Float
+  subtotalReference    Float
+  priceSnapshot        Json?
+  iva                  Float    @default(0)
+  createdAt            DateTime @default(now())
+  sale                 Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product              Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
 
   @@index([saleId])
   @@index([productId])
@@ -128,21 +144,26 @@ model SaleItem {
 }
 
 model Customer {
-  id           String                @id @default(uuid())
-  name         String
-  email        String?
-  phone        String?
-  address      String?
-  taxId        String?
-  balance      Float                 @default(0)
-  storeId      String
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
-  transactions CustomerTransaction[]
-  store        Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  sales        Sale[]
+  id                   String                @id @default(uuid())
+  name                 String
+  email                String?
+  phone                String?
+  address              String?
+  documentNumber       String?
+  documentType         String?               @default("V")
+  taxId                String?
+  balance              Float                 @default(0)
+  storeId              String
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  transactions         CustomerTransaction[]
+  store                Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sales                Sale[]
+  receivables          Receivable[]
 
+  @@unique([storeId, documentNumber])
   @@index([storeId])
+  @@index([storeId, name])
   @@map("customers")
 }
 
@@ -245,4 +266,54 @@ model ExchangeRate {
   @@index([storeId, isActive])
   @@index([createdAt(sort: Desc)])
   @@map("exchange_rates")
+}
+
+// ========================================
+// CUENTAS POR COBRAR (RECEIVABLES)
+// ========================================
+
+model Receivable {
+  id                      String              @id @default(uuid())
+  storeId                 String
+  saleId                  String?             @unique
+  customerId              String
+  customerName            String
+  documentNumber          String?
+  amount                  Float
+  baseCurrency            String              @default("USD")
+  referenceAmount         Float
+  exchangeRateAtCreation  Float               @default(0)
+  amountPaid              Float               @default(0)
+  balance                 Float
+  description             String?
+  dueDate                 DateTime?
+  invoiceNumber           String?
+  status                  String              @default("pending")
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  paidAt                  DateTime?
+  store                   Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer                Customer            @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  sale                    Sale?               @relation(fields: [saleId], references: [id], onDelete: SetNull)
+  payments                ReceivablePayment[]
+
+  @@index([storeId, status])
+  @@index([storeId, customerId])
+  @@index([storeId, dueDate])
+  @@index([saleId])
+  @@map("receivables")
+}
+
+model ReceivablePayment {
+  id              String     @id @default(uuid())
+  receivableId    String
+  amount          Float
+  paymentMethod   String
+  referenceNumber String?
+  notes           String?
+  createdAt       DateTime   @default(now())
+  receivable      Receivable @relation(fields: [receivableId], references: [id], onDelete: Cascade)
+
+  @@index([receivableId])
+  @@map("receivable_payments")
 }

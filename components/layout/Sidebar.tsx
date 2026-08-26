@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 const menuItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/dashboard/pos', icon: ShoppingCart, label: 'Punto de Venta' },
+  { href: '/dashboard/sales', icon: Receipt, label: 'Historial de Ventas' },
   { href: '/dashboard/products', icon: Package, label: 'Productos' },
   // Inventario como sección expandible
   {
