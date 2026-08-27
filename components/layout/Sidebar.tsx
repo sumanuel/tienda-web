@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -73,15 +74,17 @@ export function Sidebar() {
   };
 
   return (
-    <div className="flex h-screen w-64 flex-col border-r bg-slate-50">
+    <div className="flex h-screen w-64 flex-col border-r border-gray-200 bg-white shadow-sm">
       {/* Logo */}
-      <div className="flex h-16 items-center border-b px-6">
-        <Store className="text-brand-primary mr-2 h-6 w-6" />
-        <span className="text-brand-primary text-xl font-bold">T-Suma</span>
+      <div className="from-tsuma-primary to-tsuma-primary-dark flex h-16 items-center border-b border-gray-200 bg-gradient-to-r px-6">
+        <Store className="mr-2 h-7 w-7 text-white drop-shadow-md" />
+        <span className="text-2xl font-bold text-white drop-shadow-md">
+          T-Suma
+        </span>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 p-4">
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         {menuItems.map((item) => {
           const Icon = item.icon;
 
@@ -97,38 +100,48 @@ export function Sidebar() {
                 <button
                   onClick={() => toggleMenu(item.label)}
                   className={cn(
-                    'flex w-full items-center justify-between rounded-lg px-4 py-3 text-sm font-medium transition-colors',
+                    'group flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
                     hasActiveSubmenu
-                      ? 'bg-slate-200 text-slate-900'
-                      : 'text-slate-700 hover:bg-slate-200'
+                      ? 'bg-tsuma-primary-light text-tsuma-primary-dark'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                   )}
                 >
                   <div className="flex items-center">
-                    <Icon className="mr-3 h-5 w-5" />
+                    <Icon
+                      className={cn(
+                        'mr-3 h-5 w-5 transition-colors',
+                        hasActiveSubmenu
+                          ? 'text-tsuma-primary'
+                          : 'text-gray-500 group-hover:text-gray-700'
+                      )}
+                    />
                     {item.label}
                   </div>
                   {isExpanded ? (
-                    <ChevronDown className="h-4 w-4" />
+                    <ChevronDown className="h-4 w-4 transition-transform duration-200" />
                   ) : (
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-4 w-4 transition-transform duration-200" />
                   )}
                 </button>
 
                 {isExpanded && (
-                  <div className="mt-1 ml-4 space-y-1">
-                    {item.submenu.map((subItem) => {
+                  <div className="mt-1 ml-4 space-y-1 overflow-hidden">
+                    {item.submenu.map((subItem, index) => {
                       const isActive = pathname === subItem.href;
                       return (
                         <Link
                           key={subItem.href}
                           href={subItem.href}
                           className={cn(
-                            'flex items-center rounded-lg px-4 py-2 text-sm transition-colors',
+                            'flex items-center rounded-lg px-4 py-2.5 text-sm transition-all duration-200',
+                            'animate-slide-up',
                             isActive
-                              ? 'bg-blue-600 text-white'
-                              : 'text-slate-600 hover:bg-slate-200'
+                              ? 'bg-tsuma-primary text-white shadow-sm'
+                              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                           )}
+                          style={{ animationDelay: `${index * 0.05}s` }}
                         >
+                          <div className="mr-2 h-1.5 w-1.5 rounded-full bg-current opacity-50" />
                           {subItem.label}
                         </Link>
                       );
@@ -146,18 +159,40 @@ export function Sidebar() {
               key={item.href}
               href={item.href!}
               className={cn(
-                'flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors',
+                'group flex items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
                 isActive
-                  ? 'bg-brand-primary text-white'
-                  : 'text-slate-700 hover:bg-slate-200'
+                  ? 'bg-tsuma-primary scale-[1.02] text-white shadow-md'
+                  : 'text-gray-700 hover:scale-[1.01] hover:bg-gray-100 hover:text-gray-900 active:scale-[0.98]'
               )}
             >
-              <Icon className="mr-3 h-5 w-5" />
+              <Icon
+                className={cn(
+                  'mr-3 h-5 w-5 transition-colors',
+                  isActive
+                    ? 'text-white'
+                    : 'text-gray-500 group-hover:text-gray-700'
+                )}
+              />
               {item.label}
             </Link>
           );
         })}
       </nav>
+
+      {/* Footer con gradiente decorativo */}
+      <div className="from-tsuma-primary-bg border-t border-gray-200 bg-gradient-to-r to-white p-3">
+        <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm">
+          <div className="bg-tsuma-primary flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white">
+            {profile?.name?.charAt(0) || 'U'}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-gray-900">
+              {profile?.name || 'Usuario'}
+            </p>
+            <p className="truncate text-xs text-gray-500">Dashboard activo</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

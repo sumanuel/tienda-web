@@ -48,6 +48,14 @@
   --color-error: var(--error);
   --color-warning: var(--warning);
   --color-info: var(--info);
+  /* T-Suma Colors */
+  --color-tsuma-primary: #10b981;
+  --color-tsuma-primary-dark: #059669;
+  --color-tsuma-primary-light: #d1fae5;
+  --color-tsuma-primary-bg: #f0fdf4;
+  --color-tsuma-secondary: #3b82f6;
+  --color-tsuma-accent-warning: #f59e0b;
+  --color-tsuma-accent-danger: #ef4444;
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -55,6 +63,38 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* T-Suma Custom Animations */
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@layer utilities {
+  .animate-pulse-soft {
+    animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+  }
 }
 
 :root {
@@ -90,14 +130,14 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --brand-primary: #2d7a5b;
-  --brand-primary-dark: #1f5540;
-  --brand-primary-light: #e5f7ed;
+  --brand-primary: #10b981;
+  --brand-primary-dark: #059669;
+  --brand-primary-light: #d1fae5;
   --brand-secondary: #2f5ae0;
   --brand-secondary-light: #edf3f8;
-  --success: #2e7d32;
-  --error: #c62828;
-  --warning: #f57c00;
+  --success: #10b981;
+  --error: #ef4444;
+  --warning: #f59e0b;
   --info: #2196f3;
 }
 

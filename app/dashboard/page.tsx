@@ -4,14 +4,17 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useInventoryStore } from '@/store/inventoryStore';
 import { getStockAlerts } from '@/lib/inventory';
-import StockAlertsCard from '@/components/inventory/StockAlertsCard';
-import { TasaActivaCard } from '@/components/dashboard/TasaActivaCard';
+import { StockAlertsCardV2 } from '@/components/dashboard/StockAlertsCardV2';
+import { TasaActivaCardV2 } from '@/components/dashboard/TasaActivaCardV2';
+import { MetricCard } from '@/components/dashboard/MetricCard';
+import { TrendChartPlaceholder } from '@/components/dashboard/TrendChartPlaceholder';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import {
   DollarSign,
   Package,
   ShoppingCart,
   Users,
+  Calendar,
   TrendingUp,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -43,91 +46,101 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">
-          ¡Bienvenido, {profile?.name}!
+    <div className="to-tsuma-primary-bg/30 min-h-screen space-y-6 bg-gradient-to-br from-gray-50 p-6">
+      {/* Header */}
+      <div className="animate-slide-up">
+        <h1 className="text-4xl font-bold text-gray-900">
+          ¡Bienvenido, {profile?.name || 'fotos'}!
         </h1>
-        <p className="text-slate-600">Resumen de tu negocio</p>
+        <p className="mt-1 text-gray-600">
+          Resumen de tu negocio en tiempo real
+        </p>
       </div>
 
-      {/* Tasa Activa */}
+      {/* Tasa Activa - Featured Card */}
       {!ratesLoading && activeRate && activeRate.usdToVes > 0 && (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <TasaActivaCard
+        <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <TasaActivaCardV2
             rate={activeRate.usdToVes}
             fromCurrency="USD"
             toCurrency="VES"
             updatedAt={activeRate.updatedAt}
+            trend={{
+              value: '+2.3%',
+              isPositive: true,
+            }}
             onUpdate={() => router.push('/dashboard/exchange-rates')}
           />
         </div>
       )}
 
-      {/* KPI Cards */}
+      {/* KPI Metrics Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg border bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">
-                Ventas del Día
-              </p>
-              <p className="text-2xl font-bold text-slate-900">$0.00</p>
-              <p className="text-xs text-slate-500">
-                Próximamente con datos reales
-              </p>
-            </div>
-            <DollarSign className="h-8 w-8 text-slate-400" />
-          </div>
-        </div>
+        <MetricCard
+          title="Ventas del Día"
+          value="$0.00"
+          subtitle="Próximamente con datos reales"
+          icon={DollarSign}
+          trend={{
+            value: '+0%',
+            isPositive: true,
+          }}
+          className="animate-slide-up"
+          style={{ animationDelay: '0.2s' } as React.CSSProperties}
+        />
 
-        <div className="rounded-lg border bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">Productos</p>
-              <p className="text-2xl font-bold text-slate-900">0</p>
-              <p className="text-xs text-slate-500">Total en inventario</p>
-            </div>
-            <Package className="h-8 w-8 text-slate-400" />
-          </div>
-        </div>
+        <MetricCard
+          title="Ventas del Mes"
+          value="$0.00"
+          subtitle="vs mes pasado: 0%"
+          icon={Calendar}
+          trend={{
+            value: '+0%',
+            isPositive: true,
+          }}
+          action={{
+            label: 'Ver historial',
+            onClick: () => router.push('/dashboard/sales'),
+          }}
+          className="animate-slide-up"
+          style={{ animationDelay: '0.3s' } as React.CSSProperties}
+        />
 
-        <div className="rounded-lg border bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">
-                Ventas del Mes
-              </p>
-              <p className="text-2xl font-bold text-slate-900">0</p>
-              <p className="text-xs text-slate-500">Transacciones</p>
-            </div>
-            <ShoppingCart className="h-8 w-8 text-slate-400" />
-          </div>
-        </div>
+        <MetricCard
+          title="Productos"
+          value="0"
+          subtitle="Total en inventario"
+          icon={Package}
+          action={{
+            label: 'Gestionar',
+            onClick: () => router.push('/dashboard/products'),
+          }}
+          className="animate-slide-up"
+          style={{ animationDelay: '0.4s' } as React.CSSProperties}
+        />
 
-        <div className="rounded-lg border bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">Clientes</p>
-              <p className="text-2xl font-bold text-slate-900">0</p>
-              <p className="text-xs text-slate-500">Clientes registrados</p>
-            </div>
-            <Users className="h-8 w-8 text-slate-400" />
-          </div>
-        </div>
+        <MetricCard
+          title="Clientes"
+          value="0"
+          subtitle="Clientes registrados"
+          icon={Users}
+          action={{
+            label: 'Ver todos',
+            onClick: () => router.push('/dashboard/customers'),
+          }}
+          className="animate-slide-up"
+          style={{ animationDelay: '0.5s' } as React.CSSProperties}
+        />
       </div>
 
-      {/* Alertas de Stock Bajo */}
-      {!loadingAlerts && <StockAlertsCard alerts={alerts} />}
+      {/* Alertas de Stock */}
+      <div className="animate-slide-up" style={{ animationDelay: '0.6s' }}>
+        <StockAlertsCardV2 alerts={alerts} loading={loadingAlerts} />
+      </div>
 
-      {/* Placeholder para gráficos */}
-      <div className="rounded-lg border bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">
-          Tendencia de Ventas
-        </h2>
-        <div className="flex h-64 items-center justify-center text-slate-400">
-          Gráfico próximamente (Fase 6)
-        </div>
+      {/* Tendencia de Ventas */}
+      <div className="animate-slide-up" style={{ animationDelay: '0.7s' }}>
+        <TrendChartPlaceholder />
       </div>
     </div>
   );
