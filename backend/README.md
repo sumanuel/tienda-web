@@ -71,7 +71,14 @@ npx prisma studio
 ### 6. Iniciar Servidor
 
 ```bash
-# Desarrollo (con hot-reload)
+# ✅ RECOMENDADO: Reinicio inteligente (verifica y libera puerto 4000 automáticamente)
+npm run restart
+
+# Desarrollo (con hot-reload) - Solo si el puerto está libre
+npm run dev
+
+# Si el puerto 4000 está ocupado, liberarlo primero
+npm run kill-port
 npm run dev
 
 # Producción
@@ -80,6 +87,9 @@ npm start
 ```
 
 El servidor estará corriendo en `http://localhost:4000`
+
+**💡 Tip:** Usa `npm run restart` para evitar errores de "puerto ocupado".  
+**📖 Más información:** Ver [SOLUCION_PUERTO_OCUPADO.md](./SOLUCION_PUERTO_OCUPADO.md)
 
 ## 📚 Endpoints Disponibles
 
@@ -189,6 +199,36 @@ npm run prisma:studio    # Abrir Prisma Studio
 6. ⏳ Implementar Reportes
 
 ## 🐛 Troubleshooting
+
+### Error "EADDRINUSE: address already in use 0.0.0.0:4000"
+
+El puerto 4000 ya está ocupado por otro proceso.
+
+**Solución rápida:**
+
+```bash
+npm run restart
+```
+
+**Solución manual:**
+
+```bash
+npm run kill-port
+npm run dev
+```
+
+**📖 Guía completa:** Ver [SOLUCION_PUERTO_OCUPADO.md](./SOLUCION_PUERTO_OCUPADO.md)
+
+### Error "Failed to fetch" en Login (Frontend)
+
+El backend no está corriendo o se colgó.
+
+**Solución:**
+
+```bash
+cd backend
+npm run restart
+```
 
 ### Error de conexión a PostgreSQL
 
