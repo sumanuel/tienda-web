@@ -226,19 +226,24 @@ export async function calculateInventoryValuation(storeId: string) {
       throw new Error('La respuesta del servidor está incompleta');
     }
 
-    // Mapear byCategory a la estructura esperada
-    const byCategory = response.byCategory
-      .map((cat: any) => ({
-        category: cat.category,
-        value: cat.totalValue,
-      }))
-      .sort((a, b) => b.value - a.value);
+    // Mapear byCategory al formato esperado por la UI: { categoria: valor }
+    const byCategory = (response.byCategory as any[]).reduce(
+      (acc: Record<string, number>, cat: any) => {
+        const category = String(cat?.category || 'Sin categoria');
+        const value = Number(cat?.totalValue || 0);
+        acc[category] = (acc[category] || 0) + value;
+        return acc;
+      },
+      {}
+    );
+
+    const totalValue = Number(response.summary.totalValue || 0);
+    const totalItems = Number(response.summary.totalProducts || 0);
 
     return {
-      totalValue: response.summary.totalValue,
-      totalProducts: response.summary.totalProducts,
+      totalValue,
+      totalItems,
       byCategory,
-      products: [], // El backend no devuelve productos individuales en este endpoint
     };
   } catch (error: any) {
     console.error('Error calculando valoración de inventario:', error);

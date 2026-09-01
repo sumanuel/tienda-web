@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -179,18 +178,13 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer con gradiente decorativo */}
+      {/* Footer decorativo */}
       <div className="from-tsuma-primary-bg border-t border-gray-200 bg-gradient-to-r to-white p-3">
         <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm">
-          <div className="bg-tsuma-primary flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white">
-            {profile?.name?.charAt(0) || 'U'}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-gray-900">
-              {profile?.name || 'Usuario'}
-            </p>
-            <p className="truncate text-xs text-gray-500">Dashboard activo</p>
-          </div>
+          <Store className="text-tsuma-primary h-5 w-5" />
+          <p className="truncate text-sm font-medium text-gray-700">
+            T-Suma Dashboard
+          </p>
         </div>
       </div>
     </div>

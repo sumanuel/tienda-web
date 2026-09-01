@@ -3,13 +3,16 @@ import { PrismaClient } from '@prisma/client';
 // Singleton de Prisma Client
 // En desarrollo, previene múltiples instancias por HMR
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
+const enableQueryLogs = process.env.PRISMA_QUERY_LOGS === 'true';
 
 export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({
     log:
       process.env.NODE_ENV === 'development'
-        ? ['query', 'error', 'warn']
+        ? enableQueryLogs
+          ? ['query', 'error', 'warn']
+          : ['error', 'warn']
         : ['error'],
   });
 
