@@ -1,6 +1,6 @@
 // Cliente API para comunicarse con el backend PostgreSQL
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 interface ApiError {
   error: string;
@@ -24,16 +24,30 @@ class ApiClient {
     return localStorage.getItem('refreshToken');
   }
 
+  private setCookie(name: string, value: string, maxAgeSeconds: number) {
+    if (typeof document === 'undefined') return;
+    document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax`;
+  }
+
+  private clearCookie(name: string) {
+    if (typeof document === 'undefined') return;
+    document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=Lax`;
+  }
+
   private setTokens(accessToken: string, refreshToken: string) {
     if (typeof window === 'undefined') return;
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
+    this.setCookie('accessToken', accessToken, 60 * 60 * 24);
+    this.setCookie('refreshToken', refreshToken, 60 * 60 * 24 * 7);
   }
 
   private clearTokens() {
     if (typeof window === 'undefined') return;
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    this.clearCookie('accessToken');
+    this.clearCookie('refreshToken');
   }
 
   private getFallbackBaseUrls(): string[] {
@@ -85,7 +99,9 @@ class ApiClient {
             options
           );
           // Si responde, persistimos la URL funcional para siguientes requests
-          this.baseUrl = fallbackBaseUrl;
+          if (fallbackBaseUrl.startsWith('http')) {
+            this.baseUrl = fallbackBaseUrl;
+          }
           return response;
         } catch {
           // Intentar siguiente fallback
@@ -118,6 +134,7 @@ class ApiClient {
       // Actualizar solo el access token
       if (typeof window !== 'undefined') {
         localStorage.setItem('accessToken', newAccessToken);
+        this.setCookie('accessToken', newAccessToken, 60 * 60 * 24);
       }
 
       return newAccessToken;

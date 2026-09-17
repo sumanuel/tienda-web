@@ -146,7 +146,7 @@ export async function getSupplierProducts(storeId: string, supplierId: string) {
       products: any[];
       supplierId: string;
       note?: string;
-    }>(`/suppliers/${supplierId}/products`);
+    }>(`/api/suppliers/${supplierId}/products`);
 
     const products = response.products.map((product) => ({
       id: product.id,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,6 +18,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { setProfile } = useAuthStore();
@@ -34,12 +35,14 @@ export function LoginForm() {
     try {
       setLoading(true);
       setError('');
+      const redirectTo = searchParams.get('redirect') || '/dashboard';
 
       const { profile } = await signIn(data.email, data.password);
       setProfile(profile);
 
       toast.success('¡Bienvenido!');
-      router.push('/dashboard');
+      router.refresh();
+      window.location.assign(redirectTo);
     } catch (err: any) {
       setError(err.message || 'Error al iniciar sesión');
     } finally {

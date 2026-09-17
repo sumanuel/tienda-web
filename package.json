@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "start:all": "powershell -ExecutionPolicy Bypass -File start.ps1",
+    "stop:all": "powershell -ExecutionPolicy Bypass -File stop.ps1",
+    "restart:all": "powershell -ExecutionPolicy Bypass -File restart.ps1"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
