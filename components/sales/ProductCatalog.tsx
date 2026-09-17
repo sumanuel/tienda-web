@@ -93,14 +93,26 @@ export function ProductCatalog({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Barra de búsqueda y filtros */}
-      <div className="sticky top-0 z-10 space-y-3 border-b bg-white p-4">
-        {/* Campo de búsqueda */}
+      <div className="sticky top-0 z-10 space-y-4 border-b border-gray-200 bg-white p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800">
+              Catálogo de productos
+            </h2>
+            <p className="text-sm text-gray-500">
+              Busca rápido y agrega productos al carrito sin salir de la venta.
+            </p>
+          </div>
+          <div className="bg-brand-primary-light text-brand-primary rounded-full px-3 py-1 text-xs font-medium">
+            {filteredProducts.length} visibles
+          </div>
+        </div>
+
         <div className="relative">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
             placeholder="Buscar por nombre, SKU o código de barras..."
-            className="pr-10 pl-10"
+            className="focus:border-brand-primary focus:ring-brand-primary rounded-xl border-gray-200 bg-gray-50 pr-10 pl-10 focus:bg-white"
             value={searchQuery}
             onChange={(e) => onSearchChange?.(e.target.value)}
             autoFocus
@@ -108,10 +120,9 @@ export function ProductCatalog({
           <Barcode className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
         </div>
 
-        {/* Filtros */}
         <div className="flex gap-2">
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="flex-1">
+            <SelectTrigger className="focus:ring-brand-primary flex-1 rounded-xl border-gray-200 bg-gray-50">
               <SelectValue placeholder="Categoría" />
             </SelectTrigger>
             <SelectContent>
@@ -125,7 +136,7 @@ export function ProductCatalog({
           </Select>
 
           <Select value={stockFilter} onValueChange={setStockFilter}>
-            <SelectTrigger className="flex-1">
+            <SelectTrigger className="focus:ring-brand-primary flex-1 rounded-xl border-gray-200 bg-gray-50">
               <SelectValue placeholder="Stock" />
             </SelectTrigger>
             <SelectContent>
@@ -136,7 +147,6 @@ export function ProductCatalog({
           </Select>
         </div>
 
-        {/* Contador de resultados */}
         <p className="text-sm text-gray-600">
           {filteredProducts.length}{' '}
           {filteredProducts.length === 1 ? 'producto' : 'productos'}
@@ -145,8 +155,7 @@ export function ProductCatalog({
         </p>
       </div>
 
-      {/* Grid de productos */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto bg-gray-50/60 p-4">
         {filteredProducts.length > 0 ? (
           <div className="space-y-2">
             {filteredProducts.map((product) => (
@@ -159,11 +168,13 @@ export function ProductCatalog({
             ))}
           </div>
         ) : (
-          <div className="flex h-64 flex-col items-center justify-center text-gray-400">
-            <Package className="mb-4 h-16 w-16" />
-            <p className="text-lg font-medium">No se encontraron productos</p>
+          <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white text-gray-400">
+            <Package className="mb-4 h-14 w-14" />
+            <p className="text-lg font-medium text-gray-700">
+              No se encontraron productos
+            </p>
             {searchQuery && (
-              <p className="text-sm">Intenta con otra búsqueda</p>
+              <p className="text-sm">Intenta con otra búsqueda o categoría</p>
             )}
           </div>
         )}

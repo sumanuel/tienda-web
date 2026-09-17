@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus, AlertTriangle, Package } from 'lucide-react';
@@ -41,33 +41,31 @@ export function ProductCard({ product, currency, onAdd }: ProductCardProps) {
 
   return (
     <Card
-      className={`group cursor-pointer transition-all hover:shadow-md ${
+      className={`group hover:border-brand-primary/30 overflow-hidden rounded-2xl border-gray-200 transition-all hover:shadow-sm ${
         isOutOfStock ? 'cursor-not-allowed opacity-50' : ''
       }`}
       onClick={() => !isOutOfStock && onAdd(product)}
     >
-      <CardContent className="p-3">
+      <CardContent className="p-4">
         <div className="flex items-center gap-3">
-          {/* Imagen del producto */}
           <div className="flex-shrink-0">
             {product.image ? (
               <img
                 src={product.image}
                 alt={product.name}
-                className="h-16 w-16 rounded-lg object-cover"
+                className="h-16 w-16 rounded-xl object-cover"
               />
             ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-gray-100">
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gray-100">
                 <Package className="h-8 w-8 text-gray-400" />
               </div>
             )}
           </div>
 
-          {/* Información del producto */}
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <h3 className="truncate font-semibold text-gray-900">
+                <h3 className="truncate text-base font-semibold text-gray-900">
                   {product.name}
                 </h3>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -82,14 +80,16 @@ export function ProductCard({ product, currency, onAdd }: ProductCardProps) {
                     </span>
                   )}
                 </div>
-                <Badge variant="secondary" className="mt-1 text-xs">
+                <Badge
+                  variant="secondary"
+                  className="mt-2 rounded-full bg-gray-100 text-xs text-gray-700"
+                >
                   {product.category}
                 </Badge>
               </div>
 
-              {/* Precio y stock */}
               <div className="flex flex-col items-end gap-1">
-                <p className="text-lg font-bold text-[#2D7A5B]">
+                <p className="text-brand-primary text-xl font-bold">
                   {formatCurrency(displayPrice, currency)}
                 </p>
                 {product.trackInventory && (
@@ -102,7 +102,7 @@ export function ProductCard({ product, currency, onAdd }: ProductCardProps) {
                         isOutOfStock
                           ? 'text-red-600'
                           : isLowStock
-                            ? 'text-orange-600'
+                            ? 'text-amber-700'
                             : 'text-green-600'
                       }`}
                     >
@@ -114,12 +114,11 @@ export function ProductCard({ product, currency, onAdd }: ProductCardProps) {
             </div>
           </div>
 
-          {/* Botón agregar */}
           <div className="flex-shrink-0">
             <Button
               size="sm"
               disabled={isOutOfStock}
-              className="bg-[#2D7A5B] hover:bg-[#236449]"
+              className="bg-brand-primary hover:bg-brand-primary-dark rounded-xl px-3"
               onClick={(e) => {
                 e.stopPropagation();
                 !isOutOfStock && onAdd(product);

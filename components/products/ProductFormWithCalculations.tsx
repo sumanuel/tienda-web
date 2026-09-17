@@ -14,6 +14,9 @@ import {
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useAuth } from '@/hooks/useAuth';
 
+const inputClassName =
+  'w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary focus:outline-none';
+
 const productSchemaWithCalculations = z.object({
   code: z.string().optional(),
   barcode: z.string().optional(),
@@ -198,20 +201,27 @@ export default function ProductFormWithCalculations({
 
   if (ratesLoading) {
     return (
-      <div className="p-8 text-center">
-        <p className="text-gray-500">Cargando tasas de cambio...</p>
+      <div className="space-y-4">
+        <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="h-6 w-48 rounded bg-gray-200" />
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="h-11 rounded bg-gray-100" />
+            <div className="h-11 rounded bg-gray-100" />
+            <div className="h-11 rounded bg-gray-100 md:col-span-2" />
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!activeRate || activeRate.usdToVes === 0) {
     return (
-      <div className="space-y-6 p-6">
-        <div className="border-warning bg-warning/10 rounded-lg border-2 p-6">
+      <div className="space-y-6">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
           <div className="flex items-start gap-3">
-            <DollarSign className="text-warning h-6 w-6" />
+            <DollarSign className="h-6 w-6 text-amber-600" />
             <div className="flex-1">
-              <p className="text-warning text-lg font-semibold">
+              <p className="text-lg font-semibold text-amber-800">
                 ¡Tasa de cambio USD no configurada!
               </p>
               <p className="mt-2 text-sm text-gray-700">
@@ -222,7 +232,7 @@ export default function ProductFormWithCalculations({
               </p>
               <a
                 href="/dashboard/exchange-rates"
-                className="bg-brand-primary hover:bg-brand-primary-dark mt-4 inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-medium text-white transition-colors"
+                className="bg-brand-primary hover:bg-brand-primary-dark mt-4 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium text-white transition-colors"
               >
                 <DollarSign className="h-4 w-4" />
                 Configurar Tasa USD → VES Ahora
@@ -231,7 +241,7 @@ export default function ProductFormWithCalculations({
           </div>
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-6">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <h3 className="mb-3 font-semibold text-gray-700">
             ¿Por qué es obligatoria la tasa USD?
           </h3>
@@ -272,107 +282,126 @@ export default function ProductFormWithCalculations({
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-      {/* Imagen */}
-      <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700">
-          Imagen del Producto
-        </label>
-        <div className="flex items-center gap-4">
-          {imagePreview && (
-            <div className="relative h-24 w-24">
-              <Image
-                src={imagePreview}
-                alt="Preview"
-                fill
-                className="rounded object-cover"
+      <fieldset className="space-y-5 rounded-2xl border border-gray-200 p-5">
+        <legend className="px-1 text-sm font-semibold text-gray-700">
+          Información general
+        </legend>
+
+        <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-700">
+              Imagen del producto
+            </label>
+            <div className="flex h-40 items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50">
+              {imagePreview ? (
+                <div className="relative h-full w-full overflow-hidden rounded-2xl">
+                  <Image
+                    src={imagePreview}
+                    alt="Preview"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="text-center text-sm text-gray-400">
+                  <Upload className="mx-auto mb-2 h-7 w-7" />
+                  Sin imagen
+                </div>
+              )}
+            </div>
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
+              <Upload size={18} />
+              Subir imagen
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Código
+                </label>
+                <input
+                  {...register('code')}
+                  type="text"
+                  className={inputClassName}
+                />
+                <p className="mt-1 text-xs text-gray-400">
+                  Se genera si lo dejas vacío.
+                </p>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Código de barras
+                </label>
+                <input
+                  {...register('barcode')}
+                  type="text"
+                  className={inputClassName}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Nombre *
+              </label>
+              <input
+                {...register('name')}
+                type="text"
+                className={inputClassName}
+              />
+              {errors.name && (
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.name.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Descripción
+              </label>
+              <textarea
+                {...register('description')}
+                rows={4}
+                className={inputClassName}
               />
             </div>
-          )}
-          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 hover:bg-gray-50">
-            <Upload size={20} />
-            <span className="text-sm">Subir Imagen</span>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="hidden"
-            />
-          </label>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Categoría *
+              </label>
+              <select {...register('category')} className={inputClassName}>
+                <option value="">Seleccionar categoría</option>
+                <option value="Electrónica">Electrónica</option>
+                <option value="Alimentos">Alimentos</option>
+                <option value="Ropa">Ropa</option>
+                <option value="Hogar">Hogar</option>
+                <option value="Otros">Otros</option>
+              </select>
+              {errors.category && (
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.category.message}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      </fieldset>
 
-      {/* Información Básica */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Código (auto-generado si vacío)
-          </label>
-          <input
-            {...register('code')}
-            type="text"
-            className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Código de Barras
-          </label>
-          <input
-            {...register('barcode')}
-            type="text"
-            className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          Nombre *
-        </label>
-        <input
-          {...register('name')}
-          type="text"
-          className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none"
-        />
-        {errors.name && (
-          <p className="text-error mt-1 text-sm">{errors.name.message}</p>
-        )}
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          Descripción
-        </label>
-        <textarea
-          {...register('description')}
-          rows={3}
-          className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none"
-        />
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          Categoría *
-        </label>
-        <select
-          {...register('category')}
-          className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none"
-        >
-          <option value="">Seleccionar categoría</option>
-          <option value="Electrónica">Electrónica</option>
-          <option value="Alimentos">Alimentos</option>
-          <option value="Ropa">Ropa</option>
-          <option value="Hogar">Hogar</option>
-          <option value="Otros">Otros</option>
-        </select>
-        {errors.category && (
-          <p className="text-error mt-1 text-sm">{errors.category.message}</p>
-        )}
-      </div>
-
-      {/* Cálculo de Precios Automático */}
-      <div className="border-brand-primary bg-brand-primary-light rounded-lg border-2 p-6">
+      <fieldset className="border-brand-primary/30 bg-brand-primary-light/40 rounded-2xl border p-6">
+        <legend className="text-brand-primary px-1 text-sm font-semibold">
+          Precios y cálculo automático
+        </legend>
         <div className="mb-4 flex items-center gap-2">
           <Calculator className="text-brand-primary h-5 w-5" />
           <h3 className="text-brand-primary font-semibold">
@@ -391,10 +420,12 @@ export default function ProductFormWithCalculations({
                 {...register('cost', { valueAsNumber: true })}
                 type="number"
                 step="0.01"
-                className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none"
+                className={inputClassName}
               />
               {errors.cost && (
-                <p className="text-error mt-1 text-sm">{errors.cost.message}</p>
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.cost.message}
+                </p>
               )}
             </div>
 
@@ -402,10 +433,7 @@ export default function ProductFormWithCalculations({
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 Moneda
               </label>
-              <select
-                {...register('costCurrency')}
-                className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none"
-              >
+              <select {...register('costCurrency')} className={inputClassName}>
                 <option value="USD">USD</option>
                 <option value="VES">VES</option>
                 <option value="EUR">EUR</option>
@@ -423,7 +451,7 @@ export default function ProductFormWithCalculations({
               type="number"
               step="0.01"
               placeholder="0.00"
-              className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none"
+              className={inputClassName}
             />
           </div>
 
@@ -438,10 +466,10 @@ export default function ProductFormWithCalculations({
                 type="number"
                 step="0.1"
                 placeholder="30"
-                className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none"
+                className={inputClassName}
               />
               {errors.margin && (
-                <p className="text-error mt-1 text-sm">
+                <p className="mt-1 text-xs text-red-500">
                   {errors.margin.message}
                 </p>
               )}
@@ -456,7 +484,7 @@ export default function ProductFormWithCalculations({
                 type="number"
                 step="0.1"
                 placeholder="0"
-                className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none"
+                className={inputClassName}
               />
             </div>
           </div>
@@ -493,10 +521,12 @@ export default function ProductFormWithCalculations({
             </div>
           )}
         </div>
-      </div>
+      </fieldset>
 
-      {/* Inventario */}
-      <div className="rounded-lg border border-gray-200 p-4">
+      <fieldset className="rounded-2xl border border-gray-200 p-5">
+        <legend className="px-1 text-sm font-semibold text-gray-700">
+          Inventario
+        </legend>
         <div className="mb-4 flex items-center gap-2">
           <input
             {...register('trackInventory')}
@@ -513,7 +543,7 @@ export default function ProductFormWithCalculations({
         </div>
 
         {trackInventory && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 Stock Actual *
@@ -523,10 +553,10 @@ export default function ProductFormWithCalculations({
                 type="number"
                 step="1"
                 min="0"
-                className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none"
+                className={inputClassName}
               />
               {errors.stock && (
-                <p className="text-error mt-1 text-sm">
+                <p className="mt-1 text-xs text-red-500">
                   {errors.stock.message}
                 </p>
               )}
@@ -541,37 +571,36 @@ export default function ProductFormWithCalculations({
                 type="number"
                 step="1"
                 min="0"
-                className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none"
+                className={inputClassName}
               />
               {errors.stockMin && (
-                <p className="text-error mt-1 text-sm">
+                <p className="mt-1 text-xs text-red-500">
                   {errors.stockMin.message}
                 </p>
               )}
             </div>
           </div>
         )}
-      </div>
+      </fieldset>
 
-      {/* Botones */}
-      <div className="flex gap-3">
+      <div className="flex flex-col-reverse gap-3 border-t border-gray-200 pt-4 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-xl border border-gray-200 px-6 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+        >
+          Cancelar
+        </button>
         <button
           type="submit"
           disabled={loading}
-          className="bg-brand-primary hover:bg-brand-primary-dark rounded-lg px-6 py-2 text-white transition-colors disabled:bg-gray-400"
+          className="bg-brand-primary hover:bg-brand-primary-dark rounded-xl px-6 py-2.5 text-sm font-medium text-white transition-colors disabled:bg-gray-400"
         >
           {loading
             ? 'Guardando...'
             : initialData
-              ? 'Actualizar'
-              : 'Crear Producto'}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-lg border border-gray-300 px-6 py-2 transition-colors hover:bg-gray-50"
-        >
-          Cancelar
+              ? 'Actualizar producto'
+              : 'Crear producto'}
         </button>
       </div>
     </form>

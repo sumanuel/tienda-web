@@ -25,6 +25,7 @@ import {
   DollarSign,
   AlertCircle,
   CheckCircle2,
+  Receipt,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { Currency } from '@/lib/currency';
@@ -154,7 +155,7 @@ export default function POSPage() {
     }) => {
       try {
         const response = await apiClient.post<{ customer: Customer }>(
-          '/customers',
+          '/api/customers',
           {
             ...data,
             storeId,
@@ -259,7 +260,7 @@ export default function POSPage() {
 
         // Recargar productos para actualizar stock
         const response = await apiClient.get<{ products: Product[] }>(
-          `/products?storeId=${storeId}&limit=100`
+          `/api/products?storeId=${storeId}&limit=100`
         );
         setProducts(response.products || []);
 
@@ -310,133 +311,151 @@ export default function POSPage() {
 
   if (!profile) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <p>Cargando...</p>
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
+        <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+          <p className="text-sm text-gray-500">Cargando punto de venta...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] gap-4 bg-gray-50 p-4">
-      {/* Panel izquierdo: Catálogo de productos (50%) */}
-      <div className="flex-1 overflow-hidden rounded-lg bg-white shadow-lg">
-        <div className="flex h-full flex-col">
-          <div className="border-b bg-white p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ShoppingCart className="h-6 w-6 text-[#2D7A5B]" />
-                <h1 className="text-2xl font-bold">Punto de Venta</h1>
-              </div>
-
-              <Select
-                value={currency}
-                onValueChange={(v) => setCurrency(v as Currency)}
-              >
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="VES">Bs. (VES)</SelectItem>
-                  <SelectItem value="USD">$ (USD)</SelectItem>
-                  <SelectItem value="EUR">€ (EUR)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+    <div className="min-h-screen space-y-6 bg-gray-50 p-6">
+      <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="bg-brand-primary-light text-brand-primary flex h-11 w-11 items-center justify-center rounded-xl">
+            <Receipt className="h-5 w-5" />
           </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Punto de Venta</h1>
+            <p className="text-sm text-gray-500">
+              Registra ventas rápidas, controla stock y cobra sin salir del
+              flujo.
+            </p>
+          </div>
+        </div>
 
-          <ProductCatalog
-            products={products}
-            currency={currency}
-            onAddProduct={handleAddProduct}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-          />
+        <div className="flex items-center gap-3">
+          <div className="hidden rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 md:block">
+            F9 procesa la venta · ESC limpia el carrito
+          </div>
+          <Select
+            value={currency}
+            onValueChange={(v) => setCurrency(v as Currency)}
+          >
+            <SelectTrigger className="focus:ring-brand-primary w-36 rounded-xl border-gray-200 bg-gray-50">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="VES">Bs. (VES)</SelectItem>
+              <SelectItem value="USD">$ (USD)</SelectItem>
+              <SelectItem value="EUR">€ (EUR)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* Panel derecho: Carrito y checkout (50%) */}
-      <div className="flex flex-1 flex-col gap-4">
-        {/* Carrito */}
-        <Card className="flex flex-1 flex-col overflow-hidden shadow-lg">
-          <Cart
-            items={cart.items}
-            summary={cart.summary}
-            currency={currency}
-            onIncrement={cart.incrementItem}
-            onDecrement={cart.decrementItem}
-            onRemove={cart.removeItem}
-          />
-        </Card>
-
-        {/* Panel de checkout */}
-        <Card className="space-y-4 p-4 shadow-lg">
-          <h3 className="flex items-center gap-2 text-lg font-semibold">
-            <DollarSign className="h-5 w-5 text-[#2D7A5B]" />
-            Checkout
-          </h3>
-
-          <Separator />
-
-          {/* Selector de cliente */}
-          <CustomerSelector
-            selectedCustomer={selectedCustomer}
-            onSelectCustomer={setSelectedCustomer}
-            onCreateCustomer={handleCreateCustomer}
-            storeId={storeId}
-          />
-
-          {/* Selector de método de pago */}
-          <PaymentMethodSelector
-            paymentMethod={paymentMethod}
-            onPaymentMethodChange={(method) =>
-              setPaymentMethod(method as PaymentMethod)
-            }
-            referenceNumber={referenceNumber}
-            onReferenceNumberChange={setReferenceNumber}
-            customerDocument={selectedCustomer?.documentNumber}
-            showError={showValidationErrors}
-          />
-
-          <Separator />
-
-          {/* Botones de acción */}
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => {
-                if (cart.items.length > 0 && confirm('¿Limpiar el carrito?')) {
-                  cart.clearCart();
-                  setSelectedCustomer(null);
-                  setPaymentMethod('cash');
-                  setReferenceNumber('');
-                  setShowValidationErrors(false);
-                }
-              }}
-              disabled={cart.isEmpty || processing}
-            >
-              Limpiar (ESC)
-            </Button>
-
-            <Button
-              className="flex-1 bg-[#2D7A5B] hover:bg-[#236449]"
-              onClick={handleProcessSale}
-              disabled={cart.isEmpty || processing}
-            >
-              {processing ? (
-                <>
-                  <AlertCircle className="mr-2 h-4 w-4 animate-spin" />
-                  Procesando...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Procesar Venta (F9)
-                </>
-              )}
-            </Button>
+      <div className="grid min-h-[calc(100vh-14rem)] gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.95fr)]">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="flex h-full flex-col">
+            <ProductCatalog
+              products={products}
+              currency={currency}
+              onAddProduct={handleAddProduct}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+            />
           </div>
-        </Card>
+        </div>
+
+        <div className="flex flex-col gap-6 xl:sticky xl:top-6 xl:h-[calc(100vh-8rem)]">
+          <Card className="flex min-h-[22rem] flex-1 flex-col overflow-hidden rounded-2xl border-gray-200 shadow-sm">
+            <Cart
+              items={cart.items}
+              summary={cart.summary}
+              currency={currency}
+              onIncrement={cart.incrementItem}
+              onDecrement={cart.decrementItem}
+              onRemove={cart.removeItem}
+            />
+          </Card>
+
+          <Card className="space-y-4 rounded-2xl border-gray-200 p-5 shadow-sm">
+            <div className="flex items-center gap-2">
+              <DollarSign className="text-brand-primary h-5 w-5" />
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Checkout
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Selecciona cliente, forma de pago y confirma la venta.
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            <CustomerSelector
+              selectedCustomer={selectedCustomer}
+              onSelectCustomer={setSelectedCustomer}
+              onCreateCustomer={handleCreateCustomer}
+              storeId={storeId}
+            />
+
+            <PaymentMethodSelector
+              paymentMethod={paymentMethod}
+              onPaymentMethodChange={(method) =>
+                setPaymentMethod(method as PaymentMethod)
+              }
+              referenceNumber={referenceNumber}
+              onReferenceNumberChange={setReferenceNumber}
+              customerDocument={selectedCustomer?.documentNumber}
+              showError={showValidationErrors}
+            />
+
+            <Separator />
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl border-gray-200"
+                onClick={() => {
+                  if (
+                    cart.items.length > 0 &&
+                    confirm('¿Limpiar el carrito?')
+                  ) {
+                    cart.clearCart();
+                    setSelectedCustomer(null);
+                    setPaymentMethod('cash');
+                    setReferenceNumber('');
+                    setShowValidationErrors(false);
+                  }
+                }}
+                disabled={cart.isEmpty || processing}
+              >
+                Limpiar (ESC)
+              </Button>
+
+              <Button
+                className="bg-brand-primary hover:bg-brand-primary-dark flex-1 rounded-xl text-white"
+                onClick={handleProcessSale}
+                disabled={cart.isEmpty || processing}
+              >
+                {processing ? (
+                  <>
+                    <AlertCircle className="mr-2 h-4 w-4 animate-spin" />
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Procesar Venta (F9)
+                  </>
+                )}
+              </Button>
+            </div>
+          </Card>
+        </div>
       </div>
     </div>
   );

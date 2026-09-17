@@ -40,15 +40,19 @@ export function Cart({
 
   return (
     <div className="flex h-full flex-col bg-white">
-      {/* Header */}
-      <div className="border-b p-4">
+      <div className="border-b border-gray-200 p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5 text-[#2D7A5B]" />
-            <h2 className="text-lg font-semibold">Carrito</h2>
+            <ShoppingCart className="text-brand-primary h-5 w-5" />
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800">Carrito</h2>
+              <p className="text-xs text-gray-500">
+                Resumen de la venta actual
+              </p>
+            </div>
           </div>
           {items.length > 0 && (
-            <span className="rounded-full bg-[#2D7A5B] px-2.5 py-1 text-xs font-medium text-white">
+            <span className="bg-brand-primary rounded-full px-2.5 py-1 text-xs font-medium text-white">
               {summary.itemCount} {summary.itemCount === 1 ? 'item' : 'items'}
             </span>
           )}
@@ -72,18 +76,16 @@ export function Cart({
           </div>
         ) : (
           <div className="flex h-64 flex-col items-center justify-center text-gray-400">
-            <ShoppingCart className="mb-4 h-16 w-16" />
-            <p className="text-lg font-medium">Carrito vacío</p>
-            <p className="text-sm">Agrega productos para comenzar</p>
+            <ShoppingCart className="mb-4 h-14 w-14 text-gray-300" />
+            <p className="text-lg font-medium text-gray-700">Carrito vacío</p>
+            <p className="text-sm">Agrega productos para comenzar la venta</p>
           </div>
         )}
       </ScrollArea>
 
-      {/* Resumen de totales */}
       {items.length > 0 && (
-        <div className="border-t bg-gray-50 p-4">
+        <div className="border-t border-gray-200 bg-gray-50 p-5">
           <div className="space-y-2">
-            {/* Subtotal */}
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Subtotal:</span>
               <span className="font-medium">
@@ -91,7 +93,6 @@ export function Cart({
               </span>
             </div>
 
-            {/* IVA (si aplica) */}
             {summary.tax > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">IVA:</span>
@@ -103,15 +104,13 @@ export function Cart({
 
             <Separator />
 
-            {/* Total */}
             <div className="flex justify-between">
               <span className="text-lg font-semibold">Total:</span>
-              <span className="text-2xl font-bold text-[#2D7A5B]">
+              <span className="text-brand-primary text-2xl font-bold">
                 {formatCurrency(displayTotal, currency)}
               </span>
             </div>
 
-            {/* Conversión a moneda de referencia */}
             {currency === 'VES' && summary.totalReference > 0 && (
               <div className="mt-2 text-center text-xs text-gray-500">
                 ≈ {formatCurrency(summary.totalReference, 'USD')}
