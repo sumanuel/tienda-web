@@ -83,7 +83,9 @@ export default function AccountsReceivablePage() {
   const [customersWithBalance, setCustomersWithBalance] = useState<Customer[]>(
     []
   );
-  const [overdueCustomers, setOverdueCustomers] = useState<OverdueCustomerRow[]>([]);
+  const [overdueCustomers, setOverdueCustomers] = useState<
+    OverdueCustomerRow[]
+  >([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Dialog states
@@ -268,7 +270,7 @@ export default function AccountsReceivablePage() {
                 placeholder="Buscar por nombre o documento..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm border-gray-200 bg-gray-50 focus-visible:ring-brand-primary"
+                className="focus-visible:ring-brand-primary max-w-sm border-gray-200 bg-gray-50"
               />
             </div>
 
@@ -338,7 +340,9 @@ export default function AccountsReceivablePage() {
                     <TableHead>Cliente</TableHead>
                     <TableHead>Documento</TableHead>
                     <TableHead className="text-right">Balance Total</TableHead>
-                    <TableHead className="text-center">Días de atraso</TableHead>
+                    <TableHead className="text-center">
+                      Días de atraso
+                    </TableHead>
                     <TableHead className="text-center">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -364,7 +368,9 @@ export default function AccountsReceivablePage() {
                         </TableCell>
                         <TableCell className="text-center">
                           <span className="inline-flex rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">
-                            {status.daysOverdue ? `${status.daysOverdue} días` : 'Vencido'}
+                            {status.daysOverdue
+                              ? `${status.daysOverdue} días`
+                              : 'Vencido'}
                           </span>
                         </TableCell>
                         <TableCell>

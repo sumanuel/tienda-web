@@ -105,14 +105,14 @@ export default function CustomersTable({
           <div className="flex justify-end gap-2">
             <button
               onClick={() => onView(row.original)}
-              className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-brand-primary"
+              className="hover:text-brand-primary rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100"
               title="Ver historial"
             >
               <Eye size={18} />
             </button>
             <button
               onClick={() => onEdit(row.original)}
-              className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-brand-primary"
+              className="hover:text-brand-primary rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100"
               title="Editar"
             >
               <Edit size={18} />
@@ -157,8 +157,12 @@ export default function CustomersTable({
     <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-800">Base de clientes</h2>
-          <p className="text-sm text-gray-500">Busca, consulta historial y edita datos clave.</p>
+          <h2 className="text-lg font-semibold text-gray-800">
+            Base de clientes
+          </h2>
+          <p className="text-sm text-gray-500">
+            Busca, consulta historial y edita datos clave.
+          </p>
         </div>
         <div className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
           {customers.length} registros
@@ -175,7 +179,7 @@ export default function CustomersTable({
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
           placeholder="Buscar por nombre, documento, teléfono o email..."
-          className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pr-4 pl-10 text-sm focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary focus:outline-none"
+          className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pr-4 pl-10 text-sm focus:bg-white focus:ring-1 focus:outline-none"
         />
       </div>
 
@@ -187,7 +191,7 @@ export default function CustomersTable({
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"
+                    className="px-4 py-3 text-left text-xs font-semibold tracking-wide text-gray-500 uppercase"
                   >
                     {flexRender(
                       header.column.columnDef.header,
@@ -201,17 +205,18 @@ export default function CustomersTable({
           <tbody className="divide-y divide-gray-200 bg-white">
             {table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-4 py-12 text-center"
-                >
+                <td colSpan={columns.length} className="px-4 py-12 text-center">
                   <div className="flex flex-col items-center justify-center text-center">
                     <Users className="mb-4 h-12 w-12 text-gray-300" />
                     <p className="text-lg font-medium text-gray-700">
-                      {globalFilter ? 'No se encontraron clientes' : 'No hay clientes registrados'}
+                      {globalFilter
+                        ? 'No se encontraron clientes'
+                        : 'No hay clientes registrados'}
                     </p>
                     <p className="mt-1 text-sm text-gray-400">
-                      {globalFilter ? 'Prueba con otro criterio de búsqueda.' : 'Agrega tu primer cliente para empezar a vender a crédito.'}
+                      {globalFilter
+                        ? 'Prueba con otro criterio de búsqueda.'
+                        : 'Agrega tu primer cliente para empezar a vender a crédito.'}
                     </p>
                   </div>
                 </td>
@@ -255,7 +260,7 @@ export default function CustomersTable({
             <button
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className="rounded-lg bg-brand-primary px-3 py-1.5 text-sm text-white transition-colors hover:bg-brand-primary-dark disabled:cursor-not-allowed disabled:bg-gray-300"
+              className="bg-brand-primary hover:bg-brand-primary-dark rounded-lg px-3 py-1.5 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300"
             >
               Siguiente
             </button>

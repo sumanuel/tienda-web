@@ -112,7 +112,9 @@ export default function CustomerForm({
               placeholder="cliente@ejemplo.com"
             />
             {errors.email && (
-              <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
+              <p className="mt-1 text-xs text-red-500">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
@@ -179,7 +181,7 @@ export default function CustomerForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-primary-dark disabled:cursor-not-allowed disabled:bg-gray-300"
+          className="bg-brand-primary hover:bg-brand-primary-dark rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300"
         >
           {isSubmitting
             ? 'Guardando...'

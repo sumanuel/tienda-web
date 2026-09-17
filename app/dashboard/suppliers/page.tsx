@@ -17,7 +17,14 @@ import {
 import { Supplier, SupplierFormData } from '@/types/supplier';
 import SuppliersTable from '@/components/suppliers/SuppliersTable';
 import SupplierForm from '@/components/suppliers/SupplierForm';
-import { Plus, X, DollarSign, TruckIcon, Package, BadgeDollarSign } from 'lucide-react';
+import {
+  Plus,
+  X,
+  DollarSign,
+  TruckIcon,
+  Package,
+  BadgeDollarSign,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function SuppliersPage() {
@@ -95,7 +102,10 @@ export default function SuppliersPage() {
     try {
       if (!profile?.storeId) return;
       setViewingSupplier(supplier);
-      const productsData = await getSupplierProducts(profile.storeId, supplier.id);
+      const productsData = await getSupplierProducts(
+        profile.storeId,
+        supplier.id
+      );
       setSupplierProducts(productsData.products || []);
     } catch (error) {
       console.error('Error cargando productos del proveedor:', error);
@@ -132,7 +142,7 @@ export default function SuppliersPage() {
       <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-primary-light text-brand-primary">
+            <div className="bg-brand-primary-light text-brand-primary flex h-11 w-11 items-center justify-center rounded-xl">
               <TruckIcon className="h-5 w-5" />
             </div>
             <div>
@@ -151,7 +161,7 @@ export default function SuppliersPage() {
             setShowForm(!showForm);
             setEditingSupplier(null);
           }}
-          className="inline-flex items-center gap-2 rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-primary-dark"
+          className="bg-brand-primary hover:bg-brand-primary-dark inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors"
         >
           {showForm || editingSupplier ? (
             <>
@@ -170,11 +180,13 @@ export default function SuppliersPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-brand-primary-light p-3">
+            <div className="bg-brand-primary-light rounded-xl p-3">
               <TruckIcon className="text-brand-primary" size={24} />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Total Proveedores</p>
+              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                Total Proveedores
+              </p>
               <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
             </div>
           </div>
@@ -186,7 +198,9 @@ export default function SuppliersPage() {
               <BadgeDollarSign className="text-amber-700" size={24} />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Con Saldo Pendiente</p>
+              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                Con Saldo Pendiente
+              </p>
               <p className="text-2xl font-bold text-gray-900">
                 {stats.withBalance}
               </p>
@@ -200,7 +214,9 @@ export default function SuppliersPage() {
               <DollarSign className="text-red-600" size={24} />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Total por Pagar</p>
+              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                Total por Pagar
+              </p>
               <p className="text-2xl font-bold text-gray-900">
                 ${stats.totalBalance.toFixed(2)}
               </p>

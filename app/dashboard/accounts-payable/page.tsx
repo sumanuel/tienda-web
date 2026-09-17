@@ -68,7 +68,9 @@ export default function AccountsPayablePage() {
   const [suppliersWithBalance, setSuppliersWithBalance] = useState<Supplier[]>(
     []
   );
-  const [upcomingPayables, setUpcomingPayables] = useState<UpcomingPayableRow[]>([]);
+  const [upcomingPayables, setUpcomingPayables] = useState<
+    UpcomingPayableRow[]
+  >([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Dialog states
@@ -251,7 +253,7 @@ export default function AccountsPayablePage() {
                 placeholder="Buscar por nombre o RIF..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm border-gray-200 bg-gray-50 focus-visible:ring-brand-primary"
+                className="focus-visible:ring-brand-primary max-w-sm border-gray-200 bg-gray-50"
               />
             </div>
 

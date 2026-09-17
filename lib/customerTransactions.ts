@@ -147,7 +147,8 @@ export async function getCustomerAccountStatus(customerId: string) {
     const status: AccountStatus = {
       customerId,
       name: response.customer?.name || 'Cliente',
-      document: response.customer?.documentNumber || response.customer?.document || '',
+      document:
+        response.customer?.documentNumber || response.customer?.document || '',
       currentBalance: response.balance,
       transactions,
       totalCharges: transactions

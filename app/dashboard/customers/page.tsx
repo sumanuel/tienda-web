@@ -17,7 +17,14 @@ import {
 import { Customer, CustomerFormData } from '@/types/customer';
 import CustomersTable from '@/components/customers/CustomersTable';
 import CustomerForm from '@/components/customers/CustomerForm';
-import { Plus, X, DollarSign, Users, AlertCircle, UserRound } from 'lucide-react';
+import {
+  Plus,
+  X,
+  DollarSign,
+  Users,
+  AlertCircle,
+  UserRound,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function CustomersPage() {
@@ -135,13 +142,14 @@ export default function CustomersPage() {
       <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-primary-light text-brand-primary">
+            <div className="bg-brand-primary-light text-brand-primary flex h-11 w-11 items-center justify-center rounded-xl">
               <UserRound className="h-5 w-5" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
               <p className="text-sm text-gray-500">
-                Gestiona datos de contacto, saldos pendientes e historial de compras.
+                Gestiona datos de contacto, saldos pendientes e historial de
+                compras.
               </p>
             </div>
           </div>
@@ -154,7 +162,7 @@ export default function CustomersPage() {
             setShowForm(!showForm);
             setEditingCustomer(null);
           }}
-          className="inline-flex items-center gap-2 rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-primary-dark"
+          className="bg-brand-primary hover:bg-brand-primary-dark inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors"
         >
           {showForm || editingCustomer ? (
             <>
@@ -173,11 +181,13 @@ export default function CustomersPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-brand-primary-light p-3">
+            <div className="bg-brand-primary-light rounded-xl p-3">
               <Users className="text-brand-primary" size={24} />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Total Clientes</p>
+              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                Total Clientes
+              </p>
               <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
             </div>
           </div>
@@ -189,7 +199,9 @@ export default function CustomersPage() {
               <AlertCircle className="text-amber-700" size={24} />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Con Saldo Pendiente</p>
+              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                Con Saldo Pendiente
+              </p>
               <p className="text-2xl font-bold text-gray-900">
                 {stats.withBalance}
               </p>
@@ -203,7 +215,9 @@ export default function CustomersPage() {
               <DollarSign className="text-green-600" size={24} />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Total por Cobrar</p>
+              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                Total por Cobrar
+              </p>
               <p className="text-2xl font-bold text-gray-900">
                 ${stats.totalBalance.toFixed(2)}
               </p>
