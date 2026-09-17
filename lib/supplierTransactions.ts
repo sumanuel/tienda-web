@@ -4,6 +4,7 @@
 
 import { apiClient } from '@/lib/api';
 import type {
+  AccountStatus,
   SupplierTransaction,
   SupplierTransactionFormData,
 } from '@/types/transaction';
@@ -118,19 +119,48 @@ export async function getSupplierTransactions(
 export async function getSupplierAccountStatus(supplierId: string) {
   try {
     const response = await apiClient.getSupplierTransactions(supplierId);
+    const transactions = response.transactions.map((transaction) => ({
+      id: transaction.id,
+      storeId: '',
+      supplierId: transaction.supplierId,
+      type: transaction.type === 'purchase' ? 'charge' : 'payment',
+      amount: Math.abs(transaction.amount),
+      balanceBefore: 0,
+      balanceAfter: transaction.balance,
+      paymentMethod: undefined,
+      dueDate: transaction.dueDate ? new Date(transaction.dueDate) : undefined,
+      notes: transaction.notes || undefined,
+      createdBy: '',
+      createdAt: new Date(transaction.createdAt),
+    }));
 
-    return {
+    const overdueCharges = transactions.filter(
+      (transaction) =>
+        transaction.type === 'charge' &&
+        transaction.dueDate &&
+        transaction.dueDate < new Date()
+    );
+
+    const status: AccountStatus = {
+      supplierId,
+      name: response.supplier?.name || 'Proveedor',
+      rif: response.supplier?.taxId || response.supplier?.rif || '',
       currentBalance: response.balance,
-      totalCharges: response.transactions
-        .filter((t) => t.type === 'purchase')
-        .reduce((sum, t) => sum + t.amount, 0),
-      totalPayments: response.transactions
-        .filter((t) => t.type === 'payment')
-        .reduce((sum, t) => sum + Math.abs(t.amount), 0),
-      lastTransaction: response.transactions[0]
-        ? new Date(response.transactions[0].createdAt)
-        : undefined,
+      transactions,
+      totalCharges: transactions
+        .filter((transaction) => transaction.type === 'charge')
+        .reduce((sum, transaction) => sum + transaction.amount, 0),
+      totalPayments: transactions
+        .filter((transaction) => transaction.type === 'payment')
+        .reduce((sum, transaction) => sum + transaction.amount, 0),
+      overdueAmount: overdueCharges.reduce(
+        (sum, transaction) => sum + transaction.amount,
+        0
+      ),
+      overdueCount: overdueCharges.length,
     };
+
+    return status;
   } catch (error) {
     console.error('Error obteniendo estado de cuenta:', error);
     throw new Error('Error al obtener estado de cuenta');

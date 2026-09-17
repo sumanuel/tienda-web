@@ -17,7 +17,7 @@ import {
 import { Supplier, SupplierFormData } from '@/types/supplier';
 import SuppliersTable from '@/components/suppliers/SuppliersTable';
 import SupplierForm from '@/components/suppliers/SupplierForm';
-import { Plus, X, DollarSign, TruckIcon, Package } from 'lucide-react';
+import { Plus, X, DollarSign, TruckIcon, Package, BadgeDollarSign } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function SuppliersPage() {
@@ -95,8 +95,8 @@ export default function SuppliersPage() {
     try {
       if (!profile?.storeId) return;
       setViewingSupplier(supplier);
-      const products = await getSupplierProducts(profile.storeId, supplier.id);
-      setSupplierProducts(products);
+      const productsData = await getSupplierProducts(profile.storeId, supplier.id);
+      setSupplierProducts(productsData.products || []);
     } catch (error) {
       console.error('Error cargando productos del proveedor:', error);
       toast.error('Error al cargar productos del proveedor');
@@ -112,22 +112,37 @@ export default function SuppliersPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-          <p className="text-gray-600">Cargando proveedores...</p>
+      <div className="min-h-screen space-y-6 bg-gray-50 p-6">
+        <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="h-7 w-52 rounded bg-gray-200" />
+          <div className="mt-3 h-4 w-80 rounded bg-gray-100" />
         </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm" />
+          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm" />
+          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm" />
+        </div>
+        <div className="h-96 rounded-2xl border border-gray-200 bg-white shadow-sm" />
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+    <div className="min-h-screen space-y-6 bg-gray-50 p-6">
+      <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Proveedores</h1>
-          <p className="text-gray-600">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-primary-light text-brand-primary">
+              <TruckIcon className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Proveedores</h1>
+              <p className="text-sm text-gray-500">
+                Controla contactos, productos asociados y compromisos de pago.
+              </p>
+            </div>
+          </div>
+          <p className="mt-4 text-sm text-gray-600">
             {suppliers.length} proveedores registrados
           </p>
         </div>
@@ -136,7 +151,7 @@ export default function SuppliersPage() {
             setShowForm(!showForm);
             setEditingSupplier(null);
           }}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+          className="inline-flex items-center gap-2 rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-primary-dark"
         >
           {showForm || editingSupplier ? (
             <>
@@ -152,27 +167,26 @@ export default function SuppliersPage() {
         </button>
       </div>
 
-      {/* Estadísticas */}
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="rounded-full bg-blue-100 p-3">
-              <TruckIcon className="text-blue-600" size={24} />
+            <div className="rounded-xl bg-brand-primary-light p-3">
+              <TruckIcon className="text-brand-primary" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Total Proveedores</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Total Proveedores</p>
               <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="rounded-full bg-orange-100 p-3">
-              <DollarSign className="text-orange-600" size={24} />
+            <div className="rounded-xl bg-amber-100 p-3">
+              <BadgeDollarSign className="text-amber-700" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Con Saldo Pendiente</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Con Saldo Pendiente</p>
               <p className="text-2xl font-bold text-gray-900">
                 {stats.withBalance}
               </p>
@@ -180,13 +194,13 @@ export default function SuppliersPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="rounded-full bg-red-100 p-3">
+            <div className="rounded-xl bg-red-100 p-3">
               <DollarSign className="text-red-600" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Total por Pagar</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Total por Pagar</p>
               <p className="text-2xl font-bold text-gray-900">
                 ${stats.totalBalance.toFixed(2)}
               </p>
@@ -197,7 +211,7 @@ export default function SuppliersPage() {
 
       {/* Formulario */}
       {(showForm || editingSupplier) && (
-        <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-gray-900">
             {editingSupplier ? 'Editar Proveedor' : 'Nuevo Proveedor'}
           </h2>
@@ -212,23 +226,19 @@ export default function SuppliersPage() {
         </div>
       )}
 
-      {/* Tabla */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <SuppliersTable
-          suppliers={suppliers}
-          onEdit={(supplier) => {
-            setEditingSupplier(supplier);
-            setShowForm(false);
-          }}
-          onDelete={handleDelete}
-          onView={handleView}
-        />
-      </div>
+      <SuppliersTable
+        suppliers={suppliers}
+        onEdit={(supplier) => {
+          setEditingSupplier(supplier);
+          setShowForm(false);
+        }}
+        onDelete={handleDelete}
+        onView={handleView}
+      />
 
-      {/* Modal de Productos */}
       {viewingSupplier && (
-        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-          <div className="max-h-[80vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[85vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900">
                 Productos de {viewingSupplier.name}
@@ -244,8 +254,8 @@ export default function SuppliersPage() {
               </button>
             </div>
 
-            <div className="mb-4 rounded-lg bg-gray-50 p-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="mb-4 rounded-2xl border border-gray-200 bg-gray-50 p-5">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <p className="text-sm text-gray-600">RIF/NIT</p>
                   <p className="font-medium">{viewingSupplier.rif}</p>
@@ -273,7 +283,7 @@ export default function SuppliersPage() {
               </div>
             </div>
 
-            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold">
+            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
               <Package size={20} />
               Productos Asociados
             </h3>
@@ -282,11 +292,11 @@ export default function SuppliersPage() {
                 No hay productos asociados a este proveedor
               </p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {supplierProducts.map((product) => (
                   <div
                     key={product.id}
-                    className="rounded-lg border border-gray-200 p-4 hover:bg-gray-50"
+                    className="rounded-2xl border border-gray-200 p-4 transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -315,7 +325,7 @@ export default function SuppliersPage() {
                   setViewingSupplier(null);
                   setSupplierProducts([]);
                 }}
-                className="rounded-lg bg-gray-600 px-4 py-2 text-white hover:bg-gray-700"
+                className="rounded-xl bg-gray-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800"
               >
                 Cerrar
               </button>

@@ -38,6 +38,18 @@ import { AccountStatusPDF } from '@/components/transactions/AccountStatusPDF';
 import { DollarSign, AlertTriangle, Building2, FileText } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 
+type UpcomingPayableRow = {
+  id: string;
+  storeId: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  balance: number;
+  dueDate?: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export default function AccountsPayablePage() {
   const { profile } = useAuth();
   const router = useRouter();
@@ -56,7 +68,7 @@ export default function AccountsPayablePage() {
   const [suppliersWithBalance, setSuppliersWithBalance] = useState<Supplier[]>(
     []
   );
-  const [upcomingPayables, setUpcomingPayables] = useState<AccountStatus[]>([]);
+  const [upcomingPayables, setUpcomingPayables] = useState<UpcomingPayableRow[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Dialog states
@@ -134,12 +146,8 @@ export default function AccountsPayablePage() {
       s.rif.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getEarliestDueDate = (accountStatus: AccountStatus) => {
-    const chargesWithDueDate = accountStatus.transactions
-      .filter((t) => t.type === 'charge' && t.dueDate)
-      .sort((a, b) => (a.dueDate! < b.dueDate! ? -1 : 1));
-
-    return chargesWithDueDate[0]?.dueDate || null;
+  const getEarliestDueDate = (payable: UpcomingPayableRow) => {
+    return payable.dueDate ? new Date(payable.dueDate) : null;
   };
 
   if (loading) {
@@ -164,18 +172,18 @@ export default function AccountsPayablePage() {
       loadingMessage="Cargando cuentas por pagar..."
     >
       <div className="space-y-6 p-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">
             Cuentas por Pagar
           </h1>
-          <p className="text-muted-foreground">
+          <p className="mt-1 text-sm text-gray-500">
             Gestión de deudas con proveedores
           </p>
         </div>
 
         {/* KPIs */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card>
+          <Card className="rounded-2xl border-gray-200 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Total por Pagar
@@ -192,7 +200,7 @@ export default function AccountsPayablePage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-2xl border-gray-200 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Por Vencer (7 días)
@@ -209,7 +217,7 @@ export default function AccountsPayablePage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-2xl border-gray-200 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Saldo Vencido
@@ -229,7 +237,7 @@ export default function AccountsPayablePage() {
 
         {/* Tabs */}
         <Tabs defaultValue="all" className="space-y-4">
-          <TabsList>
+          <TabsList className="rounded-xl bg-white p-1 shadow-sm">
             <TabsTrigger value="all">Proveedores con Saldo</TabsTrigger>
             <TabsTrigger value="upcoming">
               Por Vencer ({upcomingPayables.length})
@@ -238,16 +246,16 @@ export default function AccountsPayablePage() {
 
           {/* Tab: Todos los proveedores con saldo */}
           <TabsContent value="all" className="space-y-4">
-            <div>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
               <Input
                 placeholder="Buscar por nombre o RIF..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
+                className="max-w-sm border-gray-200 bg-gray-50 focus-visible:ring-brand-primary"
               />
             </div>
 
-            <div className="rounded-md border">
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -306,12 +314,11 @@ export default function AccountsPayablePage() {
 
           {/* Tab: Por vencer (próximos 7 días) */}
           <TabsContent value="upcoming" className="space-y-4">
-            <div className="rounded-md border">
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Proveedor</TableHead>
-                    <TableHead>RIF</TableHead>
                     <TableHead className="text-right">Balance Total</TableHead>
                     <TableHead className="text-center">Vence en</TableHead>
                     <TableHead className="text-center">Acciones</TableHead>
@@ -338,13 +345,12 @@ export default function AccountsPayablePage() {
                         daysUntilDue !== null && daysUntilDue <= 3;
 
                       return (
-                        <TableRow key={status.supplierId}>
+                        <TableRow key={status.id}>
                           <TableCell className="font-medium">
                             {status.name}
                           </TableCell>
-                          <TableCell>{status.rif}</TableCell>
                           <TableCell className="text-right font-medium">
-                            ${status.currentBalance.toFixed(2)}
+                            ${Math.abs(status.balance).toFixed(2)}
                           </TableCell>
                           <TableCell className="text-center">
                             {daysUntilDue !== null ? (
@@ -369,8 +375,12 @@ export default function AccountsPayablePage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  setAccountStatus(status);
-                                  setShowAccountStatusDialog(true);
+                                  const supplier = suppliersWithBalance.find(
+                                    (item) => item.id === status.id
+                                  );
+                                  if (supplier) {
+                                    handleShowAccountStatus(supplier);
+                                  }
                                 }}
                               >
                                 Ver Detalle
@@ -389,7 +399,7 @@ export default function AccountsPayablePage() {
 
         {/* Dialog: Registrar Pago */}
         <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="rounded-2xl border-gray-200 sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Registrar Pago a Proveedor</DialogTitle>
             </DialogHeader>
@@ -408,7 +418,7 @@ export default function AccountsPayablePage() {
           open={showAccountStatusDialog}
           onOpenChange={setShowAccountStatusDialog}
         >
-          <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-[900px]">
+          <DialogContent className="max-h-[80vh] overflow-y-auto rounded-2xl border-gray-200 sm:max-w-[900px]">
             <DialogHeader>
               <DialogTitle>Estado de Cuenta</DialogTitle>
             </DialogHeader>

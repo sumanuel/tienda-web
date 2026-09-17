@@ -17,7 +17,7 @@ import {
 import { Customer, CustomerFormData } from '@/types/customer';
 import CustomersTable from '@/components/customers/CustomersTable';
 import CustomerForm from '@/components/customers/CustomerForm';
-import { Plus, X, DollarSign, Users, AlertCircle } from 'lucide-react';
+import { Plus, X, DollarSign, Users, AlertCircle, UserRound } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function CustomersPage() {
@@ -99,7 +99,7 @@ export default function CustomersPage() {
         profile.storeId,
         customer.id
       );
-      setSalesHistory(history);
+      setSalesHistory(history.sales || []);
     } catch (error) {
       console.error('Error cargando historial:', error);
       toast.error('Error al cargar historial del cliente');
@@ -115,22 +115,37 @@ export default function CustomersPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-          <p className="text-gray-600">Cargando clientes...</p>
+      <div className="min-h-screen space-y-6 bg-gray-50 p-6">
+        <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="h-7 w-52 rounded bg-gray-200" />
+          <div className="mt-3 h-4 w-80 rounded bg-gray-100" />
         </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm" />
+          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm" />
+          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm" />
+        </div>
+        <div className="h-96 rounded-2xl border border-gray-200 bg-white shadow-sm" />
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+    <div className="min-h-screen space-y-6 bg-gray-50 p-6">
+      <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
-          <p className="text-gray-600">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-primary-light text-brand-primary">
+              <UserRound className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
+              <p className="text-sm text-gray-500">
+                Gestiona datos de contacto, saldos pendientes e historial de compras.
+              </p>
+            </div>
+          </div>
+          <p className="mt-4 text-sm text-gray-600">
             {customers.length} clientes registrados
           </p>
         </div>
@@ -139,7 +154,7 @@ export default function CustomersPage() {
             setShowForm(!showForm);
             setEditingCustomer(null);
           }}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+          className="inline-flex items-center gap-2 rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-primary-dark"
         >
           {showForm || editingCustomer ? (
             <>
@@ -155,27 +170,26 @@ export default function CustomersPage() {
         </button>
       </div>
 
-      {/* Estadísticas */}
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="rounded-full bg-blue-100 p-3">
-              <Users className="text-blue-600" size={24} />
+            <div className="rounded-xl bg-brand-primary-light p-3">
+              <Users className="text-brand-primary" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Total Clientes</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Total Clientes</p>
               <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="rounded-full bg-orange-100 p-3">
-              <AlertCircle className="text-orange-600" size={24} />
+            <div className="rounded-xl bg-amber-100 p-3">
+              <AlertCircle className="text-amber-700" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Con Saldo Pendiente</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Con Saldo Pendiente</p>
               <p className="text-2xl font-bold text-gray-900">
                 {stats.withBalance}
               </p>
@@ -183,13 +197,13 @@ export default function CustomersPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="rounded-full bg-green-100 p-3">
+            <div className="rounded-xl bg-green-100 p-3">
               <DollarSign className="text-green-600" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Total por Cobrar</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Total por Cobrar</p>
               <p className="text-2xl font-bold text-gray-900">
                 ${stats.totalBalance.toFixed(2)}
               </p>
@@ -200,7 +214,7 @@ export default function CustomersPage() {
 
       {/* Formulario */}
       {(showForm || editingCustomer) && (
-        <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-gray-900">
             {editingCustomer ? 'Editar Cliente' : 'Nuevo Cliente'}
           </h2>
@@ -215,23 +229,19 @@ export default function CustomersPage() {
         </div>
       )}
 
-      {/* Tabla */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <CustomersTable
-          customers={customers}
-          onEdit={(customer) => {
-            setEditingCustomer(customer);
-            setShowForm(false);
-          }}
-          onDelete={handleDelete}
-          onView={handleView}
-        />
-      </div>
+      <CustomersTable
+        customers={customers}
+        onEdit={(customer) => {
+          setEditingCustomer(customer);
+          setShowForm(false);
+        }}
+        onDelete={handleDelete}
+        onView={handleView}
+      />
 
-      {/* Modal de Historial */}
       {viewingCustomer && (
-        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-          <div className="max-h-[80vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[85vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900">
                 Historial de {viewingCustomer.name}
@@ -247,8 +257,8 @@ export default function CustomersPage() {
               </button>
             </div>
 
-            <div className="mb-4 rounded-lg bg-gray-50 p-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="mb-4 rounded-2xl border border-gray-200 bg-gray-50 p-5">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <p className="text-sm text-gray-600">Documento</p>
                   <p className="font-medium">{viewingCustomer.document}</p>
