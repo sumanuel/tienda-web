@@ -91,7 +91,7 @@ export function CancelSaleButton({
                 rows={4}
                 className="mt-1"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
                 {reason.length} / 10 caracteres mínimos
               </p>
             </div>

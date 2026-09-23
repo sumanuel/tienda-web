@@ -95,10 +95,10 @@ export default function SalesPage() {
             <Receipt className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
               Historial de Ventas
             </h1>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-slate-400">
               Consulta y administra todas las ventas realizadas
             </p>
           </div>
@@ -111,7 +111,7 @@ export default function SalesPage() {
       {/* Tabla de ventas */}
       {loading && sales.length === 0 ? (
         <Card className="p-12">
-          <div className="flex flex-col items-center justify-center text-gray-500">
+          <div className="flex flex-col items-center justify-center text-gray-500 dark:text-slate-400">
             <Loader2 className="mb-4 h-8 w-8 animate-spin text-[#2D7A5B]" />
             <p>Cargando ventas...</p>
           </div>

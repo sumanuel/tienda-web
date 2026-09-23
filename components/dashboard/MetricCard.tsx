@@ -2,12 +2,14 @@
 
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { IconChip, type IconChipTone } from '@/components/common/IconChip';
 
 interface MetricCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
   icon: LucideIcon;
+  tone?: IconChipTone;
   trend?: {
     value: string;
     isPositive: boolean;
@@ -29,6 +31,7 @@ export function MetricCard({
   value,
   subtitle,
   icon: Icon,
+  tone = 'neutral',
   trend,
   badge,
   action,
@@ -38,12 +41,15 @@ export function MetricCard({
   if (loading) {
     return (
       <div
-        className={cn('rounded-2xl border bg-white p-6 shadow-sm', className)}
+        className={cn(
+          'rounded-2xl border bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900',
+          className
+        )}
       >
         <div className="animate-pulse space-y-4">
-          <div className="h-4 w-24 rounded bg-gray-200" />
-          <div className="h-8 w-32 rounded bg-gray-200" />
-          <div className="h-3 w-20 rounded bg-gray-200" />
+          <div className="h-4 w-24 rounded bg-gray-200 dark:bg-slate-800" />
+          <div className="h-8 w-32 rounded bg-gray-200 dark:bg-slate-800" />
+          <div className="h-3 w-20 rounded bg-gray-200 dark:bg-slate-800" />
         </div>
       </div>
     );
@@ -52,7 +58,7 @@ export function MetricCard({
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-2xl border bg-white p-6 shadow-sm transition-all duration-300',
+        'group relative overflow-hidden rounded-2xl border bg-white p-6 shadow-sm transition-all duration-300 dark:border-slate-800 dark:bg-slate-900',
         'hover:scale-[1.02] hover:shadow-md',
         'active:scale-[0.98]',
         className
@@ -60,7 +66,7 @@ export function MetricCard({
     >
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-xs font-semibold tracking-wide text-gray-600 uppercase">
+        <p className="text-xs font-semibold tracking-wide text-gray-600 uppercase dark:text-slate-400">
           {title}
         </p>
         <div className="flex items-center gap-2">
@@ -70,32 +76,31 @@ export function MetricCard({
                 'rounded-full px-2 py-0.5 text-xs font-medium',
                 badge.variant === 'success' &&
                   'bg-tsuma-primary-light text-tsuma-primary-dark',
-                badge.variant === 'warning' && 'bg-amber-100 text-amber-800',
-                badge.variant === 'info' && 'bg-blue-100 text-blue-800'
+                badge.variant === 'warning' &&
+                  'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400',
+                badge.variant === 'info' &&
+                  'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400'
               )}
             >
               {badge.label}
             </span>
           )}
-          <Icon
-            className={cn(
-              'h-5 w-5 transition-colors',
-              badge?.variant === 'success'
-                ? 'text-tsuma-primary'
-                : 'text-gray-400'
-            )}
-          />
+          <IconChip icon={Icon} tone={tone} />
         </div>
       </div>
 
       {/* Value */}
       <div className="mb-2 flex items-baseline gap-2">
-        <h3 className="text-3xl font-bold text-gray-900">{value}</h3>
+        <h3 className="text-3xl font-bold text-gray-900 dark:text-slate-100">
+          {value}
+        </h3>
         {trend && (
           <span
             className={cn(
               'flex items-center text-sm font-medium',
-              trend.isPositive ? 'text-tsuma-primary' : 'text-red-500'
+              trend.isPositive
+                ? 'text-tsuma-primary'
+                : 'text-red-500 dark:text-red-400'
             )}
           >
             {trend.isPositive ? '↑' : '↓'} {trend.value}
@@ -104,7 +109,9 @@ export function MetricCard({
       </div>
 
       {/* Subtitle */}
-      {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+      {subtitle && (
+        <p className="text-sm text-gray-500 dark:text-slate-400">{subtitle}</p>
+      )}
 
       {/* Action Button */}
       {action && (

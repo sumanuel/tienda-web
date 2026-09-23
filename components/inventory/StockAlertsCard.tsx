@@ -11,12 +11,14 @@ interface StockAlertsCardProps {
 export default function StockAlertsCard({ alerts }: StockAlertsCardProps) {
   if (alerts.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-6">
+      <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-4 flex items-center gap-2">
           <AlertTriangle size={20} className="text-green-600" />
-          <h3 className="font-semibold text-gray-900">Alertas de Stock</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-slate-100">
+            Alertas de Stock
+          </h3>
         </div>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-slate-400">
           No hay alertas de stock bajo. ¡Todo en orden!
         </p>
       </div>
@@ -36,13 +38,13 @@ export default function StockAlertsCard({ alerts }: StockAlertsCardProps) {
         {alerts.slice(0, 5).map((alert) => (
           <div
             key={alert.id}
-            className="flex items-center justify-between rounded-lg bg-white p-3"
+            className="flex items-center justify-between rounded-lg bg-white p-3 dark:bg-slate-900"
           >
             <div>
-              <p className="font-medium text-gray-900">
+              <p className="font-medium text-gray-900 dark:text-slate-100">
                 {alert.productCode} - {alert.productName}
               </p>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-slate-400">
                 Stock actual:{' '}
                 <span className="font-semibold text-red-600">
                   {alert.currentStock}

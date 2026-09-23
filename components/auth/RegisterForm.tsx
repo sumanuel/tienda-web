@@ -73,7 +73,10 @@ export function RegisterForm() {
       )}
 
       <div className="space-y-2">
-        <label htmlFor="name" className="text-sm font-medium text-slate-700">
+        <label
+          htmlFor="name"
+          className="text-sm font-medium text-slate-700 dark:text-slate-300"
+        >
           Nombre Completo
         </label>
         <input
@@ -81,7 +84,7 @@ export function RegisterForm() {
           type="text"
           placeholder="Juan Pérez"
           {...register('name')}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
         />
         {errors.name && (
           <p className="text-sm text-red-500">{errors.name.message}</p>
@@ -91,7 +94,7 @@ export function RegisterForm() {
       <div className="space-y-2">
         <label
           htmlFor="storeName"
-          className="text-sm font-medium text-slate-700"
+          className="text-sm font-medium text-slate-700 dark:text-slate-300"
         >
           Nombre de tu Tienda
         </label>
@@ -100,7 +103,7 @@ export function RegisterForm() {
           type="text"
           placeholder="Mi Tienda"
           {...register('storeName')}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
         />
         {errors.storeName && (
           <p className="text-sm text-red-500">{errors.storeName.message}</p>
@@ -110,7 +113,7 @@ export function RegisterForm() {
       <div className="space-y-2">
         <label
           htmlFor="storeAddress"
-          className="text-sm font-medium text-slate-700"
+          className="text-sm font-medium text-slate-700 dark:text-slate-300"
         >
           Dirección de tu Tienda (opcional)
         </label>
@@ -119,12 +122,15 @@ export function RegisterForm() {
           type="text"
           placeholder="Av. Principal #123"
           {...register('storeAddress')}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="email" className="text-sm font-medium text-slate-700">
+        <label
+          htmlFor="email"
+          className="text-sm font-medium text-slate-700 dark:text-slate-300"
+        >
           Email
         </label>
         <input
@@ -132,7 +138,7 @@ export function RegisterForm() {
           type="email"
           placeholder="tu@email.com"
           {...register('email')}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
         />
         {errors.email && (
           <p className="text-sm text-red-500">{errors.email.message}</p>
@@ -142,7 +148,7 @@ export function RegisterForm() {
       <div className="space-y-2">
         <label
           htmlFor="password"
-          className="text-sm font-medium text-slate-700"
+          className="text-sm font-medium text-slate-700 dark:text-slate-300"
         >
           Contraseña
         </label>
@@ -151,7 +157,7 @@ export function RegisterForm() {
           type="password"
           placeholder="••••••••"
           {...register('password')}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
         />
         {errors.password && (
           <p className="text-sm text-red-500">{errors.password.message}</p>
@@ -161,7 +167,7 @@ export function RegisterForm() {
       <div className="space-y-2">
         <label
           htmlFor="confirmPassword"
-          className="text-sm font-medium text-slate-700"
+          className="text-sm font-medium text-slate-700 dark:text-slate-300"
         >
           Confirmar Contraseña
         </label>
@@ -170,7 +176,7 @@ export function RegisterForm() {
           type="password"
           placeholder="••••••••"
           {...register('confirmPassword')}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
         />
         {errors.confirmPassword && (
           <p className="text-sm text-red-500">

@@ -60,7 +60,7 @@ export function SalesFilters({ filters, onFiltersChange }: SalesFiltersProps) {
   return (
     <Card className="p-4">
       <div className="mb-4 flex items-center gap-2">
-        <Filter className="h-5 w-5 text-gray-600" />
+        <Filter className="h-5 w-5 text-gray-600 dark:text-slate-400" />
         <h3 className="text-lg font-semibold">Filtros</h3>
         {hasActiveFilters && (
           <Button

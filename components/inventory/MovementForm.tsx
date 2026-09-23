@@ -69,12 +69,12 @@ export default function MovementForm({
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
       {/* Tipo de Movimiento */}
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700">
+        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
           Tipo de Movimiento *
         </label>
         <select
           {...register('type')}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
         >
           <option value="entry">Entrada (Compra/Ajuste Positivo)</option>
           <option value="exit">Salida (Merma/Ajuste Negativo)</option>
@@ -84,12 +84,12 @@ export default function MovementForm({
 
       {/* Producto */}
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700">
+        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
           Producto *
         </label>
         <select
           {...register('productId')}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
         >
           <option value="">Seleccionar producto</option>
           {products.map((product) => (
@@ -108,13 +108,13 @@ export default function MovementForm({
       {/* Info del Producto Seleccionado */}
       {selectedProduct && (
         <div className="rounded-lg bg-blue-50 p-4">
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-gray-700 dark:text-slate-300">
             <strong>Stock Actual:</strong> {selectedProduct.stock} unidades
           </p>
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-gray-700 dark:text-slate-300">
             <strong>Stock Mínimo:</strong> {selectedProduct.stockMin} unidades
           </p>
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-gray-700 dark:text-slate-300">
             <strong>Costo Unitario:</strong> ${selectedProduct.cost.toFixed(2)}
           </p>
         </div>
@@ -122,7 +122,7 @@ export default function MovementForm({
 
       {/* Cantidad */}
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700">
+        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
           Cantidad *
         </label>
         <input
@@ -130,7 +130,7 @@ export default function MovementForm({
           type="number"
           min="1"
           step="1"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
         />
         {errors.quantity && (
           <p className="mt-1 text-sm text-red-600">{errors.quantity.message}</p>
@@ -140,7 +140,7 @@ export default function MovementForm({
       {/* Costo Unitario (solo para entradas) */}
       {movementType === 'entry' && (
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">
+          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
             Costo Unitario (opcional)
           </label>
           <input
@@ -149,33 +149,33 @@ export default function MovementForm({
             min="0"
             step="0.01"
             placeholder={selectedProduct ? `${selectedProduct.cost}` : '0.00'}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
           />
         </div>
       )}
 
       {/* Razón */}
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700">
+        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
           Razón
         </label>
         <input
           {...register('reason')}
           type="text"
           placeholder="Ej: Compra a proveedor, Producto dañado, Ajuste de inventario"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
         />
       </div>
 
       {/* Notas */}
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700">
+        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
           Notas
         </label>
         <textarea
           {...register('notes')}
           rows={3}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
         />
       </div>
 
@@ -184,14 +184,14 @@ export default function MovementForm({
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
+          className="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400 dark:bg-slate-600"
         >
           {loading ? 'Registrando...' : 'Registrar Movimiento'}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-gray-300 px-6 py-2 hover:bg-gray-50"
+          className="rounded-lg border border-gray-300 px-6 py-2 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-800"
         >
           Cancelar
         </button>

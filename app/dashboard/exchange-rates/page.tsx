@@ -69,7 +69,9 @@ export default function ExchangeRatesPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-500">Cargando tasas de cambio...</p>
+        <p className="text-gray-500 dark:text-slate-400">
+          Cargando tasas de cambio...
+        </p>
       </div>
     );
   }
@@ -84,7 +86,9 @@ export default function ExchangeRatesPage() {
             <AlertTriangle className="text-error h-5 w-5" />
             <div>
               <p className="text-error font-semibold">Error al cargar tasas</p>
-              <p className="mt-1 text-sm text-gray-700">{error}</p>
+              <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">
+                {error}
+              </p>
               <button
                 onClick={() => window.location.reload()}
                 className="bg-error hover:bg-error/90 mt-3 rounded-lg px-4 py-2 text-sm font-medium text-white"
@@ -105,15 +109,15 @@ export default function ExchangeRatesPage() {
         <div>
           <button
             onClick={() => router.push('/dashboard')}
-            className="hover:text-brand-primary mb-2 flex items-center gap-2 text-sm text-gray-600"
+            className="hover:text-brand-primary mb-2 flex items-center gap-2 text-sm text-gray-600 dark:text-slate-400"
           >
             <ArrowLeft className="h-4 w-4" />
             Volver al Dashboard
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100">
             Gestión de Tasas de Cambio
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-slate-400">
             Administra las tasas de cambio para cálculo automático de precios
           </p>
         </div>
@@ -149,7 +153,7 @@ export default function ExchangeRatesPage() {
               <p className="text-warning font-semibold">
                 No hay tasas de cambio configuradas
               </p>
-              <p className="mt-1 text-sm text-gray-700">
+              <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">
                 Debes configurar al menos la tasa USD → VES para poder crear
                 productos con cálculo automático de precios.
               </p>
@@ -166,7 +170,7 @@ export default function ExchangeRatesPage() {
 
       {/* Formulario de Actualización */}
       {showForm && (
-        <div className="border-brand-primary rounded-lg border-2 bg-white p-6 shadow-sm">
+        <div className="border-brand-primary rounded-lg border-2 bg-white p-6 shadow-sm dark:bg-slate-900">
           <h2 className="text-brand-primary mb-4 text-xl font-semibold">
             {activeRate?.usdToVes > 0
               ? 'Actualizar Tasa'
@@ -177,7 +181,7 @@ export default function ExchangeRatesPage() {
           <div className="border-info bg-info/10 mb-4 rounded-lg border p-4">
             <div className="flex items-start gap-3">
               <AlertTriangle className="text-info h-5 w-5" />
-              <div className="text-sm text-gray-700">
+              <div className="text-sm text-gray-700 dark:text-slate-300">
                 <p className="font-semibold">Impacto en Productos</p>
                 <p className="mt-1">
                   Al actualizar la tasa, se recalcularán automáticamente los
@@ -190,7 +194,7 @@ export default function ExchangeRatesPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
                   Desde
                 </label>
                 <select
@@ -198,7 +202,7 @@ export default function ExchangeRatesPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, fromCurrency: e.target.value })
                   }
-                  className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none"
+                  className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none dark:border-slate-700"
                 >
                   <option value="USD">USD</option>
                   <option value="EUR">EUR</option>
@@ -206,7 +210,7 @@ export default function ExchangeRatesPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
                   Hacia
                 </label>
                 <select
@@ -214,7 +218,7 @@ export default function ExchangeRatesPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, toCurrency: e.target.value })
                   }
-                  className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none"
+                  className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none dark:border-slate-700"
                 >
                   <option value="VES">VES</option>
                 </select>
@@ -222,7 +226,7 @@ export default function ExchangeRatesPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
                 Tasa de Cambio *
               </label>
               <input
@@ -235,15 +239,15 @@ export default function ExchangeRatesPage() {
                 }
                 placeholder="Ej: 76.43"
                 required
-                className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none"
+                className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none dark:border-slate-700"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
                 1 {formData.fromCurrency} = ??? {formData.toCurrency}
               </p>
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
                 Fuente
               </label>
               <select
@@ -251,7 +255,7 @@ export default function ExchangeRatesPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, source: e.target.value })
                 }
-                className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none"
+                className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-1 focus:outline-none dark:border-slate-700"
               >
                 <option value="MANUAL">Manual</option>
                 <option value="BCV">BCV</option>
@@ -263,14 +267,14 @@ export default function ExchangeRatesPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="bg-brand-primary hover:bg-brand-primary-dark rounded-lg px-6 py-2 font-medium text-white transition-colors disabled:bg-gray-400"
+                className="bg-brand-primary hover:bg-brand-primary-dark rounded-lg px-6 py-2 font-medium text-white transition-colors disabled:bg-gray-400 dark:bg-slate-600"
               >
                 {submitting ? 'Actualizando...' : 'Actualizar Tasa'}
               </button>
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="rounded-lg border border-gray-300 px-6 py-2 font-medium transition-colors hover:bg-gray-50"
+                className="rounded-lg border border-gray-300 px-6 py-2 font-medium transition-colors hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-800"
               >
                 Cancelar
               </button>

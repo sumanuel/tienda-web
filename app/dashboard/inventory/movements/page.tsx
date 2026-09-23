@@ -77,7 +77,7 @@ export default function InventoryMovementsPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Movimientos de Inventario</h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-slate-400">
             {movements.length} movimientos registrados
           </p>
         </div>
@@ -101,7 +101,7 @@ export default function InventoryMovementsPage() {
 
       {/* Formulario de Nuevo Movimiento */}
       {showForm && (
-        <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6">
+        <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
           <h2 className="mb-4 text-lg font-semibold">Registrar Movimiento</h2>
           <MovementForm
             products={products}

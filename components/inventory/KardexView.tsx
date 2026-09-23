@@ -15,56 +15,61 @@ export default function KardexView({
   productCode,
 }: KardexViewProps) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6">
+    <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Kardex de Producto</h2>
-        <p className="text-gray-600">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100">
+          Kardex de Producto
+        </h2>
+        <p className="text-gray-600 dark:text-slate-400">
           {productCode} - {productName}
         </p>
       </div>
 
       {kardex.length === 0 ? (
-        <p className="py-8 text-center text-gray-500">
+        <p className="py-8 text-center text-gray-500 dark:text-slate-400">
           No hay movimientos registrados para este producto
         </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-slate-950">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-slate-300">
                   Fecha
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-slate-300">
                   Referencia
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-slate-300">
                   Tipo
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">
+                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 dark:text-slate-300">
                   Entrada
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">
+                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 dark:text-slate-300">
                   Salida
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">
+                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 dark:text-slate-300">
                   Saldo
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">
+                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 dark:text-slate-300">
                   Costo Unit.
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">
+                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 dark:text-slate-300">
                   Total
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {kardex.map((entry, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-900">
+                <tr
+                  key={index}
+                  className="hover:bg-gray-50 dark:bg-slate-950 dark:hover:bg-slate-800"
+                >
+                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-slate-100">
                     {format(entry.date, 'dd/MM/yyyy HH:mm')}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-slate-400">
                     {entry.reference}
                   </td>
                   <td className="px-4 py-3 text-sm">
@@ -76,7 +81,7 @@ export default function KardexView({
                             ? 'bg-red-100 text-red-700'
                             : entry.type === 'sale'
                               ? 'bg-blue-100 text-blue-700'
-                              : 'bg-gray-100 text-gray-700'
+                              : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300'
                       }`}
                     >
                       {entry.type === 'entry'
@@ -94,13 +99,13 @@ export default function KardexView({
                   <td className="px-4 py-3 text-right text-sm font-medium text-red-600">
                     {entry.quantityOut > 0 ? entry.quantityOut : '—'}
                   </td>
-                  <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900">
+                  <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-slate-100">
                     {entry.balance}
                   </td>
-                  <td className="px-4 py-3 text-right text-sm text-gray-600">
+                  <td className="px-4 py-3 text-right text-sm text-gray-600 dark:text-slate-400">
                     {entry.unitCost ? `$${entry.unitCost.toFixed(2)}` : '—'}
                   </td>
-                  <td className="px-4 py-3 text-right text-sm text-gray-900">
+                  <td className="px-4 py-3 text-right text-sm text-gray-900 dark:text-slate-100">
                     {entry.totalCost ? `$${entry.totalCost.toFixed(2)}` : '—'}
                   </td>
                 </tr>

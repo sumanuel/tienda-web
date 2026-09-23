@@ -17,6 +17,7 @@ import {
 import { Supplier, SupplierFormData } from '@/types/supplier';
 import SuppliersTable from '@/components/suppliers/SuppliersTable';
 import SupplierForm from '@/components/suppliers/SupplierForm';
+import { SidePanel } from '@/components/common/SidePanel';
 import {
   Plus,
   X,
@@ -122,102 +123,97 @@ export default function SuppliersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen space-y-6 bg-gray-50 p-6">
-        <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="h-7 w-52 rounded bg-gray-200" />
-          <div className="mt-3 h-4 w-80 rounded bg-gray-100" />
+      <div className="min-h-screen space-y-6 bg-gray-50 p-6 dark:bg-slate-950">
+        <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="h-7 w-52 rounded bg-gray-200 dark:bg-slate-700" />
+          <div className="mt-3 h-4 w-80 rounded bg-gray-100 dark:bg-slate-800" />
         </div>
         <div className="grid gap-4 md:grid-cols-3">
-          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm" />
-          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm" />
-          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm" />
+          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900" />
+          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900" />
+          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900" />
         </div>
-        <div className="h-96 rounded-2xl border border-gray-200 bg-white shadow-sm" />
+        <div className="h-96 rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen space-y-6 bg-gray-50 p-6">
-      <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
+    <div className="min-h-screen space-y-6 bg-gray-50 p-6 dark:bg-slate-950">
+      <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between dark:border-slate-800 dark:bg-slate-900">
         <div>
           <div className="flex items-center gap-3">
             <div className="bg-brand-primary-light text-brand-primary flex h-11 w-11 items-center justify-center rounded-xl">
               <TruckIcon className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Proveedores</h1>
-              <p className="text-sm text-gray-500">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
+                Proveedores
+              </h1>
+              <p className="text-sm text-gray-500 dark:text-slate-400">
                 Controla contactos, productos asociados y compromisos de pago.
               </p>
             </div>
           </div>
-          <p className="mt-4 text-sm text-gray-600">
+          <p className="mt-4 text-sm text-gray-600 dark:text-slate-400">
             {suppliers.length} proveedores registrados
           </p>
         </div>
         <button
           onClick={() => {
-            setShowForm(!showForm);
             setEditingSupplier(null);
+            setShowForm(true);
           }}
           className="bg-brand-primary hover:bg-brand-primary-dark inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors"
         >
-          {showForm || editingSupplier ? (
-            <>
-              <X size={20} />
-              Cancelar
-            </>
-          ) : (
-            <>
-              <Plus size={20} />
-              Nuevo Proveedor
-            </>
-          )}
+          <Plus size={20} />
+          Nuevo Proveedor
         </button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-3">
             <div className="bg-brand-primary-light rounded-xl p-3">
               <TruckIcon className="text-brand-primary" size={24} />
             </div>
             <div>
-              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-slate-400">
                 Total Proveedores
               </p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
+                {stats.total}
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-amber-100 p-3">
               <BadgeDollarSign className="text-amber-700" size={24} />
             </div>
             <div>
-              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-slate-400">
                 Con Saldo Pendiente
               </p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                 {stats.withBalance}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-red-100 p-3">
               <DollarSign className="text-red-600" size={24} />
             </div>
             <div>
-              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-slate-400">
                 Total por Pagar
               </p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                 ${stats.totalBalance.toFixed(2)}
               </p>
             </div>
@@ -225,22 +221,28 @@ export default function SuppliersPage() {
         </div>
       </div>
 
-      {/* Formulario */}
-      {(showForm || editingSupplier) && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
-            {editingSupplier ? 'Editar Proveedor' : 'Nuevo Proveedor'}
-          </h2>
-          <SupplierForm
-            initialData={editingSupplier || undefined}
-            onSubmit={editingSupplier ? handleUpdate : handleCreate}
-            onCancel={() => {
-              setShowForm(false);
-              setEditingSupplier(null);
-            }}
-          />
-        </div>
-      )}
+      <SidePanel
+        open={showForm || !!editingSupplier}
+        onClose={() => {
+          setShowForm(false);
+          setEditingSupplier(null);
+        }}
+        title={editingSupplier ? 'Editar Proveedor' : 'Nuevo Proveedor'}
+        subtitle={
+          editingSupplier
+            ? `Actualiza los datos de ${editingSupplier.name}.`
+            : 'Registra un nuevo proveedor en tu directorio.'
+        }
+      >
+        <SupplierForm
+          initialData={editingSupplier || undefined}
+          onSubmit={editingSupplier ? handleUpdate : handleCreate}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingSupplier(null);
+          }}
+        />
+      </SidePanel>
 
       <SuppliersTable
         suppliers={suppliers}
@@ -254,9 +256,9 @@ export default function SuppliersPage() {
 
       {viewingSupplier && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[85vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+          <div className="max-h-[85vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-900">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100">
                 Productos de {viewingSupplier.name}
               </h2>
               <button
@@ -264,27 +266,33 @@ export default function SuppliersPage() {
                   setViewingSupplier(null);
                   setSupplierProducts([]);
                 }}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:text-slate-500 dark:hover:text-slate-300"
               >
                 <X size={24} />
               </button>
             </div>
 
-            <div className="mb-4 rounded-2xl border border-gray-200 bg-gray-50 p-5">
+            <div className="mb-4 rounded-2xl border border-gray-200 bg-gray-50 p-5 dark:border-slate-800 dark:bg-slate-950">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <p className="text-sm text-gray-600">RIF/NIT</p>
+                  <p className="text-sm text-gray-600 dark:text-slate-400">
+                    RIF/NIT
+                  </p>
                   <p className="font-medium">{viewingSupplier.rif}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Balance Actual</p>
+                  <p className="text-sm text-gray-600 dark:text-slate-400">
+                    Balance Actual
+                  </p>
                   <p className="text-lg font-bold text-red-600">
                     ${viewingSupplier.balance.toFixed(2)}
                   </p>
                 </div>
                 {viewingSupplier.contactPerson && (
                   <div>
-                    <p className="text-sm text-gray-600">Contacto</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">
+                      Contacto
+                    </p>
                     <p className="font-medium">
                       {viewingSupplier.contactPerson}
                     </p>
@@ -292,19 +300,21 @@ export default function SuppliersPage() {
                 )}
                 {viewingSupplier.phone && (
                   <div>
-                    <p className="text-sm text-gray-600">Teléfono</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">
+                      Teléfono
+                    </p>
                     <p className="font-medium">{viewingSupplier.phone}</p>
                   </div>
                 )}
               </div>
             </div>
 
-            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
+            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-slate-100">
               <Package size={20} />
               Productos Asociados
             </h3>
             {supplierProducts.length === 0 ? (
-              <p className="py-8 text-center text-gray-500">
+              <p className="py-8 text-center text-gray-500 dark:text-slate-400">
                 No hay productos asociados a este proveedor
               </p>
             ) : (
@@ -312,12 +322,12 @@ export default function SuppliersPage() {
                 {supplierProducts.map((product) => (
                   <div
                     key={product.id}
-                    className="rounded-2xl border border-gray-200 p-4 transition-colors hover:bg-gray-50"
+                    className="rounded-2xl border border-gray-200 p-4 transition-colors hover:bg-gray-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-800"
                   >
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">{product.name}</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-slate-400">
                           Código: {product.code} | Stock: {product.stock}
                         </p>
                       </div>
@@ -325,7 +335,7 @@ export default function SuppliersPage() {
                         <p className="text-lg font-bold">
                           ${product.prices?.USD?.toFixed(2) || 'N/A'}
                         </p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-slate-400">
                           {product.category}
                         </p>
                       </div>
@@ -341,7 +351,7 @@ export default function SuppliersPage() {
                   setViewingSupplier(null);
                   setSupplierProducts([]);
                 }}
-                className="rounded-xl bg-gray-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+                className="rounded-xl bg-gray-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 dark:bg-slate-600 dark:bg-slate-700"
               >
                 Cerrar
               </button>

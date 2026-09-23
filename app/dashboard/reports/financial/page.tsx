@@ -66,11 +66,14 @@ export default function FinancialReportPage() {
     return (
       <div className="p-8">
         <div className="animate-pulse">
-          <div className="mb-4 h-8 w-1/4 rounded bg-gray-200"></div>
-          <div className="mb-8 h-4 w-1/3 rounded bg-gray-200"></div>
+          <div className="mb-4 h-8 w-1/4 rounded bg-gray-200 dark:bg-slate-700"></div>
+          <div className="mb-8 h-4 w-1/3 rounded bg-gray-200 dark:bg-slate-700"></div>
           <div className="grid grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 rounded bg-gray-200"></div>
+              <div
+                key={i}
+                className="h-32 rounded bg-gray-200 dark:bg-slate-700"
+              ></div>
             ))}
           </div>
         </div>
@@ -82,7 +85,7 @@ export default function FinancialReportPage() {
     <div className="p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="mb-4 text-3xl font-bold text-gray-900">
+        <h1 className="mb-4 text-3xl font-bold text-gray-900 dark:text-slate-100">
           Reporte Financiero
         </h1>
         <div className="flex items-center justify-between">
@@ -97,42 +100,50 @@ export default function FinancialReportPage() {
 
       {/* KPIs */}
       <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-4">
-        <div className="rounded-lg border bg-white p-6">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-gray-600">Ingresos Totales</span>
+            <span className="text-sm text-gray-600 dark:text-slate-400">
+              Ingresos Totales
+            </span>
             <TrendingUp className="h-5 w-5 text-green-500" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-3xl font-bold text-gray-900 dark:text-slate-100">
             ${reportData?.totalRevenue.toFixed(2) || '0.00'}
           </p>
         </div>
 
-        <div className="rounded-lg border bg-white p-6">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-gray-600">Egresos Totales</span>
+            <span className="text-sm text-gray-600 dark:text-slate-400">
+              Egresos Totales
+            </span>
             <TrendingDown className="h-5 w-5 text-red-500" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-3xl font-bold text-gray-900 dark:text-slate-100">
             ${reportData?.totalExpenses.toFixed(2) || '0.00'}
           </p>
         </div>
 
-        <div className="rounded-lg border bg-white p-6">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-gray-600">Utilidad Bruta</span>
+            <span className="text-sm text-gray-600 dark:text-slate-400">
+              Utilidad Bruta
+            </span>
             <DollarSign className="h-5 w-5 text-blue-500" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-3xl font-bold text-gray-900 dark:text-slate-100">
             ${reportData?.grossProfit.toFixed(2) || '0.00'}
           </p>
         </div>
 
-        <div className="rounded-lg border bg-white p-6">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-gray-600">Margen de Utilidad</span>
+            <span className="text-sm text-gray-600 dark:text-slate-400">
+              Margen de Utilidad
+            </span>
             <Percent className="h-5 w-5 text-purple-500" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-3xl font-bold text-gray-900 dark:text-slate-100">
             {reportData?.profitMargin.toFixed(1) || '0.0'}%
           </p>
         </div>
@@ -140,8 +151,8 @@ export default function FinancialReportPage() {
 
       {/* Cuentas por Cobrar/Pagar */}
       <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="rounded-lg border bg-white p-6">
-          <h3 className="mb-2 text-lg font-semibold text-gray-900">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
+          <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-slate-100">
             Cuentas por Cobrar
           </h3>
           <p className="text-4xl font-bold text-green-600">
@@ -149,8 +160,8 @@ export default function FinancialReportPage() {
           </p>
         </div>
 
-        <div className="rounded-lg border bg-white p-6">
-          <h3 className="mb-2 text-lg font-semibold text-gray-900">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
+          <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-slate-100">
             Cuentas por Pagar
           </h3>
           <p className="text-4xl font-bold text-red-600">
@@ -162,8 +173,8 @@ export default function FinancialReportPage() {
       {/* Gráficos */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Distribución de Ingresos */}
-        <div className="rounded-lg border bg-white p-6">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
             Distribución de Ingresos
           </h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -191,25 +202,27 @@ export default function FinancialReportPage() {
         </div>
 
         {/* Resumen Financiero */}
-        <div className="rounded-lg border bg-white p-6">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
             Resumen Financiero
           </h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b pb-3">
-              <span className="text-gray-600">Ingresos</span>
+              <span className="text-gray-600 dark:text-slate-400">
+                Ingresos
+              </span>
               <span className="text-lg font-semibold text-green-600">
                 ${reportData?.totalRevenue.toFixed(2) || '0.00'}
               </span>
             </div>
             <div className="flex items-center justify-between border-b pb-3">
-              <span className="text-gray-600">Egresos</span>
+              <span className="text-gray-600 dark:text-slate-400">Egresos</span>
               <span className="text-lg font-semibold text-red-600">
                 ${reportData?.totalExpenses.toFixed(2) || '0.00'}
               </span>
             </div>
             <div className="flex items-center justify-between border-b pb-3">
-              <span className="font-semibold text-gray-600">
+              <span className="font-semibold text-gray-600 dark:text-slate-400">
                 Utilidad Bruta
               </span>
               <span className="text-xl font-bold text-blue-600">
@@ -217,7 +230,7 @@ export default function FinancialReportPage() {
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Margen</span>
+              <span className="text-gray-600 dark:text-slate-400">Margen</span>
               <span className="text-lg font-semibold text-purple-600">
                 {reportData?.profitMargin.toFixed(1) || '0.0'}%
               </span>

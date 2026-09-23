@@ -96,31 +96,37 @@ export function SaleDetailModal({
             {/* Información general */}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-start gap-3">
-                <Calendar className="mt-0.5 h-5 w-5 text-gray-400" />
+                <Calendar className="mt-0.5 h-5 w-5 text-gray-400 dark:text-slate-400 dark:text-slate-500" />
                 <div>
-                  <p className="text-sm text-gray-600">Fecha</p>
+                  <p className="text-sm text-gray-600 dark:text-slate-400">
+                    Fecha
+                  </p>
                   <p className="font-medium">{formatDate(sale.createdAt)}</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <User className="mt-0.5 h-5 w-5 text-gray-400" />
+                <User className="mt-0.5 h-5 w-5 text-gray-400 dark:text-slate-400 dark:text-slate-500" />
                 <div>
-                  <p className="text-sm text-gray-600">Cajero</p>
+                  <p className="text-sm text-gray-600 dark:text-slate-400">
+                    Cajero
+                  </p>
                   <p className="font-medium">{sale.cashier?.name || 'N/A'}</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <User className="mt-0.5 h-5 w-5 text-gray-400" />
+                <User className="mt-0.5 h-5 w-5 text-gray-400 dark:text-slate-400 dark:text-slate-500" />
                 <div>
-                  <p className="text-sm text-gray-600">Cliente</p>
+                  <p className="text-sm text-gray-600 dark:text-slate-400">
+                    Cliente
+                  </p>
                   <p className="font-medium">
                     {sale.customer?.name || 'Cliente Genérico'}
                   </p>
                   {sale.customer?.documentNumber &&
                     sale.customer.documentNumber !== '1' && (
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-slate-400">
                         Doc: {sale.customer.documentNumber}
                       </p>
                     )}
@@ -128,15 +134,17 @@ export function SaleDetailModal({
               </div>
 
               <div className="flex items-start gap-3">
-                <CreditCard className="mt-0.5 h-5 w-5 text-gray-400" />
+                <CreditCard className="mt-0.5 h-5 w-5 text-gray-400 dark:text-slate-400 dark:text-slate-500" />
                 <div>
-                  <p className="text-sm text-gray-600">Método de Pago</p>
+                  <p className="text-sm text-gray-600 dark:text-slate-400">
+                    Método de Pago
+                  </p>
                   <p className="font-medium">
                     {PAYMENT_METHOD_LABELS[sale.paymentMethod] ||
                       sale.paymentMethod}
                   </p>
                   {sale.referenceNumber && (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
                       Ref: {sale.referenceNumber}
                     </p>
                   )}
@@ -149,24 +157,24 @@ export function SaleDetailModal({
             {/* Items de la venta */}
             <div>
               <div className="mb-3 flex items-center gap-2">
-                <Package className="h-5 w-5 text-gray-600" />
+                <Package className="h-5 w-5 text-gray-600 dark:text-slate-400" />
                 <h3 className="font-semibold">Productos</h3>
               </div>
 
               <div className="overflow-hidden rounded-lg border">
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gray-50 dark:bg-slate-950">
                     <tr>
-                      <th className="p-3 text-left text-sm font-medium text-gray-600">
+                      <th className="p-3 text-left text-sm font-medium text-gray-600 dark:text-slate-400">
                         Producto
                       </th>
-                      <th className="p-3 text-center text-sm font-medium text-gray-600">
+                      <th className="p-3 text-center text-sm font-medium text-gray-600 dark:text-slate-400">
                         Cantidad
                       </th>
-                      <th className="p-3 text-right text-sm font-medium text-gray-600">
+                      <th className="p-3 text-right text-sm font-medium text-gray-600 dark:text-slate-400">
                         Precio Unit.
                       </th>
-                      <th className="p-3 text-right text-sm font-medium text-gray-600">
+                      <th className="p-3 text-right text-sm font-medium text-gray-600 dark:text-slate-400">
                         Subtotal
                       </th>
                     </tr>
@@ -177,7 +185,7 @@ export function SaleDetailModal({
                         <td className="p-3">
                           <p className="font-medium">{item.productName}</p>
                           {item.product?.sku && (
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-500 dark:text-slate-400">
                               SKU: {item.product.sku}
                             </p>
                           )}
@@ -207,13 +215,15 @@ export function SaleDetailModal({
             {/* Totales */}
             <div>
               <div className="mb-3 flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-gray-600" />
+                <DollarSign className="h-5 w-5 text-gray-600 dark:text-slate-400" />
                 <h3 className="font-semibold">Totales</h3>
               </div>
 
-              <div className="space-y-2 rounded-lg bg-gray-50 p-4">
+              <div className="space-y-2 rounded-lg bg-gray-50 p-4 dark:bg-slate-950">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Subtotal:</span>
+                  <span className="text-gray-600 dark:text-slate-400">
+                    Subtotal:
+                  </span>
                   <span className="font-medium">
                     {formatCurrency(sale.subtotal, sale.currency as Currency)}
                   </span>
@@ -221,7 +231,9 @@ export function SaleDetailModal({
 
                 {sale.tax > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">IVA:</span>
+                    <span className="text-gray-600 dark:text-slate-400">
+                      IVA:
+                    </span>
                     <span className="font-medium">
                       {formatCurrency(sale.tax, sale.currency as Currency)}
                     </span>
@@ -230,7 +242,9 @@ export function SaleDetailModal({
 
                 {sale.discount > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Descuento:</span>
+                    <span className="text-gray-600 dark:text-slate-400">
+                      Descuento:
+                    </span>
                     <span className="font-medium text-red-600">
                       -
                       {formatCurrency(sale.discount, sale.currency as Currency)}
@@ -248,12 +262,12 @@ export function SaleDetailModal({
                 </div>
 
                 {sale.totalReference && sale.currency !== 'USD' && (
-                  <div className="text-center text-sm text-gray-500">
+                  <div className="text-center text-sm text-gray-500 dark:text-slate-400">
                     ≈ {formatCurrency(sale.totalReference, 'USD')}
                   </div>
                 )}
 
-                <div className="mt-2 flex justify-between text-sm text-gray-600">
+                <div className="mt-2 flex justify-between text-sm text-gray-600 dark:text-slate-400">
                   <span>Tasa de cambio:</span>
                   <span>1 USD = {sale.exchangeRate.toFixed(2)} VES</span>
                 </div>
@@ -272,7 +286,9 @@ export function SaleDetailModal({
 
                   <div className="space-y-2 rounded-lg border border-orange-200 bg-orange-50 p-4">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Monto original:</span>
+                      <span className="text-gray-600 dark:text-slate-400">
+                        Monto original:
+                      </span>
                       <span className="font-medium">
                         {formatCurrency(
                           sale.receivable.amount,
@@ -281,7 +297,9 @@ export function SaleDetailModal({
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Monto pagado:</span>
+                      <span className="text-gray-600 dark:text-slate-400">
+                        Monto pagado:
+                      </span>
                       <span className="font-medium">
                         {formatCurrency(
                           sale.receivable.amountPaid,
@@ -299,7 +317,9 @@ export function SaleDetailModal({
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Estado:</span>
+                      <span className="text-gray-600 dark:text-slate-400">
+                        Estado:
+                      </span>
                       <Badge
                         variant={
                           sale.receivable.status === 'paid'
@@ -332,12 +352,14 @@ export function SaleDetailModal({
                   <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-4">
                     {sale.cancelReason && (
                       <div>
-                        <p className="mb-1 text-sm text-gray-600">Razón:</p>
+                        <p className="mb-1 text-sm text-gray-600 dark:text-slate-400">
+                          Razón:
+                        </p>
                         <p className="text-sm">{sale.cancelReason}</p>
                       </div>
                     )}
                     {sale.cancelledAt && (
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-600 dark:text-slate-400">
                         Cancelada el: {formatDate(sale.cancelledAt)}
                       </div>
                     )}
@@ -352,10 +374,10 @@ export function SaleDetailModal({
                 <Separator />
                 <div>
                   <div className="mb-3 flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-gray-600" />
+                    <FileText className="h-5 w-5 text-gray-600 dark:text-slate-400" />
                     <h3 className="font-semibold">Notas</h3>
                   </div>
-                  <p className="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
+                  <p className="rounded-lg bg-gray-50 p-3 text-sm text-gray-600 dark:bg-slate-950 dark:text-slate-400">
                     {sale.notes}
                   </p>
                 </div>

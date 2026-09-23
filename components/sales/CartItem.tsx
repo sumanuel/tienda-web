@@ -39,15 +39,19 @@ export function CartItem({
       {/* Información del producto */}
       <div className="min-w-0 flex-1">
         <h4 className="truncate text-sm font-medium">{item.productName}</h4>
-        {item.sku && <p className="text-xs text-gray-500">SKU: {item.sku}</p>}
-        <p className="mt-1 text-sm text-gray-600">
+        {item.sku && (
+          <p className="text-xs text-gray-500 dark:text-slate-400">
+            SKU: {item.sku}
+          </p>
+        )}
+        <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
           {formatCurrency(displayPrice, currency)} × {item.quantity}
         </p>
       </div>
 
       {/* Controles de cantidad */}
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1 rounded-lg bg-gray-100 p-1">
+        <div className="flex items-center gap-1 rounded-lg bg-gray-100 p-1 dark:bg-slate-800">
           <Button
             size="sm"
             variant="ghost"

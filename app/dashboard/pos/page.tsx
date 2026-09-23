@@ -311,24 +311,28 @@ export default function POSPage() {
 
   if (!profile) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
-        <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-          <p className="text-sm text-gray-500">Cargando punto de venta...</p>
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6 dark:bg-slate-950">
+        <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-sm text-gray-500 dark:text-slate-400">
+            Cargando punto de venta...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen space-y-6 bg-gray-50 p-6">
-      <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+    <div className="min-h-screen space-y-6 bg-gray-50 p-6 dark:bg-slate-950">
+      <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-3">
           <div className="bg-brand-primary-light text-brand-primary flex h-11 w-11 items-center justify-center rounded-xl">
             <Receipt className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Punto de Venta</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
+              Punto de Venta
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-slate-400">
               Registra ventas rápidas, controla stock y cobra sin salir del
               flujo.
             </p>
@@ -336,14 +340,14 @@ export default function POSPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="hidden rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 md:block">
+          <div className="hidden rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 md:block dark:bg-slate-800 dark:text-slate-400">
             F9 procesa la venta · ESC limpia el carrito
           </div>
           <Select
             value={currency}
             onValueChange={(v) => setCurrency(v as Currency)}
           >
-            <SelectTrigger className="focus:ring-brand-primary w-36 rounded-xl border-gray-200 bg-gray-50">
+            <SelectTrigger className="focus:ring-brand-primary w-36 rounded-xl border-gray-200 bg-gray-50 dark:border-slate-800 dark:bg-slate-950">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -356,7 +360,7 @@ export default function POSPage() {
       </div>
 
       <div className="grid min-h-[calc(100vh-14rem)] gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.95fr)]">
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex h-full flex-col">
             <ProductCatalog
               products={products}
@@ -369,7 +373,7 @@ export default function POSPage() {
         </div>
 
         <div className="flex flex-col gap-6 xl:sticky xl:top-6 xl:h-[calc(100vh-8rem)]">
-          <Card className="flex min-h-[22rem] flex-1 flex-col overflow-hidden rounded-2xl border-gray-200 shadow-sm">
+          <Card className="flex min-h-[22rem] flex-1 flex-col overflow-hidden rounded-2xl border-gray-200 shadow-sm dark:border-slate-800">
             <Cart
               items={cart.items}
               summary={cart.summary}
@@ -380,14 +384,14 @@ export default function POSPage() {
             />
           </Card>
 
-          <Card className="space-y-4 rounded-2xl border-gray-200 p-5 shadow-sm">
+          <Card className="space-y-4 rounded-2xl border-gray-200 p-5 shadow-sm dark:border-slate-800">
             <div className="flex items-center gap-2">
               <DollarSign className="text-brand-primary h-5 w-5" />
               <div>
-                <h3 className="text-lg font-semibold text-gray-800">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-200">
                   Checkout
                 </h3>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-slate-400">
                   Selecciona cliente, forma de pago y confirma la venta.
                 </p>
               </div>
@@ -418,7 +422,7 @@ export default function POSPage() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="flex-1 rounded-xl border-gray-200"
+                className="flex-1 rounded-xl border-gray-200 dark:border-slate-800"
                 onClick={() => {
                   if (
                     cart.items.length > 0 &&

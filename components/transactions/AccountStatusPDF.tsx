@@ -91,7 +91,7 @@ export function AccountStatusPDF({
         fillColor: [59, 130, 246], // bg-blue-600
       },
       alternateRowStyles: {
-        fillColor: [249, 250, 251], // bg-gray-50
+        fillColor: [249, 250, 251], // bg-gray-50 dark:bg-slate-950
       },
     });
 

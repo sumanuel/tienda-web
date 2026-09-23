@@ -13,7 +13,7 @@ export default function HomePage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <p className="text-slate-600">Redirigiendo...</p>
+      <p className="text-slate-600 dark:text-slate-300">Redirigiendo...</p>
     </div>
   );
 }

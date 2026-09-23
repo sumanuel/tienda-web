@@ -15,7 +15,7 @@ import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useAuth } from '@/hooks/useAuth';
 
 const inputClassName =
-  'w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary focus:outline-none';
+  'w-full rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-brand-primary focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-900 focus:ring-1 focus:ring-brand-primary focus:outline-none';
 
 const productSchemaWithCalculations = z.object({
   code: z.string().optional(),
@@ -202,12 +202,12 @@ export default function ProductFormWithCalculations({
   if (ratesLoading) {
     return (
       <div className="space-y-4">
-        <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="h-6 w-48 rounded bg-gray-200" />
+        <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="h-6 w-48 rounded bg-gray-200 dark:bg-slate-700" />
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div className="h-11 rounded bg-gray-100" />
-            <div className="h-11 rounded bg-gray-100" />
-            <div className="h-11 rounded bg-gray-100 md:col-span-2" />
+            <div className="h-11 rounded bg-gray-100 dark:bg-slate-800" />
+            <div className="h-11 rounded bg-gray-100 dark:bg-slate-800" />
+            <div className="h-11 rounded bg-gray-100 md:col-span-2 dark:bg-slate-800" />
           </div>
         </div>
       </div>
@@ -224,7 +224,7 @@ export default function ProductFormWithCalculations({
               <p className="text-lg font-semibold text-amber-800">
                 ¡Tasa de cambio USD no configurada!
               </p>
-              <p className="mt-2 text-sm text-gray-700">
+              <p className="mt-2 text-sm text-gray-700 dark:text-slate-300">
                 Para crear productos necesitas configurar la tasa de cambio USD
                 → VES. Esta tasa es <strong>obligatoria</strong> para calcular
                 precios automáticamente y gestionar ventas, cuentas por pagar y
@@ -241,11 +241,11 @@ export default function ProductFormWithCalculations({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h3 className="mb-3 font-semibold text-gray-700">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h3 className="mb-3 font-semibold text-gray-700 dark:text-slate-300">
             ¿Por qué es obligatoria la tasa USD?
           </h3>
-          <ul className="space-y-2 text-sm text-gray-600">
+          <ul className="space-y-2 text-sm text-gray-600 dark:text-slate-400">
             <li className="flex items-start gap-2">
               <span className="text-brand-primary mt-1">•</span>
               <span>
@@ -282,17 +282,17 @@ export default function ProductFormWithCalculations({
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-      <fieldset className="space-y-5 rounded-2xl border border-gray-200 p-5">
-        <legend className="px-1 text-sm font-semibold text-gray-700">
+      <fieldset className="space-y-5 rounded-2xl border border-gray-200 p-5 dark:border-slate-800">
+        <legend className="px-1 text-sm font-semibold text-gray-700 dark:text-slate-300">
           Información general
         </legend>
 
         <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
               Imagen del producto
             </label>
-            <div className="flex h-40 items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50">
+            <div className="flex h-40 items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 dark:border-slate-800 dark:bg-slate-950">
               {imagePreview ? (
                 <div className="relative h-full w-full overflow-hidden rounded-2xl">
                   <Image
@@ -303,13 +303,13 @@ export default function ProductFormWithCalculations({
                   />
                 </div>
               ) : (
-                <div className="text-center text-sm text-gray-400">
+                <div className="text-center text-sm text-gray-400 dark:text-slate-400 dark:text-slate-500">
                   <Upload className="mx-auto mb-2 h-7 w-7" />
                   Sin imagen
                 </div>
               )}
             </div>
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800">
               <Upload size={18} />
               Subir imagen
               <input
@@ -324,7 +324,7 @@ export default function ProductFormWithCalculations({
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
                   Código
                 </label>
                 <input
@@ -332,13 +332,13 @@ export default function ProductFormWithCalculations({
                   type="text"
                   className={inputClassName}
                 />
-                <p className="mt-1 text-xs text-gray-400">
+                <p className="mt-1 text-xs text-gray-400 dark:text-slate-400 dark:text-slate-500">
                   Se genera si lo dejas vacío.
                 </p>
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
                   Código de barras
                 </label>
                 <input
@@ -350,7 +350,7 @@ export default function ProductFormWithCalculations({
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
                 Nombre *
               </label>
               <input
@@ -366,7 +366,7 @@ export default function ProductFormWithCalculations({
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
                 Descripción
               </label>
               <textarea
@@ -377,7 +377,7 @@ export default function ProductFormWithCalculations({
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
                 Categoría *
               </label>
               <select {...register('category')} className={inputClassName}>
@@ -413,7 +413,7 @@ export default function ProductFormWithCalculations({
           {/* Costo */}
           <div className="grid grid-cols-3 gap-4">
             <div className="col-span-2">
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
                 Costo Base *
               </label>
               <input
@@ -430,7 +430,7 @@ export default function ProductFormWithCalculations({
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
                 Moneda
               </label>
               <select {...register('costCurrency')} className={inputClassName}>
@@ -443,7 +443,7 @@ export default function ProductFormWithCalculations({
 
           {/* Costo Adicional */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
               Costo Adicional (Flete, Impuestos, etc.)
             </label>
             <input
@@ -458,7 +458,7 @@ export default function ProductFormWithCalculations({
           {/* Margen e IVA */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
                 Margen de Ganancia (%) *
               </label>
               <input
@@ -476,7 +476,7 @@ export default function ProductFormWithCalculations({
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
                 IVA (%)
               </label>
               <input
@@ -491,28 +491,34 @@ export default function ProductFormWithCalculations({
 
           {/* Precios Calculados */}
           {calculatedPrices && (
-            <div className="border-brand-primary mt-6 rounded-lg border bg-white p-4">
+            <div className="border-brand-primary mt-6 rounded-lg border bg-white p-4 dark:bg-slate-900">
               <div className="mb-2 flex items-center gap-2">
                 <DollarSign className="text-brand-primary h-4 w-4" />
-                <p className="text-sm font-semibold text-gray-700">
+                <p className="text-sm font-semibold text-gray-700 dark:text-slate-300">
                   Precios de Venta Calculados
                 </p>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center">
-                  <p className="text-xs text-gray-500">VES</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
+                    VES
+                  </p>
                   <p className="text-brand-primary text-lg font-bold">
                     {formatPrice(calculatedPrices.priceVES, 'VES')}
                   </p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-gray-500">USD</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
+                    USD
+                  </p>
                   <p className="text-brand-primary text-lg font-bold">
                     {formatPrice(calculatedPrices.priceUSD, 'USD')}
                   </p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-gray-500">EUR</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
+                    EUR
+                  </p>
                   <p className="text-brand-primary text-lg font-bold">
                     {formatPrice(calculatedPrices.priceEUR, 'EUR')}
                   </p>
@@ -523,8 +529,8 @@ export default function ProductFormWithCalculations({
         </div>
       </fieldset>
 
-      <fieldset className="rounded-2xl border border-gray-200 p-5">
-        <legend className="px-1 text-sm font-semibold text-gray-700">
+      <fieldset className="rounded-2xl border border-gray-200 p-5 dark:border-slate-800">
+        <legend className="px-1 text-sm font-semibold text-gray-700 dark:text-slate-300">
           Inventario
         </legend>
         <div className="mb-4 flex items-center gap-2">
@@ -532,11 +538,11 @@ export default function ProductFormWithCalculations({
             {...register('trackInventory')}
             type="checkbox"
             id="trackInventory"
-            className="text-brand-primary focus:ring-brand-primary h-4 w-4 rounded border-gray-300"
+            className="text-brand-primary focus:ring-brand-primary h-4 w-4 rounded border-gray-300 dark:border-slate-700"
           />
           <label
             htmlFor="trackInventory"
-            className="text-sm font-medium text-gray-700"
+            className="text-sm font-medium text-gray-700 dark:text-slate-300"
           >
             Controlar inventario
           </label>
@@ -545,7 +551,7 @@ export default function ProductFormWithCalculations({
         {trackInventory && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
                 Stock Actual *
               </label>
               <input
@@ -563,7 +569,7 @@ export default function ProductFormWithCalculations({
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
                 Stock Mínimo *
               </label>
               <input
@@ -583,18 +589,18 @@ export default function ProductFormWithCalculations({
         )}
       </fieldset>
 
-      <div className="flex flex-col-reverse gap-3 border-t border-gray-200 pt-4 sm:flex-row sm:justify-end">
+      <div className="flex flex-col-reverse gap-3 border-t border-gray-200 pt-4 sm:flex-row sm:justify-end dark:border-slate-800">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-xl border border-gray-200 px-6 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          className="rounded-xl border border-gray-200 px-6 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
         >
           Cancelar
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="bg-brand-primary hover:bg-brand-primary-dark rounded-xl px-6 py-2.5 text-sm font-medium text-white transition-colors disabled:bg-gray-400"
+          className="bg-brand-primary hover:bg-brand-primary-dark rounded-xl px-6 py-2.5 text-sm font-medium text-white transition-colors disabled:bg-gray-400 dark:bg-slate-600"
         >
           {loading
             ? 'Guardando...'

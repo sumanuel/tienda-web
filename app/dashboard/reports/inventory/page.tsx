@@ -68,11 +68,14 @@ export default function InventoryReportPage() {
     return (
       <div className="p-8">
         <div className="animate-pulse">
-          <div className="mb-4 h-8 w-1/4 rounded bg-gray-200"></div>
-          <div className="mb-8 h-4 w-1/3 rounded bg-gray-200"></div>
+          <div className="mb-4 h-8 w-1/4 rounded bg-gray-200 dark:bg-slate-700"></div>
+          <div className="mb-8 h-4 w-1/3 rounded bg-gray-200 dark:bg-slate-700"></div>
           <div className="grid grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 rounded bg-gray-200"></div>
+              <div
+                key={i}
+                className="h-32 rounded bg-gray-200 dark:bg-slate-700"
+              ></div>
             ))}
           </div>
         </div>
@@ -84,7 +87,7 @@ export default function InventoryReportPage() {
     <div className="p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="mb-4 text-3xl font-bold text-gray-900">
+        <h1 className="mb-4 text-3xl font-bold text-gray-900 dark:text-slate-100">
           Reporte de Inventario
         </h1>
         <div className="flex items-center justify-end">
@@ -98,42 +101,50 @@ export default function InventoryReportPage() {
 
       {/* KPIs */}
       <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-4">
-        <div className="rounded-lg border bg-white p-6">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-gray-600">Valor Total</span>
+            <span className="text-sm text-gray-600 dark:text-slate-400">
+              Valor Total
+            </span>
             <DollarSign className="h-5 w-5 text-blue-500" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-3xl font-bold text-gray-900 dark:text-slate-100">
             ${reportData?.totalValue.toFixed(2) || '0.00'}
           </p>
         </div>
 
-        <div className="rounded-lg border bg-white p-6">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-gray-600">Total Productos</span>
+            <span className="text-sm text-gray-600 dark:text-slate-400">
+              Total Productos
+            </span>
             <Package className="h-5 w-5 text-green-500" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-3xl font-bold text-gray-900 dark:text-slate-100">
             {reportData?.totalProducts || 0}
           </p>
         </div>
 
-        <div className="rounded-lg border bg-white p-6">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-gray-600">Stock Bajo</span>
+            <span className="text-sm text-gray-600 dark:text-slate-400">
+              Stock Bajo
+            </span>
             <AlertTriangle className="h-5 w-5 text-yellow-500" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-3xl font-bold text-gray-900 dark:text-slate-100">
             {reportData?.lowStockProducts || 0}
           </p>
         </div>
 
-        <div className="rounded-lg border bg-white p-6">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-gray-600">Sin Stock</span>
+            <span className="text-sm text-gray-600 dark:text-slate-400">
+              Sin Stock
+            </span>
             <XCircle className="h-5 w-5 text-red-500" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-3xl font-bold text-gray-900 dark:text-slate-100">
             {reportData?.outOfStockProducts || 0}
           </p>
         </div>
@@ -142,8 +153,8 @@ export default function InventoryReportPage() {
       {/* Gráficos */}
       <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Valor por categoría */}
-        <div className="rounded-lg border bg-white p-6">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
             Valor por Categoría
           </h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -159,8 +170,8 @@ export default function InventoryReportPage() {
         </div>
 
         {/* Distribución de stock */}
-        <div className="rounded-lg border bg-white p-6">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
             Distribución de Stock
           </h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -189,37 +200,40 @@ export default function InventoryReportPage() {
       </div>
 
       {/* Tabla de valorización */}
-      <div className="overflow-hidden rounded-lg border bg-white">
+      <div className="overflow-hidden rounded-lg border bg-white dark:bg-slate-900">
         <div className="border-b p-6">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
             Valorización por Categoría
           </h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-slate-950">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase dark:text-slate-400">
                   Categoría
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase dark:text-slate-400">
                   Cantidad
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase dark:text-slate-400">
                   Valor ($)
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {reportData?.valueByCategory.map((category, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm text-gray-900">
+                <tr
+                  key={index}
+                  className="hover:bg-gray-50 dark:bg-slate-950 dark:hover:bg-slate-800"
+                >
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-slate-100">
                     {category.category}
                   </td>
-                  <td className="px-6 py-4 text-right text-sm text-gray-900">
+                  <td className="px-6 py-4 text-right text-sm text-gray-900 dark:text-slate-100">
                     {category.quantity}
                   </td>
-                  <td className="px-6 py-4 text-right text-sm text-gray-900">
+                  <td className="px-6 py-4 text-right text-sm text-gray-900 dark:text-slate-100">
                     ${category.value.toFixed(2)}
                   </td>
                 </tr>

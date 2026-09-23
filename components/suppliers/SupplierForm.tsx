@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { SupplierFormData } from '@/types/supplier';
 
 const inputClassName =
-  'mt-1 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary focus:outline-none';
+  'mt-1 w-full rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-brand-primary focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-900 focus:ring-1 focus:ring-brand-primary focus:outline-none';
 
 const supplierSchema = z.object({
   name: z.string().min(2, 'Nombre debe tener al menos 2 caracteres'),
@@ -52,13 +52,13 @@ export default function SupplierForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <fieldset className="rounded-2xl border border-gray-200 p-5">
-        <legend className="px-1 text-sm font-semibold text-gray-700">
+      <fieldset className="rounded-2xl border border-gray-200 p-5 dark:border-slate-800">
+        <legend className="px-1 text-sm font-semibold text-gray-700 dark:text-slate-300">
           Información general
         </legend>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
               Nombre <span className="text-red-500">*</span>
             </label>
             <input
@@ -72,7 +72,7 @@ export default function SupplierForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
               RIF/NIT <span className="text-red-500">*</span>
             </label>
             <input
@@ -86,7 +86,7 @@ export default function SupplierForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
               Teléfono
             </label>
             <input
@@ -98,7 +98,7 @@ export default function SupplierForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
               Email
             </label>
             <input
@@ -115,7 +115,7 @@ export default function SupplierForm({
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
               Persona de Contacto
             </label>
             <input
@@ -127,12 +127,12 @@ export default function SupplierForm({
         </div>
       </fieldset>
 
-      <fieldset className="rounded-2xl border border-gray-200 p-5">
-        <legend className="px-1 text-sm font-semibold text-gray-700">
+      <fieldset className="rounded-2xl border border-gray-200 p-5 dark:border-slate-800">
+        <legend className="px-1 text-sm font-semibold text-gray-700 dark:text-slate-300">
           Notas
         </legend>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
             Notas
           </label>
           <textarea
@@ -144,18 +144,18 @@ export default function SupplierForm({
         </div>
       </fieldset>
 
-      <div className="flex flex-col-reverse justify-end gap-3 border-t border-gray-200 pt-4 sm:flex-row">
+      <div className="flex flex-col-reverse justify-end gap-3 border-t border-gray-200 pt-4 sm:flex-row dark:border-slate-800">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
         >
           Cancelar
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="bg-brand-primary hover:bg-brand-primary-dark rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300"
+          className="bg-brand-primary hover:bg-brand-primary-dark rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300 dark:bg-slate-600"
         >
           {isSubmitting
             ? 'Guardando...'

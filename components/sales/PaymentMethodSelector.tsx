@@ -119,7 +119,7 @@ export function PaymentMethodSelector({
         </Select>
 
         {selectedMethod && (
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
             {selectedMethod.description}
           </p>
         )}

@@ -136,7 +136,7 @@ export default function ProductForm({
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
       {/* Imagen */}
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700">
+        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
           Imagen del Producto
         </label>
         <div className="flex items-center gap-4">
@@ -150,7 +150,7 @@ export default function ProductForm({
               />
             </div>
           )}
-          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 hover:bg-gray-50">
+          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-800">
             <Upload size={20} />
             <span className="text-sm">Subir Imagen</span>
             <input
@@ -166,36 +166,36 @@ export default function ProductForm({
       {/* Información Básica */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
             Código (auto-generado si vacío)
           </label>
           <input
             {...register('code')}
             type="text"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
             Código de Barras
           </label>
           <input
             {...register('barcode')}
             type="text"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
           />
         </div>
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
           Nombre *
         </label>
         <input
           {...register('name')}
           type="text"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
         />
         {errors.name && (
           <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
@@ -203,23 +203,23 @@ export default function ProductForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
           Descripción
         </label>
         <textarea
           {...register('description')}
           rows={3}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
           Categoría *
         </label>
         <select
           {...register('category')}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
         >
           <option value="">Seleccionar categoría</option>
           <option value="Electrónica">Electrónica</option>
@@ -234,18 +234,20 @@ export default function ProductForm({
       </div>
 
       {/* Precios */}
-      <div className="rounded-lg border border-gray-200 p-4">
-        <h3 className="mb-4 font-semibold text-gray-700">Precios de Venta</h3>
+      <div className="rounded-lg border border-gray-200 p-4 dark:border-slate-800">
+        <h3 className="mb-4 font-semibold text-gray-700 dark:text-slate-300">
+          Precios de Venta
+        </h3>
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
               Precio USD *
             </label>
             <input
               {...register('priceUSD', { valueAsNumber: true })}
               type="number"
               step="0.01"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
             />
             {errors.priceUSD && (
               <p className="mt-1 text-sm text-red-600">
@@ -259,14 +261,14 @@ export default function ProductForm({
       {/* Costo */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
             Costo *
           </label>
           <input
             {...register('cost', { valueAsNumber: true })}
             type="number"
             step="0.01"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
           />
           {errors.cost && (
             <p className="mt-1 text-sm text-red-600">{errors.cost.message}</p>
@@ -274,12 +276,12 @@ export default function ProductForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
             Moneda del Costo
           </label>
           <select
             {...register('costCurrency')}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
           >
             <option value="USD">USD</option>
             <option value="VES">VES</option>
@@ -289,17 +291,17 @@ export default function ProductForm({
       </div>
 
       {/* Inventario */}
-      <div className="rounded-lg border border-gray-200 p-4">
+      <div className="rounded-lg border border-gray-200 p-4 dark:border-slate-800">
         <div className="mb-4 flex items-center gap-2">
           <input
             {...register('trackInventory')}
             type="checkbox"
             id="trackInventory"
-            className="h-4 w-4 rounded border-gray-300 text-blue-600"
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 dark:border-slate-700"
           />
           <label
             htmlFor="trackInventory"
-            className="text-sm font-medium text-gray-700"
+            className="text-sm font-medium text-gray-700 dark:text-slate-300"
           >
             Controlar inventario
           </label>
@@ -308,7 +310,7 @@ export default function ProductForm({
         {trackInventory && (
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
                 Stock Actual *
               </label>
               <input
@@ -316,7 +318,7 @@ export default function ProductForm({
                 type="number"
                 step="1"
                 min="0"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
               />
               {errors.stock && (
                 <p className="mt-1 text-sm text-red-600">
@@ -326,7 +328,7 @@ export default function ProductForm({
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
                 Stock Mínimo *
               </label>
               <input
@@ -334,7 +336,7 @@ export default function ProductForm({
                 type="number"
                 step="1"
                 min="0"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
               />
               {errors.stockMin && (
                 <p className="mt-1 text-sm text-red-600">
@@ -351,7 +353,7 @@ export default function ProductForm({
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
+          className="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400 dark:bg-slate-600"
         >
           {loading
             ? 'Guardando...'
@@ -362,7 +364,7 @@ export default function ProductForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-gray-300 px-6 py-2 hover:bg-gray-50"
+          className="rounded-lg border border-gray-300 px-6 py-2 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-800"
         >
           Cancelar
         </button>

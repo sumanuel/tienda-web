@@ -13,7 +13,7 @@ export function LoadingState({
   fullScreen = false,
 }: LoadingStateProps) {
   const content = (
-    <div className="flex flex-col items-center justify-center text-gray-500">
+    <div className="flex flex-col items-center justify-center text-gray-500 dark:text-slate-400">
       <Loader2 className="mb-4 h-8 w-8 animate-spin text-[#2D7A5B]" />
       <p className="text-sm">{message}</p>
     </div>

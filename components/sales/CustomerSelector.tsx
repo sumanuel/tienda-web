@@ -123,7 +123,7 @@ export function CustomerSelector({
 
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-slate-400 dark:text-slate-500" />
           <Input
             id="customer"
             placeholder="Buscar por documento o nombre (1 = genérico)"
@@ -134,19 +134,19 @@ export function CustomerSelector({
 
           {/* Resultados de búsqueda */}
           {searchResults.length > 0 && (
-            <div className="absolute z-10 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border bg-white shadow-lg">
+            <div className="absolute z-10 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border bg-white shadow-lg dark:bg-slate-900">
               {searchResults.map((customer) => (
                 <button
                   key={customer.id}
-                  className="flex w-full items-center gap-3 px-4 py-2 text-left hover:bg-gray-100"
+                  className="flex w-full items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-800"
                   onClick={() => handleSelectCustomer(customer)}
                 >
-                  <User className="h-4 w-4 text-gray-400" />
+                  <User className="h-4 w-4 text-gray-400 dark:text-slate-400 dark:text-slate-500" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">
                       {customer.name}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
                       Doc: {customer.documentNumber}
                       {customer.phone && ` • Tel: ${customer.phone}`}
                     </p>

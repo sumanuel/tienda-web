@@ -38,11 +38,11 @@ export function ErrorState({
             />
           </div>
 
-          <h2 className="mb-2 text-xl font-semibold text-gray-900">
+          <h2 className="mb-2 text-xl font-semibold text-gray-900 dark:text-slate-100">
             {isAuthError ? 'Sesión Expirada' : title}
           </h2>
 
-          <p className="mb-6 text-gray-600">
+          <p className="mb-6 text-gray-600 dark:text-slate-400">
             {isAuthError
               ? 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.'
               : message}

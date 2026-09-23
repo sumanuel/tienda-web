@@ -45,6 +45,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { DollarSign, AlertCircle, Users, FileText } from 'lucide-react';
+import { IconChip } from '@/components/common/IconChip';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -192,23 +193,23 @@ export default function AccountsReceivablePage() {
       loadingMessage="Cargando cuentas por cobrar..."
     >
       <div className="space-y-6 p-8">
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-slate-100">
             Cuentas por Cobrar
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
             Gestión de créditos a clientes y cartera
           </p>
         </div>
 
         {/* KPIs */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="rounded-2xl border-gray-200 shadow-sm">
+          <Card className="rounded-2xl border-gray-200 shadow-sm dark:border-slate-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Total por Cobrar
               </CardTitle>
-              <DollarSign className="text-muted-foreground h-4 w-4" />
+              <IconChip icon={DollarSign} tone="accent" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -220,12 +221,12 @@ export default function AccountsReceivablePage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-gray-200 shadow-sm">
+          <Card className="rounded-2xl border-gray-200 shadow-sm dark:border-slate-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Saldo Vencido
               </CardTitle>
-              <AlertCircle className="h-4 w-4 text-red-600" />
+              <IconChip icon={AlertCircle} tone="danger" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
@@ -237,12 +238,12 @@ export default function AccountsReceivablePage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-gray-200 shadow-sm">
+          <Card className="rounded-2xl border-gray-200 shadow-sm dark:border-slate-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Saldo Vigente
               </CardTitle>
-              <Users className="text-muted-foreground h-4 w-4" />
+              <IconChip icon={Users} tone="accent" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
@@ -255,7 +256,7 @@ export default function AccountsReceivablePage() {
 
         {/* Tabs */}
         <Tabs defaultValue="all" className="space-y-4">
-          <TabsList className="rounded-xl bg-white p-1 shadow-sm">
+          <TabsList className="rounded-xl bg-white p-1 shadow-sm dark:bg-slate-900">
             <TabsTrigger value="all">Clientes con Saldo</TabsTrigger>
             <TabsTrigger value="overdue">
               Cuentas Vencidas ({overdueCustomers.length})
@@ -265,16 +266,16 @@ export default function AccountsReceivablePage() {
 
           {/* Tab: Todos los clientes con saldo */}
           <TabsContent value="all" className="space-y-4">
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <Input
                 placeholder="Buscar por nombre o documento..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="focus-visible:ring-brand-primary max-w-sm border-gray-200 bg-gray-50"
+                className="focus-visible:ring-brand-primary max-w-sm border-gray-200 bg-gray-50 dark:border-slate-800 dark:bg-slate-950"
               />
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -333,7 +334,7 @@ export default function AccountsReceivablePage() {
 
           {/* Tab: Cuentas vencidas */}
           <TabsContent value="overdue" className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -394,7 +395,7 @@ export default function AccountsReceivablePage() {
 
           {/* Tab: Aging de cartera */}
           <TabsContent value="aging" className="space-y-4">
-            <Card className="rounded-2xl border-gray-200 shadow-sm">
+            <Card className="rounded-2xl border-gray-200 shadow-sm dark:border-slate-800">
               <CardHeader>
                 <CardTitle>Distribución de Cartera Vencida por Días</CardTitle>
               </CardHeader>
@@ -414,7 +415,7 @@ export default function AccountsReceivablePage() {
             </Card>
 
             <div className="grid gap-4 md:grid-cols-4">
-              <Card className="rounded-2xl border-gray-200 shadow-sm">
+              <Card className="rounded-2xl border-gray-200 shadow-sm dark:border-slate-800">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium">
                     0-30 días
@@ -427,7 +428,7 @@ export default function AccountsReceivablePage() {
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-gray-200 shadow-sm">
+              <Card className="rounded-2xl border-gray-200 shadow-sm dark:border-slate-800">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium">
                     31-60 días
@@ -440,7 +441,7 @@ export default function AccountsReceivablePage() {
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-gray-200 shadow-sm">
+              <Card className="rounded-2xl border-gray-200 shadow-sm dark:border-slate-800">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium">
                     61-90 días
@@ -453,7 +454,7 @@ export default function AccountsReceivablePage() {
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-gray-200 shadow-sm">
+              <Card className="rounded-2xl border-gray-200 shadow-sm dark:border-slate-800">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium">
                     90+ días
@@ -471,7 +472,7 @@ export default function AccountsReceivablePage() {
 
         {/* Dialog: Registrar Abono */}
         <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-          <DialogContent className="rounded-2xl border-gray-200 sm:max-w-[500px]">
+          <DialogContent className="rounded-2xl border-gray-200 sm:max-w-[500px] dark:border-slate-800">
             <DialogHeader>
               <DialogTitle>Registrar Abono de Cliente</DialogTitle>
             </DialogHeader>
@@ -490,7 +491,7 @@ export default function AccountsReceivablePage() {
           open={showAccountStatusDialog}
           onOpenChange={setShowAccountStatusDialog}
         >
-          <DialogContent className="max-h-[80vh] overflow-y-auto rounded-2xl border-gray-200 sm:max-w-[900px]">
+          <DialogContent className="max-h-[80vh] overflow-y-auto rounded-2xl border-gray-200 sm:max-w-[900px] dark:border-slate-800">
             <DialogHeader>
               <DialogTitle>Estado de Cuenta</DialogTitle>
             </DialogHeader>

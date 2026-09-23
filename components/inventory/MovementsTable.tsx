@@ -40,7 +40,7 @@ export default function MovementsTable({ movements }: MovementsTableProps) {
                 ? 'bg-red-100 text-red-700'
                 : type === 'sale'
                   ? 'bg-blue-100 text-blue-700'
-                  : 'bg-gray-100 text-gray-700';
+                  : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300';
 
           const label =
             type === 'entry'
@@ -130,7 +130,7 @@ export default function MovementsTable({ movements }: MovementsTableProps) {
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search
-            className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"
+            className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 dark:text-slate-400 dark:text-slate-500"
             size={20}
           />
           <input
@@ -138,21 +138,21 @@ export default function MovementsTable({ movements }: MovementsTableProps) {
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder="Buscar movimientos..."
-            className="w-full rounded-lg border border-gray-300 py-2 pr-4 pl-10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-gray-300 py-2 pr-4 pl-10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
           />
         </div>
       </div>
 
       {/* Tabla */}
-      <div className="overflow-hidden rounded-lg border border-gray-200">
+      <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-slate-800">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 dark:bg-slate-950">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 text-left text-sm font-semibold text-gray-700"
+                    className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-slate-300"
                   >
                     {header.isPlaceholder
                       ? null
@@ -165,11 +165,17 @@ export default function MovementsTable({ movements }: MovementsTableProps) {
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
+          <tbody className="divide-y divide-gray-200 bg-white dark:bg-slate-900">
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="hover:bg-gray-50">
+              <tr
+                key={row.id}
+                className="hover:bg-gray-50 dark:bg-slate-950 dark:hover:bg-slate-800"
+              >
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-4 py-3 text-sm text-gray-900">
+                  <td
+                    key={cell.id}
+                    className="px-4 py-3 text-sm text-gray-900 dark:text-slate-100"
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
@@ -181,7 +187,7 @@ export default function MovementsTable({ movements }: MovementsTableProps) {
 
       {/* Paginación */}
       <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-700">
+        <div className="text-sm text-gray-700 dark:text-slate-300">
           Mostrando {table.getRowModel().rows.length} de {movements.length}{' '}
           movimientos
         </div>
@@ -189,14 +195,14 @@ export default function MovementsTable({ movements }: MovementsTableProps) {
           <button
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:bg-gray-300"
+            className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:bg-gray-300 dark:bg-slate-600"
           >
             Anterior
           </button>
           <button
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:bg-gray-300"
+            className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:bg-gray-300 dark:bg-slate-600"
           >
             Siguiente
           </button>

@@ -42,8 +42,10 @@ export default function ReportsPage() {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Reportes</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100">
+          Reportes
+        </h1>
+        <p className="mt-2 text-gray-600 dark:text-slate-400">
           Analiza el rendimiento de tu negocio con reportes detallados
         </p>
       </div>
@@ -56,7 +58,7 @@ export default function ReportsPage() {
             <Link
               key={report.id}
               href={report.href}
-              className="block rounded-lg border-2 border-gray-200 bg-white p-6 transition-colors hover:border-gray-400"
+              className="block rounded-lg border-2 border-gray-200 bg-white p-6 transition-colors hover:border-gray-400 dark:border-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-500"
             >
               <div className="flex items-start gap-4">
                 <div className={`${report.color} rounded-lg p-3`}>
@@ -64,10 +66,12 @@ export default function ReportsPage() {
                 </div>
 
                 <div className="flex-1">
-                  <h3 className="mb-2 text-xl font-semibold text-gray-900">
+                  <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-slate-100">
                     {report.title}
                   </h3>
-                  <p className="text-gray-600">{report.description}</p>
+                  <p className="text-gray-600 dark:text-slate-400">
+                    {report.description}
+                  </p>
                 </div>
               </div>
             </Link>

@@ -90,9 +90,11 @@ export function SalesTable({
 
   if (sales.length === 0) {
     return (
-      <div className="rounded-lg border bg-white py-12 text-center">
-        <p className="text-lg text-gray-500">No se encontraron ventas</p>
-        <p className="mt-2 text-sm text-gray-400">
+      <div className="rounded-lg border bg-white py-12 text-center dark:bg-slate-900">
+        <p className="text-lg text-gray-500 dark:text-slate-400">
+          No se encontraron ventas
+        </p>
+        <p className="mt-2 text-sm text-gray-400 dark:text-slate-400 dark:text-slate-500">
           Intenta ajustar los filtros de búsqueda
         </p>
       </div>
@@ -100,7 +102,7 @@ export function SalesTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border bg-white">
+    <div className="overflow-hidden rounded-lg border bg-white dark:bg-slate-900">
       {/* Tabla */}
       <div className="overflow-x-auto">
         <Table>
@@ -119,7 +121,7 @@ export function SalesTable({
             {sales.map((sale) => (
               <TableRow key={sale.id}>
                 <TableCell className="font-medium">{sale.saleNumber}</TableCell>
-                <TableCell className="text-sm text-gray-600">
+                <TableCell className="text-sm text-gray-600 dark:text-slate-400">
                   {formatDate(sale.createdAt)}
                 </TableCell>
                 <TableCell>
@@ -130,13 +132,13 @@ export function SalesTable({
                       </p>
                       {sale.customer.documentNumber &&
                         sale.customer.documentNumber !== '1' && (
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 dark:text-slate-400">
                             Doc: {sale.customer.documentNumber}
                           </p>
                         )}
                     </div>
                   ) : (
-                    <span className="text-sm text-gray-400">
+                    <span className="text-sm text-gray-400 dark:text-slate-400 dark:text-slate-500">
                       Cliente Genérico
                     </span>
                   )}
@@ -147,7 +149,7 @@ export function SalesTable({
                       sale.paymentMethod}
                   </span>
                   {sale.referenceNumber && (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
                       Ref: {sale.referenceNumber}
                     </p>
                   )}
@@ -158,7 +160,7 @@ export function SalesTable({
                       {formatCurrency(sale.total, sale.currency as Currency)}
                     </p>
                     {sale.totalReference && sale.currency !== 'USD' && (
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-slate-400">
                         ≈ {formatCurrency(sale.totalReference, 'USD')}
                       </p>
                     )}
@@ -191,7 +193,7 @@ export function SalesTable({
 
       {/* Paginación */}
       <div className="flex items-center justify-between border-t px-4 py-3">
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-600 dark:text-slate-400">
           Mostrando {(pagination.page - 1) * pagination.limit + 1} -{' '}
           {Math.min(pagination.page * pagination.limit, pagination.total)} de{' '}
           {pagination.total} ventas

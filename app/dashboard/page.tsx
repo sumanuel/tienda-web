@@ -46,13 +46,13 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="to-tsuma-primary-bg/30 min-h-screen space-y-6 bg-gradient-to-br from-gray-50 p-6">
+    <div className="to-tsuma-primary-bg/30 min-h-screen space-y-6 bg-gradient-to-br from-gray-50 p-6 dark:from-slate-950 dark:to-slate-950">
       {/* Header */}
       <div className="animate-slide-up">
-        <h1 className="text-4xl font-bold text-gray-900">
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-slate-100">
           ¡Bienvenido, {profile?.name || 'fotos'}!
         </h1>
-        <p className="mt-1 text-gray-600">
+        <p className="mt-1 text-gray-600 dark:text-slate-400">
           Resumen de tu negocio en tiempo real
         </p>
       </div>
@@ -81,6 +81,7 @@ export default function DashboardPage() {
           value="$0.00"
           subtitle="Próximamente con datos reales"
           icon={DollarSign}
+          tone="accent"
           trend={{
             value: '+0%',
             isPositive: true,
@@ -94,6 +95,7 @@ export default function DashboardPage() {
           value="$0.00"
           subtitle="vs mes pasado: 0%"
           icon={Calendar}
+          tone="accent"
           trend={{
             value: '+0%',
             isPositive: true,
@@ -111,6 +113,7 @@ export default function DashboardPage() {
           value="0"
           subtitle="Total en inventario"
           icon={Package}
+          tone="warning"
           action={{
             label: 'Gestionar',
             onClick: () => router.push('/dashboard/products'),
@@ -124,6 +127,7 @@ export default function DashboardPage() {
           value="0"
           subtitle="Clientes registrados"
           icon={Users}
+          tone="neutral"
           action={{
             label: 'Ver todos',
             onClick: () => router.push('/dashboard/customers'),

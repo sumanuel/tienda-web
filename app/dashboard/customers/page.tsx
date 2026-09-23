@@ -17,6 +17,7 @@ import {
 import { Customer, CustomerFormData } from '@/types/customer';
 import CustomersTable from '@/components/customers/CustomersTable';
 import CustomerForm from '@/components/customers/CustomerForm';
+import { SidePanel } from '@/components/common/SidePanel';
 import {
   Plus,
   X,
@@ -122,103 +123,98 @@ export default function CustomersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen space-y-6 bg-gray-50 p-6">
-        <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="h-7 w-52 rounded bg-gray-200" />
-          <div className="mt-3 h-4 w-80 rounded bg-gray-100" />
+      <div className="min-h-screen space-y-6 bg-gray-50 p-6 dark:bg-slate-950">
+        <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="h-7 w-52 rounded bg-gray-200 dark:bg-slate-700" />
+          <div className="mt-3 h-4 w-80 rounded bg-gray-100 dark:bg-slate-800" />
         </div>
         <div className="grid gap-4 md:grid-cols-3">
-          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm" />
-          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm" />
-          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm" />
+          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900" />
+          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900" />
+          <div className="h-32 rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900" />
         </div>
-        <div className="h-96 rounded-2xl border border-gray-200 bg-white shadow-sm" />
+        <div className="h-96 rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen space-y-6 bg-gray-50 p-6">
-      <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
+    <div className="min-h-screen space-y-6 bg-gray-50 p-6 dark:bg-slate-950">
+      <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between dark:border-slate-800 dark:bg-slate-900">
         <div>
           <div className="flex items-center gap-3">
             <div className="bg-brand-primary-light text-brand-primary flex h-11 w-11 items-center justify-center rounded-xl">
               <UserRound className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
-              <p className="text-sm text-gray-500">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
+                Clientes
+              </h1>
+              <p className="text-sm text-gray-500 dark:text-slate-400">
                 Gestiona datos de contacto, saldos pendientes e historial de
                 compras.
               </p>
             </div>
           </div>
-          <p className="mt-4 text-sm text-gray-600">
+          <p className="mt-4 text-sm text-gray-600 dark:text-slate-400">
             {customers.length} clientes registrados
           </p>
         </div>
         <button
           onClick={() => {
-            setShowForm(!showForm);
             setEditingCustomer(null);
+            setShowForm(true);
           }}
           className="bg-brand-primary hover:bg-brand-primary-dark inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors"
         >
-          {showForm || editingCustomer ? (
-            <>
-              <X size={20} />
-              Cancelar
-            </>
-          ) : (
-            <>
-              <Plus size={20} />
-              Nuevo Cliente
-            </>
-          )}
+          <Plus size={20} />
+          Nuevo Cliente
         </button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-3">
             <div className="bg-brand-primary-light rounded-xl p-3">
               <Users className="text-brand-primary" size={24} />
             </div>
             <div>
-              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-slate-400">
                 Total Clientes
               </p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
+                {stats.total}
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-amber-100 p-3">
               <AlertCircle className="text-amber-700" size={24} />
             </div>
             <div>
-              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-slate-400">
                 Con Saldo Pendiente
               </p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                 {stats.withBalance}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-green-100 p-3">
               <DollarSign className="text-green-600" size={24} />
             </div>
             <div>
-              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+              <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-slate-400">
                 Total por Cobrar
               </p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                 ${stats.totalBalance.toFixed(2)}
               </p>
             </div>
@@ -226,22 +222,28 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Formulario */}
-      {(showForm || editingCustomer) && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
-            {editingCustomer ? 'Editar Cliente' : 'Nuevo Cliente'}
-          </h2>
-          <CustomerForm
-            initialData={editingCustomer || undefined}
-            onSubmit={editingCustomer ? handleUpdate : handleCreate}
-            onCancel={() => {
-              setShowForm(false);
-              setEditingCustomer(null);
-            }}
-          />
-        </div>
-      )}
+      <SidePanel
+        open={showForm || !!editingCustomer}
+        onClose={() => {
+          setShowForm(false);
+          setEditingCustomer(null);
+        }}
+        title={editingCustomer ? 'Editar Cliente' : 'Nuevo Cliente'}
+        subtitle={
+          editingCustomer
+            ? `Actualiza los datos de ${editingCustomer.name}.`
+            : 'Registra un nuevo cliente en tu base de datos.'
+        }
+      >
+        <CustomerForm
+          initialData={editingCustomer || undefined}
+          onSubmit={editingCustomer ? handleUpdate : handleCreate}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingCustomer(null);
+          }}
+        />
+      </SidePanel>
 
       <CustomersTable
         customers={customers}
@@ -255,9 +257,9 @@ export default function CustomersPage() {
 
       {viewingCustomer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[85vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+          <div className="max-h-[85vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-900">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100">
                 Historial de {viewingCustomer.name}
               </h2>
               <button
@@ -265,33 +267,41 @@ export default function CustomersPage() {
                   setViewingCustomer(null);
                   setSalesHistory([]);
                 }}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:text-slate-500 dark:hover:text-slate-300"
               >
                 <X size={24} />
               </button>
             </div>
 
-            <div className="mb-4 rounded-2xl border border-gray-200 bg-gray-50 p-5">
+            <div className="mb-4 rounded-2xl border border-gray-200 bg-gray-50 p-5 dark:border-slate-800 dark:bg-slate-950">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <p className="text-sm text-gray-600">Documento</p>
+                  <p className="text-sm text-gray-600 dark:text-slate-400">
+                    Documento
+                  </p>
                   <p className="font-medium">{viewingCustomer.document}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Balance Actual</p>
+                  <p className="text-sm text-gray-600 dark:text-slate-400">
+                    Balance Actual
+                  </p>
                   <p className="text-lg font-bold text-orange-600">
                     ${viewingCustomer.balance.toFixed(2)}
                   </p>
                 </div>
                 {viewingCustomer.phone && (
                   <div>
-                    <p className="text-sm text-gray-600">Teléfono</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">
+                      Teléfono
+                    </p>
                     <p className="font-medium">{viewingCustomer.phone}</p>
                   </div>
                 )}
                 {viewingCustomer.email && (
                   <div>
-                    <p className="text-sm text-gray-600">Email</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">
+                      Email
+                    </p>
                     <p className="font-medium">{viewingCustomer.email}</p>
                   </div>
                 )}
@@ -300,7 +310,7 @@ export default function CustomersPage() {
 
             <h3 className="mb-3 text-lg font-semibold">Historial de Compras</h3>
             {salesHistory.length === 0 ? (
-              <p className="py-8 text-center text-gray-500">
+              <p className="py-8 text-center text-gray-500 dark:text-slate-400">
                 Este cliente aún no ha realizado compras
               </p>
             ) : (
@@ -308,12 +318,12 @@ export default function CustomersPage() {
                 {salesHistory.map((sale) => (
                   <div
                     key={sale.id}
-                    className="rounded-lg border border-gray-200 p-4 hover:bg-gray-50"
+                    className="rounded-lg border border-gray-200 p-4 hover:bg-gray-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-800"
                   >
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">Venta #{sale.saleNumber}</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-slate-400">
                           {new Date(sale.createdAt).toLocaleString('es-VE')}
                         </p>
                       </div>
@@ -321,7 +331,9 @@ export default function CustomersPage() {
                         <p className="text-lg font-bold">
                           ${sale.total.toFixed(2)}
                         </p>
-                        <p className="text-sm text-gray-600">{sale.currency}</p>
+                        <p className="text-sm text-gray-600 dark:text-slate-400">
+                          {sale.currency}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -335,7 +347,7 @@ export default function CustomersPage() {
                   setViewingCustomer(null);
                   setSalesHistory([]);
                 }}
-                className="rounded-lg bg-gray-600 px-4 py-2 text-white hover:bg-gray-700"
+                className="rounded-lg bg-gray-600 px-4 py-2 text-white hover:bg-gray-700 dark:bg-slate-500 dark:bg-slate-600"
               >
                 Cerrar
               </button>

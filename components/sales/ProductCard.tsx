@@ -41,7 +41,7 @@ export function ProductCard({ product, currency, onAdd }: ProductCardProps) {
 
   return (
     <Card
-      className={`group hover:border-brand-primary/30 overflow-hidden rounded-2xl border-gray-200 transition-all hover:shadow-sm ${
+      className={`group hover:border-brand-primary/30 overflow-hidden rounded-2xl border-gray-200 transition-all hover:shadow-sm dark:border-slate-800 ${
         isOutOfStock ? 'cursor-not-allowed opacity-50' : ''
       }`}
       onClick={() => !isOutOfStock && onAdd(product)}
@@ -56,8 +56,8 @@ export function ProductCard({ product, currency, onAdd }: ProductCardProps) {
                 className="h-16 w-16 rounded-xl object-cover"
               />
             ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gray-100">
-                <Package className="h-8 w-8 text-gray-400" />
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gray-100 dark:bg-slate-800">
+                <Package className="h-8 w-8 text-gray-400 dark:text-slate-400 dark:text-slate-500" />
               </div>
             )}
           </div>
@@ -65,24 +65,24 @@ export function ProductCard({ product, currency, onAdd }: ProductCardProps) {
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <h3 className="truncate text-base font-semibold text-gray-900">
+                <h3 className="truncate text-base font-semibold text-gray-900 dark:text-slate-100">
                   {product.name}
                 </h3>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   {product.sku && (
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-gray-500 dark:text-slate-400">
                       SKU: {product.sku}
                     </span>
                   )}
                   {product.barcode && (
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-gray-500 dark:text-slate-400">
                       Código: {product.barcode}
                     </span>
                   )}
                 </div>
                 <Badge
                   variant="secondary"
-                  className="mt-2 rounded-full bg-gray-100 text-xs text-gray-700"
+                  className="mt-2 rounded-full bg-gray-100 text-xs text-gray-700 dark:bg-slate-800 dark:text-slate-300"
                 >
                   {product.category}
                 </Badge>

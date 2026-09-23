@@ -65,11 +65,14 @@ export default function SalesReportPage() {
     return (
       <div className="p-8">
         <div className="animate-pulse">
-          <div className="mb-4 h-8 w-1/4 rounded bg-gray-200"></div>
-          <div className="mb-8 h-4 w-1/3 rounded bg-gray-200"></div>
+          <div className="mb-4 h-8 w-1/4 rounded bg-gray-200 dark:bg-slate-700"></div>
+          <div className="mb-8 h-4 w-1/3 rounded bg-gray-200 dark:bg-slate-700"></div>
           <div className="grid grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 rounded bg-gray-200"></div>
+              <div
+                key={i}
+                className="h-32 rounded bg-gray-200 dark:bg-slate-700"
+              ></div>
             ))}
           </div>
         </div>
@@ -81,7 +84,7 @@ export default function SalesReportPage() {
     <div className="p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="mb-4 text-3xl font-bold text-gray-900">
+        <h1 className="mb-4 text-3xl font-bold text-gray-900 dark:text-slate-100">
           Reporte de Ventas
         </h1>
         <div className="flex items-center justify-between">
@@ -96,45 +99,53 @@ export default function SalesReportPage() {
 
       {/* KPIs */}
       <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-4">
-        <div className="rounded-lg border bg-white p-6">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-gray-600">Total Ventas</span>
+            <span className="text-sm text-gray-600 dark:text-slate-400">
+              Total Ventas
+            </span>
             <DollarSign className="h-5 w-5 text-blue-500" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-3xl font-bold text-gray-900 dark:text-slate-100">
             ${reportData?.totalSales.toFixed(2) || '0.00'}
           </p>
         </div>
 
-        <div className="rounded-lg border bg-white p-6">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-gray-600">Transacciones</span>
+            <span className="text-sm text-gray-600 dark:text-slate-400">
+              Transacciones
+            </span>
             <ShoppingCart className="h-5 w-5 text-green-500" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-3xl font-bold text-gray-900 dark:text-slate-100">
             {reportData?.totalTransactions || 0}
           </p>
         </div>
 
-        <div className="rounded-lg border bg-white p-6">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-gray-600">Ticket Promedio</span>
+            <span className="text-sm text-gray-600 dark:text-slate-400">
+              Ticket Promedio
+            </span>
             <TrendingUp className="h-5 w-5 text-purple-500" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-3xl font-bold text-gray-900 dark:text-slate-100">
             ${reportData?.averageTicket.toFixed(2) || '0.00'}
           </p>
         </div>
 
-        <div className="rounded-lg border bg-white p-6">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-gray-600">Top Producto</span>
+            <span className="text-sm text-gray-600 dark:text-slate-400">
+              Top Producto
+            </span>
             <Award className="h-5 w-5 text-orange-500" />
           </div>
-          <p className="truncate text-sm font-semibold text-gray-900">
+          <p className="truncate text-sm font-semibold text-gray-900 dark:text-slate-100">
             {reportData?.topProduct?.name || 'N/A'}
           </p>
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-gray-600 dark:text-slate-400">
             {reportData?.topProduct?.quantity || 0} unidades
           </p>
         </div>
@@ -143,8 +154,8 @@ export default function SalesReportPage() {
       {/* Gráficos */}
       <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Ventas por día */}
-        <div className="rounded-lg border bg-white p-6">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
             Ventas por Día
           </h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -165,8 +176,8 @@ export default function SalesReportPage() {
         </div>
 
         {/* Top productos */}
-        <div className="rounded-lg border bg-white p-6">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
             Top 5 Productos
           </h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -182,8 +193,8 @@ export default function SalesReportPage() {
         </div>
 
         {/* Métodos de pago */}
-        <div className="rounded-lg border bg-white p-6">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
             Métodos de Pago
           </h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -213,8 +224,8 @@ export default function SalesReportPage() {
         </div>
 
         {/* Ventas por hora */}
-        <div className="rounded-lg border bg-white p-6">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
             Ventas por Hora
           </h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -231,37 +242,40 @@ export default function SalesReportPage() {
       </div>
 
       {/* Tabla de productos */}
-      <div className="overflow-hidden rounded-lg border bg-white">
+      <div className="overflow-hidden rounded-lg border bg-white dark:bg-slate-900">
         <div className="border-b p-6">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
             Detalle por Producto
           </h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-slate-950">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase dark:text-slate-400">
                   Producto
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase dark:text-slate-400">
                   Cantidad
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase dark:text-slate-400">
                   Total ($)
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {reportData?.salesByProduct.map((product) => (
-                <tr key={product.productId} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm text-gray-900">
+                <tr
+                  key={product.productId}
+                  className="hover:bg-gray-50 dark:bg-slate-950 dark:hover:bg-slate-800"
+                >
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-slate-100">
                     {product.productName}
                   </td>
-                  <td className="px-6 py-4 text-right text-sm text-gray-900">
+                  <td className="px-6 py-4 text-right text-sm text-gray-900 dark:text-slate-100">
                     {product.quantity}
                   </td>
-                  <td className="px-6 py-4 text-right text-sm text-gray-900">
+                  <td className="px-6 py-4 text-right text-sm text-gray-900 dark:text-slate-100">
                     ${product.total.toFixed(2)}
                   </td>
                 </tr>

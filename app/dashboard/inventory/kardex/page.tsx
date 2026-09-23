@@ -101,7 +101,7 @@ export default function KardexPage() {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Kardex de Productos</h1>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-slate-400">
           Historial detallado de movimientos por producto
         </p>
       </div>
@@ -109,12 +109,12 @@ export default function KardexPage() {
       {/* Selector de Producto */}
       <div className="mb-6 flex items-end gap-4">
         <div className="flex-1">
-          <label className="mb-2 block text-sm font-medium text-gray-700">
+          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
             Seleccionar Producto
           </label>
           <select
             onChange={(e) => handleProductChange(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
           >
             <option value="">Seleccionar producto</option>
             {products.map((product) => (
@@ -128,7 +128,7 @@ export default function KardexPage() {
         {selectedProduct && kardex.length > 0 && (
           <button
             onClick={exportToCSV}
-            className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 hover:bg-gray-50"
+            className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-800"
           >
             <FileDown size={20} />
             Exportar CSV
@@ -139,7 +139,9 @@ export default function KardexPage() {
       {/* Vista de Kardex */}
       {generatingKardex && (
         <div className="py-12 text-center">
-          <p className="text-gray-500">Generando kardex...</p>
+          <p className="text-gray-500 dark:text-slate-400">
+            Generando kardex...
+          </p>
         </div>
       )}
 
@@ -152,8 +154,8 @@ export default function KardexPage() {
       )}
 
       {!generatingKardex && !selectedProduct && (
-        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-          <p className="text-gray-500">
+        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-gray-500 dark:text-slate-400">
             Selecciona un producto para ver su kardex
           </p>
         </div>

@@ -29,10 +29,10 @@ export function StockAlertsCardV2({
 
   if (loading) {
     return (
-      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="animate-pulse space-y-4">
-          <div className="h-5 w-32 rounded bg-gray-200" />
-          <div className="h-12 w-full rounded bg-gray-200" />
+          <div className="h-5 w-32 rounded bg-gray-200 dark:bg-slate-800" />
+          <div className="h-12 w-full rounded bg-gray-200 dark:bg-slate-800" />
         </div>
       </div>
     );
@@ -42,14 +42,18 @@ export function StockAlertsCardV2({
     <div
       className={cn(
         'rounded-2xl border-2 bg-white p-6 shadow-sm transition-all duration-300',
-        !hasAlerts && 'border-tsuma-primary/30 bg-tsuma-primary-bg',
-        hasAlerts && !hasCritical && 'border-amber-300 bg-amber-50',
-        hasCritical && 'border-red-300 bg-red-50'
+        !hasAlerts &&
+          'border-tsuma-primary/30 bg-tsuma-primary-bg dark:bg-slate-900',
+        hasAlerts &&
+          !hasCritical &&
+          'border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40',
+        hasCritical &&
+          'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/40'
       )}
     >
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
           Alertas de Stock
         </h3>
         {hasAlerts && (
@@ -66,11 +70,13 @@ export function StockAlertsCardV2({
 
       {/* Content */}
       {!hasAlerts ? (
-        <div className="flex items-center gap-3 rounded-xl bg-white p-4">
+        <div className="flex items-center gap-3 rounded-xl bg-white p-4 dark:bg-slate-800">
           <CheckCircle className="text-tsuma-primary h-12 w-12 flex-shrink-0" />
           <div>
-            <p className="font-medium text-gray-900">¡Todo en orden!</p>
-            <p className="text-sm text-gray-600">
+            <p className="font-medium text-gray-900 dark:text-slate-100">
+              ¡Todo en orden!
+            </p>
+            <p className="text-sm text-gray-600 dark:text-slate-400">
               No hay alertas de stock en este momento
             </p>
           </div>
@@ -81,19 +87,23 @@ export function StockAlertsCardV2({
           <div
             className={cn(
               'flex items-center gap-3 rounded-xl p-4',
-              hasCritical ? 'bg-red-100' : 'bg-amber-100'
+              hasCritical
+                ? 'bg-red-100 dark:bg-red-950/60'
+                : 'bg-amber-100 dark:bg-amber-950/60'
             )}
           >
             {hasCritical ? (
-              <XCircle className="h-10 w-10 flex-shrink-0 text-red-600" />
+              <XCircle className="h-10 w-10 flex-shrink-0 text-red-600 dark:text-red-400" />
             ) : (
-              <AlertTriangle className="h-10 w-10 flex-shrink-0 text-amber-600" />
+              <AlertTriangle className="h-10 w-10 flex-shrink-0 text-amber-600 dark:text-amber-400" />
             )}
             <div className="flex-1">
               <p
                 className={cn(
                   'font-semibold',
-                  hasCritical ? 'text-red-900' : 'text-amber-900'
+                  hasCritical
+                    ? 'text-red-900 dark:text-red-300'
+                    : 'text-amber-900 dark:text-amber-300'
                 )}
               >
                 {hasCritical
@@ -103,7 +113,9 @@ export function StockAlertsCardV2({
               <p
                 className={cn(
                   'text-sm',
-                  hasCritical ? 'text-red-700' : 'text-amber-700'
+                  hasCritical
+                    ? 'text-red-700 dark:text-red-400'
+                    : 'text-amber-700 dark:text-amber-400'
                 )}
               >
                 {hasCritical
@@ -118,14 +130,14 @@ export function StockAlertsCardV2({
             {activeAlerts.slice(0, 3).map((alert) => (
               <div
                 key={alert.id}
-                className="flex items-center gap-3 rounded-lg bg-white p-3"
+                className="flex items-center gap-3 rounded-lg bg-white p-3 dark:bg-slate-800"
               >
-                <Package className="h-5 w-5 text-gray-400" />
+                <Package className="h-5 w-5 text-gray-400 dark:text-slate-500" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-gray-900">
+                  <p className="truncate text-sm font-medium text-gray-900 dark:text-slate-100">
                     {alert.productName}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
                     Stock: {alert.currentStock} / Min: {alert.minStock}
                   </p>
                 </div>
@@ -133,8 +145,8 @@ export function StockAlertsCardV2({
                   className={cn(
                     'flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium',
                     alert.currentStock === 0
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-amber-100 text-amber-700'
+                      ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400'
+                      : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400'
                   )}
                 >
                   {alert.currentStock === 0 ? 'Agotado' : 'Bajo'}
@@ -145,7 +157,7 @@ export function StockAlertsCardV2({
 
           {/* View All Link */}
           {activeAlerts.length > 3 && (
-            <button className="text-tsuma-primary hover:bg-tsuma-primary-light hover:text-tsuma-primary-dark w-full rounded-lg bg-white py-2 text-sm font-medium transition-colors">
+            <button className="text-tsuma-primary hover:bg-tsuma-primary-light hover:text-tsuma-primary-dark w-full rounded-lg bg-white py-2 text-sm font-medium transition-colors dark:bg-slate-800">
               Ver todos ({activeAlerts.length})
             </button>
           )}

@@ -4,14 +4,14 @@ import { TrendingUp, Settings } from 'lucide-react';
 
 export function TrendChartPlaceholder() {
   return (
-    <div className="rounded-2xl border bg-white p-6 shadow-sm">
+    <div className="rounded-2xl border bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="bg-tsuma-primary-light rounded-lg p-2">
             <TrendingUp className="text-tsuma-primary h-5 w-5" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
             Tendencia de Ventas
           </h3>
         </div>
@@ -38,10 +38,10 @@ export function TrendChartPlaceholder() {
 
       {/* Message */}
       <div className="mt-6 text-center">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-slate-400">
           Los datos se mostrarán aquí pronto
         </p>
-        <p className="mt-1 text-xs text-gray-400">
+        <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">
           Conecta tu punto de venta para ver estadísticas en tiempo real
         </p>
       </div>

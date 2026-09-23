@@ -35,18 +35,18 @@ export function TasaActivaCardV2({
 
   if (loading) {
     return (
-      <div className="from-tsuma-primary-bg rounded-2xl border bg-gradient-to-br to-white p-6 shadow-sm">
+      <div className="from-tsuma-primary-bg rounded-2xl border bg-gradient-to-br to-white p-6 shadow-sm dark:border-slate-800 dark:to-slate-900">
         <div className="animate-pulse space-y-4">
-          <div className="h-4 w-24 rounded bg-gray-200" />
-          <div className="h-10 w-40 rounded bg-gray-200" />
-          <div className="h-3 w-32 rounded bg-gray-200" />
+          <div className="h-4 w-24 rounded bg-gray-200 dark:bg-slate-800" />
+          <div className="h-10 w-40 rounded bg-gray-200 dark:bg-slate-800" />
+          <div className="h-3 w-32 rounded bg-gray-200 dark:bg-slate-800" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="group border-tsuma-primary/20 from-tsuma-primary-bg relative overflow-hidden rounded-2xl border bg-gradient-to-br to-white p-6 shadow-sm backdrop-blur-xl transition-all duration-300 hover:shadow-lg">
+    <div className="group border-tsuma-primary/20 from-tsuma-primary-bg relative overflow-hidden rounded-2xl border bg-gradient-to-br to-white p-6 shadow-sm backdrop-blur-xl transition-all duration-300 hover:shadow-lg dark:to-slate-900">
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -62,8 +62,10 @@ export function TasaActivaCardV2({
 
       {/* Rate Value */}
       <div className="mb-2 flex items-baseline gap-3">
-        <h2 className="text-4xl font-bold text-gray-900">{rate.toFixed(2)}</h2>
-        <span className="text-base font-medium text-gray-600">
+        <h2 className="text-4xl font-bold text-gray-900 dark:text-slate-100">
+          {rate.toFixed(2)}
+        </h2>
+        <span className="text-base font-medium text-gray-600 dark:text-slate-400">
           {toCurrency} / {fromCurrency}
         </span>
       </div>
@@ -73,17 +75,23 @@ export function TasaActivaCardV2({
         <div
           className={cn(
             'mb-3 flex items-center gap-1 text-sm font-medium',
-            trend.isPositive ? 'text-tsuma-primary' : 'text-red-500'
+            trend.isPositive
+              ? 'text-tsuma-primary'
+              : 'text-red-500 dark:text-red-400'
           )}
         >
           <span>{trend.isPositive ? '↑' : '↓'}</span>
           <span>{trend.value}</span>
-          <span className="text-xs text-gray-500">vs ayer</span>
+          <span className="text-xs text-gray-500 dark:text-slate-500">
+            vs ayer
+          </span>
         </div>
       )}
 
       {/* Date */}
-      <p className="mb-4 text-sm text-gray-500">Actualizada {formattedDate}</p>
+      <p className="mb-4 text-sm text-gray-500 dark:text-slate-400">
+        Actualizada {formattedDate}
+      </p>
 
       {/* Update Button */}
       {onUpdate && (

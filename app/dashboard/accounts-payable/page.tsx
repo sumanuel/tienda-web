@@ -36,6 +36,7 @@ import { SupplierPaymentForm } from '@/components/transactions/SupplierPaymentFo
 import { SupplierTransactionsList } from '@/components/transactions/SupplierTransactionsList';
 import { AccountStatusPDF } from '@/components/transactions/AccountStatusPDF';
 import { DollarSign, AlertTriangle, Building2, FileText } from 'lucide-react';
+import { IconChip } from '@/components/common/IconChip';
 import { differenceInDays } from 'date-fns';
 
 type UpcomingPayableRow = {
@@ -174,23 +175,23 @@ export default function AccountsPayablePage() {
       loadingMessage="Cargando cuentas por pagar..."
     >
       <div className="space-y-6 p-8">
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-slate-100">
             Cuentas por Pagar
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
             Gestión de deudas con proveedores
           </p>
         </div>
 
         {/* KPIs */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="rounded-2xl border-gray-200 shadow-sm">
+          <Card className="rounded-2xl border-gray-200 shadow-sm dark:border-slate-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Total por Pagar
               </CardTitle>
-              <DollarSign className="text-muted-foreground h-4 w-4" />
+              <IconChip icon={DollarSign} tone="danger" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
@@ -202,12 +203,12 @@ export default function AccountsPayablePage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-gray-200 shadow-sm">
+          <Card className="rounded-2xl border-gray-200 shadow-sm dark:border-slate-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Por Vencer (7 días)
               </CardTitle>
-              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+              <IconChip icon={AlertTriangle} tone="warning" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-yellow-600">
@@ -219,12 +220,12 @@ export default function AccountsPayablePage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-gray-200 shadow-sm">
+          <Card className="rounded-2xl border-gray-200 shadow-sm dark:border-slate-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Saldo Vencido
               </CardTitle>
-              <Building2 className="h-4 w-4 text-red-600" />
+              <IconChip icon={Building2} tone="danger" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
@@ -239,7 +240,7 @@ export default function AccountsPayablePage() {
 
         {/* Tabs */}
         <Tabs defaultValue="all" className="space-y-4">
-          <TabsList className="rounded-xl bg-white p-1 shadow-sm">
+          <TabsList className="rounded-xl bg-white p-1 shadow-sm dark:bg-slate-900">
             <TabsTrigger value="all">Proveedores con Saldo</TabsTrigger>
             <TabsTrigger value="upcoming">
               Por Vencer ({upcomingPayables.length})
@@ -248,16 +249,16 @@ export default function AccountsPayablePage() {
 
           {/* Tab: Todos los proveedores con saldo */}
           <TabsContent value="all" className="space-y-4">
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <Input
                 placeholder="Buscar por nombre o RIF..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="focus-visible:ring-brand-primary max-w-sm border-gray-200 bg-gray-50"
+                className="focus-visible:ring-brand-primary max-w-sm border-gray-200 bg-gray-50 dark:border-slate-800 dark:bg-slate-950"
               />
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -316,7 +317,7 @@ export default function AccountsPayablePage() {
 
           {/* Tab: Por vencer (próximos 7 días) */}
           <TabsContent value="upcoming" className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -401,7 +402,7 @@ export default function AccountsPayablePage() {
 
         {/* Dialog: Registrar Pago */}
         <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-          <DialogContent className="rounded-2xl border-gray-200 sm:max-w-[500px]">
+          <DialogContent className="rounded-2xl border-gray-200 sm:max-w-[500px] dark:border-slate-800">
             <DialogHeader>
               <DialogTitle>Registrar Pago a Proveedor</DialogTitle>
             </DialogHeader>
@@ -420,7 +421,7 @@ export default function AccountsPayablePage() {
           open={showAccountStatusDialog}
           onOpenChange={setShowAccountStatusDialog}
         >
-          <DialogContent className="max-h-[80vh] overflow-y-auto rounded-2xl border-gray-200 sm:max-w-[900px]">
+          <DialogContent className="max-h-[80vh] overflow-y-auto rounded-2xl border-gray-200 sm:max-w-[900px] dark:border-slate-800">
             <DialogHeader>
               <DialogTitle>Estado de Cuenta</DialogTitle>
             </DialogHeader>

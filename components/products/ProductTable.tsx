@@ -12,15 +12,16 @@ import {
 } from '@tanstack/react-table';
 import { Product } from '@/types/product';
 import { Pencil, Trash2, Search, Package, AlertTriangle } from 'lucide-react';
-import Link from 'next/link';
 
 interface ProductTableProps {
   products: Product[];
+  onEdit: (product: Product) => void;
   onDelete: (productId: string) => void;
 }
 
 export default function ProductTable({
   products,
+  onEdit,
   onDelete,
 }: ProductTableProps) {
   const [globalFilter, setGlobalFilter] = useState('');
@@ -54,7 +55,7 @@ export default function ProductTable({
         accessorKey: 'category',
         header: 'Categoría',
         cell: (info) => (
-          <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+          <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700 dark:bg-slate-800 dark:text-slate-300">
             {info.getValue() as string}
           </span>
         ),
@@ -96,12 +97,12 @@ export default function ProductTable({
         header: 'Acciones',
         cell: (info) => (
           <div className="flex justify-end gap-2">
-            <Link
-              href={`/dashboard/products/${info.row.original.id}/edit`}
-              className="hover:text-brand-primary rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100"
+            <button
+              onClick={() => onEdit(info.row.original)}
+              className="hover:text-brand-primary rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
             >
               <Pencil size={18} />
-            </Link>
+            </button>
             <button
               onClick={() => {
                 if (
@@ -110,7 +111,7 @@ export default function ProductTable({
                   onDelete(info.row.original.id);
                 }
               }}
-              className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
+              className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-slate-400"
             >
               <Trash2 size={18} />
             </button>
@@ -118,7 +119,7 @@ export default function ProductTable({
         ),
       },
     ],
-    [onDelete]
+    [onEdit, onDelete]
   );
 
   const table = useReactTable({
@@ -140,15 +141,17 @@ export default function ProductTable({
   });
 
   return (
-    <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-800">Catálogo</h2>
-          <p className="text-sm text-gray-500">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-200">
+            Catálogo
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-slate-400">
             Busca rápido por código, nombre o categoría.
           </p>
         </div>
-        <div className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+        <div className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-slate-800 dark:text-slate-400">
           {products.length} productos totales
         </div>
       </div>
@@ -156,7 +159,7 @@ export default function ProductTable({
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search
-            className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"
+            className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 dark:text-slate-400 dark:text-slate-500"
             size={20}
           />
           <input
@@ -164,20 +167,20 @@ export default function ProductTable({
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder="Buscar productos..."
-            className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pr-4 pl-10 text-sm focus:bg-white focus:ring-1 focus:outline-none"
+            className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pr-4 pl-10 text-sm focus:bg-white focus:ring-1 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:bg-slate-950 dark:focus:bg-slate-900"
           />
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200">
+      <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-slate-800">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 dark:bg-slate-950">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 text-left text-xs font-semibold tracking-wide text-gray-500 uppercase"
+                    className="px-4 py-3 text-left text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-slate-400"
                   >
                     {header.isPlaceholder
                       ? null
@@ -190,14 +193,17 @@ export default function ProductTable({
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-gray-100 bg-white">
+          <tbody className="divide-y divide-gray-100 bg-white dark:bg-slate-900">
             {table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="transition-colors hover:bg-gray-50">
+                <tr
+                  key={row.id}
+                  className="transition-colors hover:bg-gray-50 dark:bg-slate-950 dark:hover:bg-slate-800"
+                >
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="px-4 py-3 text-sm text-gray-900"
+                      className="px-4 py-3 text-sm text-gray-900 dark:text-slate-100"
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -211,11 +217,11 @@ export default function ProductTable({
               <tr>
                 <td colSpan={columns.length} className="px-6 py-16">
                   <div className="flex flex-col items-center justify-center text-center">
-                    <Package className="mb-4 h-12 w-12 text-gray-300" />
-                    <p className="text-lg font-medium text-gray-700">
+                    <Package className="mb-4 h-12 w-12 text-gray-300 dark:text-slate-300 dark:text-slate-600" />
+                    <p className="text-lg font-medium text-gray-700 dark:text-slate-300">
                       No hay productos para mostrar
                     </p>
-                    <p className="mt-1 text-sm text-gray-400">
+                    <p className="mt-1 text-sm text-gray-400 dark:text-slate-400 dark:text-slate-500">
                       Ajusta la búsqueda o agrega tu primer producto.
                     </p>
                   </div>
@@ -227,7 +233,7 @@ export default function ProductTable({
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-600 dark:text-slate-400">
           Mostrando {table.getRowModel().rows.length} de {products.length}{' '}
           productos
         </div>
@@ -235,14 +241,14 @@ export default function ProductTable({
           <button
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300"
+            className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:text-slate-600 dark:hover:bg-slate-800"
           >
             Anterior
           </button>
           <button
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="bg-brand-primary hover:bg-brand-primary-dark rounded-lg px-3 py-1.5 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300"
+            className="bg-brand-primary hover:bg-brand-primary-dark rounded-lg px-3 py-1.5 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300 dark:bg-slate-600"
           >
             Siguiente
           </button>

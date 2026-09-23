@@ -93,13 +93,13 @@ export function ProductCatalog({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="sticky top-0 z-10 space-y-4 border-b border-gray-200 bg-white p-5">
+      <div className="sticky top-0 z-10 space-y-4 border-b border-gray-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-800">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-200">
               Catálogo de productos
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-slate-400">
               Busca rápido y agrega productos al carrito sin salir de la venta.
             </p>
           </div>
@@ -109,20 +109,20 @@ export function ProductCatalog({
         </div>
 
         <div className="relative">
-          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-slate-400 dark:text-slate-500" />
           <Input
             placeholder="Buscar por nombre, SKU o código de barras..."
-            className="focus:border-brand-primary focus:ring-brand-primary rounded-xl border-gray-200 bg-gray-50 pr-10 pl-10 focus:bg-white"
+            className="focus:border-brand-primary focus:ring-brand-primary rounded-xl border-gray-200 bg-gray-50 pr-10 pl-10 focus:bg-white dark:border-slate-800 dark:bg-slate-900 dark:bg-slate-950 dark:focus:bg-slate-900"
             value={searchQuery}
             onChange={(e) => onSearchChange?.(e.target.value)}
             autoFocus
           />
-          <Barcode className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Barcode className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-slate-400 dark:text-slate-500" />
         </div>
 
         <div className="flex gap-2">
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="focus:ring-brand-primary flex-1 rounded-xl border-gray-200 bg-gray-50">
+            <SelectTrigger className="focus:ring-brand-primary flex-1 rounded-xl border-gray-200 bg-gray-50 dark:border-slate-800 dark:bg-slate-950">
               <SelectValue placeholder="Categoría" />
             </SelectTrigger>
             <SelectContent>
@@ -136,7 +136,7 @@ export function ProductCatalog({
           </Select>
 
           <Select value={stockFilter} onValueChange={setStockFilter}>
-            <SelectTrigger className="focus:ring-brand-primary flex-1 rounded-xl border-gray-200 bg-gray-50">
+            <SelectTrigger className="focus:ring-brand-primary flex-1 rounded-xl border-gray-200 bg-gray-50 dark:border-slate-800 dark:bg-slate-950">
               <SelectValue placeholder="Stock" />
             </SelectTrigger>
             <SelectContent>
@@ -147,7 +147,7 @@ export function ProductCatalog({
           </Select>
         </div>
 
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-slate-400">
           {filteredProducts.length}{' '}
           {filteredProducts.length === 1 ? 'producto' : 'productos'}
           {searchQuery &&
@@ -168,9 +168,9 @@ export function ProductCatalog({
             ))}
           </div>
         ) : (
-          <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white text-gray-400">
+          <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white text-gray-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:text-slate-500">
             <Package className="mb-4 h-14 w-14" />
-            <p className="text-lg font-medium text-gray-700">
+            <p className="text-lg font-medium text-gray-700 dark:text-slate-300">
               No se encontraron productos
             </p>
             {searchQuery && (
