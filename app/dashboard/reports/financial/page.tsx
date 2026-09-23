@@ -9,23 +9,23 @@ import { FinancialReportData } from '@/types/reports';
 import DateRangePicker from '@/components/reports/DateRangePicker';
 import ExportButtons from '@/components/reports/ExportButtons';
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { DollarSign, TrendingUp, TrendingDown, Percent } from 'lucide-react';
+import {
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  Percent,
+  Wallet,
+} from 'lucide-react';
+import { IconChip } from '@/components/common/IconChip';
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
+const COLORS = ['#1f7a59', '#3b82f6', '#f59e0b', '#ef4444'];
 
 export default function FinancialReportPage() {
   const { profile } = useAuthStore();
@@ -64,31 +64,39 @@ export default function FinancialReportPage() {
 
   if (loading) {
     return (
-      <div className="p-8">
-        <div className="animate-pulse">
-          <div className="mb-4 h-8 w-1/4 rounded bg-gray-200 dark:bg-slate-700"></div>
-          <div className="mb-8 h-4 w-1/3 rounded bg-gray-200 dark:bg-slate-700"></div>
-          <div className="grid grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="h-32 rounded bg-gray-200 dark:bg-slate-700"
-              ></div>
-            ))}
-          </div>
+      <div className="min-h-screen space-y-6 bg-gray-50 p-6 dark:bg-slate-950">
+        <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="h-7 w-48 rounded bg-gray-200 dark:bg-slate-700" />
+          <div className="mt-3 h-4 w-72 rounded bg-gray-100 dark:bg-slate-800" />
+        </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="h-32 animate-pulse rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
+            />
+          ))}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-8">
+    <div className="min-h-screen space-y-6 bg-gray-50 p-6 dark:bg-slate-950">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="mb-4 text-3xl font-bold text-gray-900 dark:text-slate-100">
-          Reporte Financiero
-        </h1>
-        <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex items-center gap-3">
+          <IconChip icon={Wallet} tone="info" className="h-11 w-11" />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
+              Reporte Financiero
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-slate-400">
+              Estado de resultados, rentabilidad y flujo de caja.
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <DateRangePicker dateRange={dateRange} onChange={setDateRange} />
           <ExportButtons
             onExportExcel={handleExportExcel}
@@ -99,82 +107,82 @@ export default function FinancialReportPage() {
       </div>
 
       {/* KPIs */}
-      <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-4">
-        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm text-gray-600 dark:text-slate-400">
               Ingresos Totales
             </span>
-            <TrendingUp className="h-5 w-5 text-green-500" />
+            <IconChip icon={TrendingUp} tone="accent" className="h-9 w-9" />
           </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-slate-100">
+          <p className="text-tsuma-primary-dark font-mono text-2xl font-bold tabular-nums">
             ${reportData?.totalRevenue.toFixed(2) || '0.00'}
           </p>
         </div>
 
-        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm text-gray-600 dark:text-slate-400">
               Egresos Totales
             </span>
-            <TrendingDown className="h-5 w-5 text-red-500" />
+            <IconChip icon={TrendingDown} tone="danger" className="h-9 w-9" />
           </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-slate-100">
+          <p className="font-mono text-2xl font-bold text-red-600 tabular-nums dark:text-red-400">
             ${reportData?.totalExpenses.toFixed(2) || '0.00'}
           </p>
         </div>
 
-        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm text-gray-600 dark:text-slate-400">
               Utilidad Bruta
             </span>
-            <DollarSign className="h-5 w-5 text-blue-500" />
+            <IconChip icon={DollarSign} tone="info" className="h-9 w-9" />
           </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-slate-100">
+          <p className="font-mono text-2xl font-bold text-gray-900 tabular-nums dark:text-slate-100">
             ${reportData?.grossProfit.toFixed(2) || '0.00'}
           </p>
         </div>
 
-        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm text-gray-600 dark:text-slate-400">
               Margen de Utilidad
             </span>
-            <Percent className="h-5 w-5 text-purple-500" />
+            <IconChip icon={Percent} tone="neutral" className="h-9 w-9" />
           </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-slate-100">
+          <p className="font-mono text-2xl font-bold text-gray-900 tabular-nums dark:text-slate-100">
             {reportData?.profitMargin.toFixed(1) || '0.0'}%
           </p>
         </div>
       </div>
 
       {/* Cuentas por Cobrar/Pagar */}
-      <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
-          <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-slate-100">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h3 className="mb-2 text-lg font-semibold text-gray-800 dark:text-slate-200">
             Cuentas por Cobrar
           </h3>
-          <p className="text-4xl font-bold text-green-600">
+          <p className="text-tsuma-primary-dark font-mono text-4xl font-bold tabular-nums">
             ${reportData?.accountsReceivable.toFixed(2) || '0.00'}
           </p>
         </div>
 
-        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
-          <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-slate-100">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h3 className="mb-2 text-lg font-semibold text-gray-800 dark:text-slate-200">
             Cuentas por Pagar
           </h3>
-          <p className="text-4xl font-bold text-red-600">
+          <p className="font-mono text-4xl font-bold text-red-600 tabular-nums dark:text-red-400">
             ${reportData?.accountsPayable.toFixed(2) || '0.00'}
           </p>
         </div>
       </div>
 
       {/* Gráficos */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Distribución de Ingresos */}
-        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h3 className="mb-4 text-lg font-semibold text-gray-800 dark:text-slate-200">
             Distribución de Ingresos
           </h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -202,36 +210,36 @@ export default function FinancialReportPage() {
         </div>
 
         {/* Resumen Financiero */}
-        <div className="rounded-lg border bg-white p-6 dark:bg-slate-900">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h3 className="mb-4 text-lg font-semibold text-gray-800 dark:text-slate-200">
             Resumen Financiero
           </h3>
           <div className="space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-slate-800">
               <span className="text-gray-600 dark:text-slate-400">
                 Ingresos
               </span>
-              <span className="text-lg font-semibold text-green-600">
+              <span className="text-tsuma-primary-dark font-mono text-lg font-semibold tabular-nums">
                 ${reportData?.totalRevenue.toFixed(2) || '0.00'}
               </span>
             </div>
-            <div className="flex items-center justify-between border-b pb-3">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-slate-800">
               <span className="text-gray-600 dark:text-slate-400">Egresos</span>
-              <span className="text-lg font-semibold text-red-600">
+              <span className="font-mono text-lg font-semibold text-red-600 tabular-nums dark:text-red-400">
                 ${reportData?.totalExpenses.toFixed(2) || '0.00'}
               </span>
             </div>
-            <div className="flex items-center justify-between border-b pb-3">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-slate-800">
               <span className="font-semibold text-gray-600 dark:text-slate-400">
                 Utilidad Bruta
               </span>
-              <span className="text-xl font-bold text-blue-600">
+              <span className="font-mono text-xl font-bold text-blue-600 tabular-nums dark:text-blue-400">
                 ${reportData?.grossProfit.toFixed(2) || '0.00'}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-gray-600 dark:text-slate-400">Margen</span>
-              <span className="text-lg font-semibold text-purple-600">
+              <span className="font-mono text-lg font-semibold text-purple-600 tabular-nums dark:text-purple-400">
                 {reportData?.profitMargin.toFixed(1) || '0.0'}%
               </span>
             </div>

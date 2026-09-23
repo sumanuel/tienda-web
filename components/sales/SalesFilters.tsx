@@ -58,16 +58,18 @@ export function SalesFilters({ filters, onFiltersChange }: SalesFiltersProps) {
     localFilters.status;
 
   return (
-    <Card className="p-4">
+    <Card className="rounded-2xl border-gray-200 p-4 shadow-sm dark:border-slate-800">
       <div className="mb-4 flex items-center gap-2">
         <Filter className="h-5 w-5 text-gray-600 dark:text-slate-400" />
-        <h3 className="text-lg font-semibold">Filtros</h3>
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-200">
+          Filtros
+        </h3>
         {hasActiveFilters && (
           <Button
             variant="ghost"
             size="sm"
             onClick={handleClearFilters}
-            className="ml-auto text-red-600 hover:text-red-700"
+            className="ml-auto text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
           >
             <X className="mr-1 h-4 w-4" />
             Limpiar
@@ -163,7 +165,7 @@ export function SalesFilters({ filters, onFiltersChange }: SalesFiltersProps) {
         </Button>
         <Button
           onClick={handleApplyFilters}
-          className="bg-[#2D7A5B] hover:bg-[#236449]"
+          className="bg-brand-primary hover:bg-brand-primary-dark"
         >
           <Search className="mr-2 h-4 w-4" />
           Aplicar Filtros

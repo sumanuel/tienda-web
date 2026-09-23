@@ -46,6 +46,7 @@ import {
 } from 'recharts';
 import { DollarSign, AlertCircle, Users, FileText } from 'lucide-react';
 import { IconChip } from '@/components/common/IconChip';
+import { StatusPill } from '@/components/common/StatusPill';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -229,7 +230,7 @@ export default function AccountsReceivablePage() {
               <IconChip icon={AlertCircle} tone="danger" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                 ${summary.overdueAmount.toFixed(2)}
               </div>
               <p className="text-muted-foreground text-xs">
@@ -246,7 +247,7 @@ export default function AccountsReceivablePage() {
               <IconChip icon={Users} tone="accent" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-tsuma-primary-dark text-2xl font-bold">
                 ${summary.currentAmount.toFixed(2)}
               </div>
               <p className="text-muted-foreground text-xs">Sin vencimiento</p>
@@ -302,7 +303,7 @@ export default function AccountsReceivablePage() {
                           {customer.name}
                         </TableCell>
                         <TableCell>{customer.document}</TableCell>
-                        <TableCell className="text-right font-medium text-red-600">
+                        <TableCell className="text-right font-medium text-red-600 dark:text-red-400">
                           ${customer.balance.toFixed(2)}
                         </TableCell>
                         <TableCell>
@@ -368,11 +369,11 @@ export default function AccountsReceivablePage() {
                           ${status.balance.toFixed(2)}
                         </TableCell>
                         <TableCell className="text-center">
-                          <span className="inline-flex rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">
+                          <StatusPill tone="crit">
                             {status.daysOverdue
                               ? `${status.daysOverdue} días`
                               : 'Vencido'}
-                          </span>
+                          </StatusPill>
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-center gap-2">
@@ -435,7 +436,7 @@ export default function AccountsReceivablePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-yellow-600">
+                  <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
                     ${summary.agingData.days30.toFixed(2)}
                   </div>
                 </CardContent>
@@ -448,7 +449,7 @@ export default function AccountsReceivablePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-orange-600">
+                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                     ${summary.agingData.days60.toFixed(2)}
                   </div>
                 </CardContent>
@@ -461,7 +462,7 @@ export default function AccountsReceivablePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-red-600">
+                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                     ${summary.agingData.days90.toFixed(2)}
                   </div>
                 </CardContent>
@@ -507,7 +508,7 @@ export default function AccountsReceivablePage() {
                     </p>
                     <p className="mt-2 text-sm font-medium">
                       Saldo Actual:{' '}
-                      <span className="text-red-600">
+                      <span className="text-red-600 dark:text-red-400">
                         ${accountStatus.currentBalance.toFixed(2)}
                       </span>
                     </p>

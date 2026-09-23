@@ -37,6 +37,7 @@ import { SupplierTransactionsList } from '@/components/transactions/SupplierTran
 import { AccountStatusPDF } from '@/components/transactions/AccountStatusPDF';
 import { DollarSign, AlertTriangle, Building2, FileText } from 'lucide-react';
 import { IconChip } from '@/components/common/IconChip';
+import { StatusPill } from '@/components/common/StatusPill';
 import { differenceInDays } from 'date-fns';
 
 type UpcomingPayableRow = {
@@ -194,7 +195,7 @@ export default function AccountsPayablePage() {
               <IconChip icon={DollarSign} tone="danger" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                 ${summary.totalPayable.toFixed(2)}
               </div>
               <p className="text-muted-foreground text-xs">
@@ -211,7 +212,7 @@ export default function AccountsPayablePage() {
               <IconChip icon={AlertTriangle} tone="warning" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">
+              <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
                 ${summary.upcomingAmount.toFixed(2)}
               </div>
               <p className="text-muted-foreground text-xs">
@@ -228,7 +229,7 @@ export default function AccountsPayablePage() {
               <IconChip icon={Building2} tone="danger" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                 ${summary.overdueAmount.toFixed(2)}
               </div>
               <p className="text-muted-foreground text-xs">
@@ -285,7 +286,7 @@ export default function AccountsPayablePage() {
                           {supplier.name}
                         </TableCell>
                         <TableCell>{supplier.rif}</TableCell>
-                        <TableCell className="text-right font-medium text-red-600">
+                        <TableCell className="text-right font-medium text-red-600 dark:text-red-400">
                           ${supplier.balance.toFixed(2)}
                         </TableCell>
                         <TableCell>
@@ -357,17 +358,13 @@ export default function AccountsPayablePage() {
                           </TableCell>
                           <TableCell className="text-center">
                             {daysUntilDue !== null ? (
-                              <span
-                                className={`font-medium ${
-                                  isUrgent ? 'text-red-600' : 'text-yellow-600'
-                                }`}
-                              >
+                              <StatusPill tone={isUrgent ? 'crit' : 'warn'}>
                                 {daysUntilDue === 0
                                   ? 'HOY'
                                   : daysUntilDue === 1
                                     ? 'Mañana'
                                     : `${daysUntilDue} días`}
-                              </span>
+                              </StatusPill>
                             ) : (
                               '-'
                             )}
@@ -437,7 +434,7 @@ export default function AccountsPayablePage() {
                     </p>
                     <p className="mt-2 text-sm font-medium">
                       Saldo Actual:{' '}
-                      <span className="text-red-600">
+                      <span className="text-red-600 dark:text-red-400">
                         ${accountStatus.currentBalance.toFixed(2)}
                       </span>
                     </p>

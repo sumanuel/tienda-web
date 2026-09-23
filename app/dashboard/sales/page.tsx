@@ -5,7 +5,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSales } from '@/hooks/useSales';
 import { SalesTable } from '@/components/sales/SalesTable';
 import { SalesFilters } from '@/components/sales/SalesFilters';
-import { Card } from '@/components/ui/card';
 import { Loader2, Receipt } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { Sale, SalesResponse } from '@/hooks/useSales';
@@ -80,26 +79,26 @@ export default function SalesPage() {
 
   if (!profile) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#2D7A5B]" />
+      <div className="text-brand-primary flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="min-h-screen space-y-6 bg-gray-50 p-6 dark:bg-slate-950">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-[#2D7A5B] p-2">
-            <Receipt className="h-6 w-6 text-white" />
+          <div className="bg-brand-primary-light text-brand-primary flex h-11 w-11 items-center justify-center rounded-xl">
+            <Receipt className="h-5 w-5" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
               Historial de Ventas
             </h1>
-            <p className="text-sm text-gray-600 dark:text-slate-400">
-              Consulta y administra todas las ventas realizadas
+            <p className="text-sm text-gray-500 dark:text-slate-400">
+              Consulta y administra todas las ventas realizadas.
             </p>
           </div>
         </div>
@@ -110,12 +109,12 @@ export default function SalesPage() {
 
       {/* Tabla de ventas */}
       {loading && sales.length === 0 ? (
-        <Card className="p-12">
-          <div className="flex flex-col items-center justify-center text-gray-500 dark:text-slate-400">
-            <Loader2 className="mb-4 h-8 w-8 animate-spin text-[#2D7A5B]" />
-            <p>Cargando ventas...</p>
-          </div>
-        </Card>
+        <div className="text-brand-primary flex flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white p-12 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <Loader2 className="mb-4 h-8 w-8 animate-spin" />
+          <p className="text-gray-500 dark:text-slate-400">
+            Cargando ventas...
+          </p>
+        </div>
       ) : (
         <SalesTable
           sales={sales}
