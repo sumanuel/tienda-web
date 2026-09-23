@@ -27,6 +27,11 @@ const registerSchema = z
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
+const inputClass =
+  'focus:border-tsuma-primary focus:ring-tsuma-primary w-full rounded-xl border border-[#d8e4db] bg-[#f6faf7] px-4 py-3 text-base text-[#193227] placeholder:text-[#8a94a6] focus:ring-1 focus:outline-none';
+
+const labelClass = 'text-sm font-bold text-[#193227]';
+
 export function RegisterForm() {
   const router = useRouter();
   const [error, setError] = useState('');
@@ -65,18 +70,15 @@ export function RegisterForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
       {error && (
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-800">
+        <div className="text-error rounded-xl bg-[#fbeceb] p-3 text-sm font-medium">
           {error}
         </div>
       )}
 
-      <div className="space-y-2">
-        <label
-          htmlFor="name"
-          className="text-sm font-medium text-slate-700 dark:text-slate-300"
-        >
+      <div className="space-y-1.5">
+        <label htmlFor="name" className={labelClass}>
           Nombre Completo
         </label>
         <input
@@ -84,18 +86,15 @@ export function RegisterForm() {
           type="text"
           placeholder="Juan Pérez"
           {...register('name')}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
+          className={inputClass}
         />
         {errors.name && (
-          <p className="text-sm text-red-500">{errors.name.message}</p>
+          <p className="text-error text-sm">{errors.name.message}</p>
         )}
       </div>
 
-      <div className="space-y-2">
-        <label
-          htmlFor="storeName"
-          className="text-sm font-medium text-slate-700 dark:text-slate-300"
-        >
+      <div className="space-y-1.5">
+        <label htmlFor="storeName" className={labelClass}>
           Nombre de tu Tienda
         </label>
         <input
@@ -103,18 +102,15 @@ export function RegisterForm() {
           type="text"
           placeholder="Mi Tienda"
           {...register('storeName')}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
+          className={inputClass}
         />
         {errors.storeName && (
-          <p className="text-sm text-red-500">{errors.storeName.message}</p>
+          <p className="text-error text-sm">{errors.storeName.message}</p>
         )}
       </div>
 
-      <div className="space-y-2">
-        <label
-          htmlFor="storeAddress"
-          className="text-sm font-medium text-slate-700 dark:text-slate-300"
-        >
+      <div className="space-y-1.5">
+        <label htmlFor="storeAddress" className={labelClass}>
           Dirección de tu Tienda (opcional)
         </label>
         <input
@@ -122,15 +118,12 @@ export function RegisterForm() {
           type="text"
           placeholder="Av. Principal #123"
           {...register('storeAddress')}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
+          className={inputClass}
         />
       </div>
 
-      <div className="space-y-2">
-        <label
-          htmlFor="email"
-          className="text-sm font-medium text-slate-700 dark:text-slate-300"
-        >
+      <div className="space-y-1.5">
+        <label htmlFor="email" className={labelClass}>
           Email
         </label>
         <input
@@ -138,18 +131,15 @@ export function RegisterForm() {
           type="email"
           placeholder="tu@email.com"
           {...register('email')}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
+          className={inputClass}
         />
         {errors.email && (
-          <p className="text-sm text-red-500">{errors.email.message}</p>
+          <p className="text-error text-sm">{errors.email.message}</p>
         )}
       </div>
 
-      <div className="space-y-2">
-        <label
-          htmlFor="password"
-          className="text-sm font-medium text-slate-700 dark:text-slate-300"
-        >
+      <div className="space-y-1.5">
+        <label htmlFor="password" className={labelClass}>
           Contraseña
         </label>
         <input
@@ -157,18 +147,15 @@ export function RegisterForm() {
           type="password"
           placeholder="••••••••"
           {...register('password')}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
+          className={inputClass}
         />
         {errors.password && (
-          <p className="text-sm text-red-500">{errors.password.message}</p>
+          <p className="text-error text-sm">{errors.password.message}</p>
         )}
       </div>
 
-      <div className="space-y-2">
-        <label
-          htmlFor="confirmPassword"
-          className="text-sm font-medium text-slate-700 dark:text-slate-300"
-        >
+      <div className="space-y-1.5">
+        <label htmlFor="confirmPassword" className={labelClass}>
           Confirmar Contraseña
         </label>
         <input
@@ -176,19 +163,17 @@ export function RegisterForm() {
           type="password"
           placeholder="••••••••"
           {...register('confirmPassword')}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
+          className={inputClass}
         />
         {errors.confirmPassword && (
-          <p className="text-sm text-red-500">
-            {errors.confirmPassword.message}
-          </p>
+          <p className="text-error text-sm">{errors.confirmPassword.message}</p>
         )}
       </div>
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+        className="bg-tsuma-primary mt-2 w-full rounded-xl px-4 py-3.5 text-sm font-extrabold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
       >
         {loading ? 'Creando cuenta...' : 'Registrarse'}
       </button>
