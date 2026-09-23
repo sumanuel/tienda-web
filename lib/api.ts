@@ -1032,12 +1032,15 @@ class ApiClient {
     });
 
     return this.request<{
-      stats: {
-        totalSales: number;
-        totalRevenue: number;
-        averageTicket: number;
-        totalItems: number;
-      };
+      totalRevenue: number;
+      totalTax: number;
+      averageSale: number;
+      salesCount: number;
+      salesByPaymentMethod: Array<{
+        paymentMethod: string;
+        count: number;
+        total: number;
+      }>;
     }>(`/api/sales/stats/summary?${queryParams}`);
   }
 
@@ -1143,23 +1146,21 @@ class ApiClient {
 
   async getStockReport(storeId: string) {
     return this.request<{
-      report: Array<{
-        id: string;
-        code: string;
-        name: string;
-        category: string;
-        stock: number;
-        minStock: number;
-        cost: number;
-        totalValue: number;
-        status: string;
-      }>;
       summary: {
         totalProducts: number;
+        totalStock: number;
         totalValue: number;
-        lowStockProducts: number;
-        outOfStockProducts: number;
+        totalRetailValue: number;
+        lowStockCount: number;
+        outOfStockCount: number;
       };
+      byCategory: Array<{
+        category: string;
+        productCount: number;
+        totalStock: number;
+        totalValue: number;
+        lowStockCount: number;
+      }> | null;
     }>(`/api/inventory/stock-report?storeId=${storeId}`);
   }
 

@@ -13,41 +13,29 @@ export async function getInventoryReport(
 ): Promise<InventoryReportData> {
   try {
     const response = await apiClient.getStockReport(storeId);
+    const byCategory = response.byCategory || [];
 
-    // Agrupar valor por categoría
-    const categoryMap = new Map<string, { value: number; quantity: number }>();
-
-    response.report.forEach((product) => {
-      const category = product.category || 'Sin Categoría';
-      const existing = categoryMap.get(category) || { value: 0, quantity: 0 };
-
-      categoryMap.set(category, {
-        value: existing.value + product.totalValue,
-        quantity: existing.quantity + product.stock,
-      });
-    });
-
-    const valueByCategory = Array.from(categoryMap.entries())
-      .map(([category, data]) => ({
-        category,
-        value: data.value,
-        quantity: data.quantity,
+    const valueByCategory = byCategory
+      .map((category) => ({
+        category: category.category,
+        value: category.totalValue,
+        quantity: category.totalStock,
       }))
       .sort((a, b) => b.value - a.value);
 
     // Distribución de stock por categoría
-    const stockDistribution = Array.from(categoryMap.entries())
-      .map(([category, data]) => ({
-        category,
-        count: data.quantity,
+    const stockDistribution = byCategory
+      .map((category) => ({
+        category: category.category,
+        count: category.totalStock,
       }))
       .sort((a, b) => b.count - a.count);
 
     return {
       totalValue: response.summary.totalValue,
       totalProducts: response.summary.totalProducts,
-      lowStockProducts: response.summary.lowStockProducts,
-      outOfStockProducts: response.summary.outOfStockProducts,
+      lowStockProducts: response.summary.lowStockCount,
+      outOfStockProducts: response.summary.outOfStockCount,
       inventoryTurnover: 0, // TODO: Calcular con histórico de ventas
       valueByCategory,
       stockDistribution,

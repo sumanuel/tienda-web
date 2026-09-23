@@ -81,9 +81,9 @@ export async function getSalesReport(
     // Para obtener productos vendidos, necesitaríamos detalles de cada venta
     // Por ahora devolvemos datos básicos
     return {
-      totalSales: statsResponse.stats.totalRevenue,
-      totalTransactions: statsResponse.stats.totalSales,
-      averageTicket: statsResponse.stats.averageTicket,
+      totalSales: statsResponse.totalRevenue,
+      totalTransactions: statsResponse.salesCount,
+      averageTicket: statsResponse.averageSale,
       topProduct: null, // Requiere consultar detalles de items
       salesByDay,
       salesByProduct: [], // Requiere consultar detalles de items

@@ -74,10 +74,7 @@ export async function processSale(
       currency: response.sale.currency,
       exchangeRateSnapshot: {}, // No disponible en backend actual
       paymentMethod: response.sale.paymentMethod as
-        | 'cash'
-        | 'card'
-        | 'transfer'
-        | 'credit',
+        'cash' | 'card' | 'transfer' | 'credit',
       paymentStatus: response.sale.paymentStatus as 'paid' | 'credit',
       amountReceived: response.sale.amountReceived || undefined,
       change: response.sale.change || undefined,
@@ -114,7 +111,8 @@ export async function getSales(storeId: string): Promise<Sale[]> {
       total: sale.total,
       currency: sale.currency,
       exchangeRateSnapshot: {},
-      paymentMethod: sale.paymentMethod as 'cash' | 'card' | 'transfer' | 'credit',
+      paymentMethod: sale.paymentMethod as
+        'cash' | 'card' | 'transfer' | 'credit',
       paymentStatus: sale.paymentStatus as 'paid' | 'credit',
       amountReceived: undefined,
       change: undefined,
@@ -162,10 +160,7 @@ export async function getSaleById(saleId: string): Promise<Sale | null> {
       currency: response.sale.currency,
       exchangeRateSnapshot: {},
       paymentMethod: response.sale.paymentMethod as
-        | 'cash'
-        | 'card'
-        | 'transfer'
-        | 'credit',
+        'cash' | 'card' | 'transfer' | 'credit',
       paymentStatus: response.sale.paymentStatus as 'paid' | 'credit',
       amountReceived: response.sale.amountReceived || undefined,
       change: response.sale.change || undefined,
@@ -212,10 +207,10 @@ export async function getSalesStats(
     });
 
     return {
-      totalSales: response.stats.totalSales,
-      totalRevenue: response.stats.totalRevenue,
-      averageTicket: response.stats.averageTicket,
-      totalItems: response.stats.totalItems,
+      totalSales: response.salesCount,
+      totalRevenue: response.totalRevenue,
+      averageTicket: response.averageSale,
+      totalTax: response.totalTax,
     };
   } catch (error: any) {
     console.error('Error getting sales stats:', error);
@@ -231,7 +226,11 @@ export async function getCustomerSales(
   customerId: string
 ): Promise<Sale[]> {
   try {
-    const response = await apiClient.getSales({ storeId, customerId, limit: 1000 });
+    const response = await apiClient.getSales({
+      storeId,
+      customerId,
+      limit: 1000,
+    });
 
     return response.sales.map((sale) => ({
       id: sale.id,
@@ -248,7 +247,8 @@ export async function getCustomerSales(
       total: sale.total,
       currency: sale.currency,
       exchangeRateSnapshot: {},
-      paymentMethod: sale.paymentMethod as 'cash' | 'card' | 'transfer' | 'credit',
+      paymentMethod: sale.paymentMethod as
+        'cash' | 'card' | 'transfer' | 'credit',
       paymentStatus: sale.paymentStatus as 'paid' | 'credit',
       amountReceived: undefined,
       change: undefined,

@@ -171,17 +171,7 @@ export async function getStockReport(storeId: string) {
     const response = await apiClient.getStockReport(storeId);
 
     return {
-      products: response.report.map((item) => ({
-        id: item.id,
-        code: item.code,
-        name: item.name,
-        category: item.category,
-        stock: item.stock,
-        minStock: item.minStock,
-        cost: item.cost,
-        totalValue: item.totalValue,
-        status: item.status,
-      })),
+      byCategory: response.byCategory || [],
       summary: response.summary,
     };
   } catch (error: any) {
