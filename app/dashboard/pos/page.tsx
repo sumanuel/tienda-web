@@ -359,7 +359,7 @@ export default function POSPage() {
         </div>
       </div>
 
-      <div className="grid min-h-[calc(100vh-14rem)] gap-6 xl:h-[calc(100vh-8rem)] xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.95fr)]">
+      <div className="grid min-h-[calc(100vh-14rem)] gap-6 xl:h-[calc(100vh-8rem)] xl:grid-cols-2">
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm xl:h-full dark:border-slate-800 dark:bg-slate-900">
           <div className="flex h-full flex-col">
             <ProductCatalog
