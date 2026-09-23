@@ -155,7 +155,7 @@ export function ProductCatalog({
         </p>
       </div>
 
-      <div className="flex-1 overflow-y-auto bg-gray-50/60 p-4">
+      <div className="flex-1 overflow-y-auto bg-gray-50/60 p-4 dark:bg-slate-950/60">
         {filteredProducts.length > 0 ? (
           <div className="space-y-2">
             {filteredProducts.map((product) => (

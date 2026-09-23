@@ -359,8 +359,8 @@ export default function POSPage() {
         </div>
       </div>
 
-      <div className="grid min-h-[calc(100vh-14rem)] gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.95fr)]">
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="grid min-h-[calc(100vh-14rem)] gap-6 xl:h-[calc(100vh-8rem)] xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.95fr)]">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm xl:h-full dark:border-slate-800 dark:bg-slate-900">
           <div className="flex h-full flex-col">
             <ProductCatalog
               products={products}
@@ -372,7 +372,7 @@ export default function POSPage() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-6 xl:sticky xl:top-6 xl:h-[calc(100vh-8rem)]">
+        <div className="flex flex-col gap-6 overflow-y-auto xl:sticky xl:top-6 xl:h-full">
           <Card className="flex min-h-[22rem] flex-1 flex-col overflow-hidden rounded-2xl border-gray-200 shadow-sm dark:border-slate-800">
             <Cart
               items={cart.items}
