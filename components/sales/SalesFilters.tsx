@@ -37,9 +37,10 @@ export function SalesFilters({ filters, onFiltersChange }: SalesFiltersProps) {
   };
 
   const handleClearFilters = () => {
+    const today = new Date().toISOString().split('T')[0];
     const clearedFilters: SalesFilters = {
-      startDate: '',
-      endDate: '',
+      startDate: today,
+      endDate: today,
       customerId: '',
       paymentMethod: '',
       status: '',
@@ -51,8 +52,6 @@ export function SalesFilters({ filters, onFiltersChange }: SalesFiltersProps) {
   };
 
   const hasActiveFilters =
-    localFilters.startDate ||
-    localFilters.endDate ||
     localFilters.customerId ||
     localFilters.paymentMethod ||
     localFilters.status;

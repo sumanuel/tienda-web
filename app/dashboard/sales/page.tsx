@@ -29,9 +29,10 @@ export default function SalesPage() {
     total: 0,
     pages: 1,
   });
+  const today = new Date().toISOString().split('T')[0];
   const [filters, setFilters] = useState<Filters>({
-    startDate: '',
-    endDate: '',
+    startDate: today,
+    endDate: today,
     customerId: '',
     paymentMethod: '',
     status: '',

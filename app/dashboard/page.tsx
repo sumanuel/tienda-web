@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useInventoryStore } from '@/store/inventoryStore';
 import { getStockAlerts } from '@/lib/inventory';
@@ -23,10 +23,39 @@ export default function DashboardPage() {
   const router = useRouter();
   const { profile } = useAuth();
   const { alerts, setAlerts } = useInventoryStore();
-  const { activeRate, loading: ratesLoading } = useExchangeRates(
-    profile?.storeId || ''
-  );
+  const {
+    activeRate,
+    rates,
+    loading: ratesLoading,
+  } = useExchangeRates(profile?.storeId || '');
   const [loadingAlerts, setLoadingAlerts] = useState(false);
+
+  const usdTrend = useMemo(() => {
+    if (!activeRate || activeRate.usdToVes <= 0) return undefined;
+
+    const pairRates = rates
+      .filter((r) => r.fromCurrency === 'USD' && r.toCurrency === 'VES')
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    if (pairRates.length === 0) return undefined;
+
+    const latestTime = new Date(pairRates[0].createdAt).getTime();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const previous = pairRates.find(
+      (r) => latestTime - new Date(r.createdAt).getTime() >= dayMs
+    );
+    if (!previous || previous.rate <= 0) return undefined;
+
+    const change =
+      ((activeRate.usdToVes - previous.rate) / previous.rate) * 100;
+    return {
+      value: `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`,
+      isPositive: change >= 0,
+    };
+  }, [rates, activeRate]);
 
   useEffect(() => {
     loadAlerts();
@@ -65,10 +94,7 @@ export default function DashboardPage() {
             fromCurrency="USD"
             toCurrency="VES"
             updatedAt={activeRate.updatedAt}
-            trend={{
-              value: '+2.3%',
-              isPositive: true,
-            }}
+            trend={usdTrend}
             onUpdate={() => router.push('/dashboard/exchange-rates')}
           />
         </div>
