@@ -16,6 +16,7 @@ import {
 } from '@tanstack/react-table';
 import { Customer } from '@/types/customer';
 import { Search, Edit, Trash2, Eye, Users } from 'lucide-react';
+import { StatusPill } from '@/components/common/StatusPill';
 
 interface CustomersTableProps {
   customers: Customer[];
@@ -47,7 +48,7 @@ export default function CustomersTable({
         accessorKey: 'document',
         header: 'Documento',
         cell: (info) => (
-          <span className="text-gray-700 dark:text-slate-300">
+          <span className="font-mono text-sm text-gray-700 dark:text-slate-300">
             {info.getValue() as string}
           </span>
         ),
@@ -76,15 +77,9 @@ export default function CustomersTable({
         cell: (info) => {
           const balance = info.getValue() as number;
           return (
-            <span
-              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                balance > 0
-                  ? 'bg-amber-100 text-amber-800'
-                  : 'bg-green-100 text-green-700'
-              }`}
-            >
+            <StatusPill tone={balance > 0 ? 'warn' : 'ok'}>
               ${balance.toFixed(2)}
-            </span>
+            </StatusPill>
           );
         },
       },
@@ -93,13 +88,9 @@ export default function CustomersTable({
         header: 'Límite Crédito',
         cell: (info) => {
           const limit = info.getValue() as number | undefined;
-          return limit ? (
-            <span className="text-gray-600 dark:text-slate-400">
-              ${limit.toFixed(2)}
-            </span>
-          ) : (
-            <span className="text-gray-400 dark:text-slate-400 dark:text-slate-500">
-              —
+          return (
+            <span className="font-mono text-sm text-gray-600 dark:text-slate-400">
+              {limit ? `$${limit.toFixed(2)}` : '—'}
             </span>
           );
         },
@@ -108,20 +99,20 @@ export default function CustomersTable({
         id: 'actions',
         header: 'Acciones',
         cell: ({ row }) => (
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-1.5">
             <button
               onClick={() => onView(row.original)}
-              className="hover:text-brand-primary rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+              className="hover:border-tsuma-primary hover:text-tsuma-primary flex items-center gap-1.5 rounded-md border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors dark:border-slate-700 dark:text-slate-300"
               title="Ver historial"
             >
-              <Eye size={18} />
+              <Eye size={13} />
             </button>
             <button
               onClick={() => onEdit(row.original)}
-              className="hover:text-brand-primary rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+              className="hover:border-tsuma-primary hover:text-tsuma-primary flex items-center gap-1.5 rounded-md border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors dark:border-slate-700 dark:text-slate-300"
               title="Editar"
             >
-              <Edit size={18} />
+              <Edit size={13} />
             </button>
             <button
               onClick={() => {
@@ -129,10 +120,10 @@ export default function CustomersTable({
                   onDelete(row.original.id);
                 }
               }}
-              className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-slate-400"
+              className="flex items-center gap-1.5 rounded-md border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-red-300 hover:text-red-600 dark:border-slate-700 dark:text-slate-300"
               title="Eliminar"
             >
-              <Trash2 size={18} />
+              <Trash2 size={13} />
             </button>
           </div>
         ),
@@ -170,14 +161,14 @@ export default function CustomersTable({
             Busca, consulta historial y edita datos clave.
           </p>
         </div>
-        <div className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-slate-800 dark:text-slate-400">
+        <div className="rounded-full bg-gray-100 px-3 py-1 font-mono text-xs font-medium text-gray-600 dark:bg-slate-800 dark:text-slate-400">
           {customers.length} registros
         </div>
       </div>
 
       <div className="relative">
         <Search
-          className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 dark:text-slate-400 dark:text-slate-500"
+          className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 dark:text-slate-500"
           size={20}
         />
         <input
@@ -185,11 +176,11 @@ export default function CustomersTable({
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
           placeholder="Buscar por nombre, documento, teléfono o email..."
-          className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pr-4 pl-10 text-sm focus:bg-white focus:ring-1 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:bg-slate-950 dark:focus:bg-slate-900"
+          className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pr-4 pl-10 text-sm focus:bg-white focus:ring-1 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:focus:bg-slate-900"
         />
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm dark:border-slate-800">
+      <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm dark:border-slate-800">
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-slate-950">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -197,7 +188,7 @@ export default function CustomersTable({
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 text-left text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-slate-400"
+                    className="border-b border-gray-200 px-4 py-2.5 text-left font-mono text-[0.65rem] font-semibold tracking-widest whitespace-nowrap text-gray-500 uppercase dark:border-slate-800 dark:text-slate-500"
                   >
                     {flexRender(
                       header.column.columnDef.header,
@@ -208,18 +199,18 @@ export default function CustomersTable({
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white dark:bg-slate-900">
+          <tbody className="divide-y divide-gray-200 bg-white dark:divide-slate-800 dark:bg-slate-900">
             {table.getRowModel().rows.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="px-4 py-12 text-center">
                   <div className="flex flex-col items-center justify-center text-center">
-                    <Users className="mb-4 h-12 w-12 text-gray-300 dark:text-slate-300 dark:text-slate-600" />
+                    <Users className="mb-4 h-12 w-12 text-gray-300 dark:text-slate-700" />
                     <p className="text-lg font-medium text-gray-700 dark:text-slate-300">
                       {globalFilter
                         ? 'No se encontraron clientes'
                         : 'No hay clientes registrados'}
                     </p>
-                    <p className="mt-1 text-sm text-gray-400 dark:text-slate-400 dark:text-slate-500">
+                    <p className="mt-1 text-sm text-gray-400 dark:text-slate-500">
                       {globalFilter
                         ? 'Prueba con otro criterio de búsqueda.'
                         : 'Agrega tu primer cliente para empezar a vender a crédito.'}
@@ -231,7 +222,7 @@ export default function CustomersTable({
               table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="transition-colors hover:bg-gray-50 dark:bg-slate-950 dark:hover:bg-slate-800"
+                  className="transition-colors hover:bg-gray-50 dark:hover:bg-slate-800"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td
@@ -262,14 +253,14 @@ export default function CustomersTable({
             <button
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
-              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:text-slate-600 dark:hover:bg-slate-800"
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Anterior
             </button>
             <button
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className="bg-brand-primary hover:bg-brand-primary-dark rounded-lg px-3 py-1.5 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300 dark:bg-slate-600"
+              className="bg-brand-primary hover:bg-brand-primary-dark rounded-lg px-3 py-1.5 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300 dark:disabled:bg-slate-700"
             >
               Siguiente
             </button>

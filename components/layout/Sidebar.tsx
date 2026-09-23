@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  Home,
   LayoutDashboard,
   ShoppingCart,
   Package,
@@ -39,6 +40,12 @@ interface MenuSection {
 const menuSections: MenuSection[] = [
   {
     items: [
+      {
+        href: '/dashboard/inicio',
+        icon: Home,
+        label: 'Inicio',
+        tone: 'accent',
+      },
       {
         href: '/dashboard',
         icon: LayoutDashboard,

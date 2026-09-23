@@ -11,7 +11,8 @@ import {
   flexRender,
 } from '@tanstack/react-table';
 import { Product } from '@/types/product';
-import { Pencil, Trash2, Search, Package, AlertTriangle } from 'lucide-react';
+import { Pencil, Trash2, Search, Package } from 'lucide-react';
+import { StatusPill } from '@/components/common/StatusPill';
 
 interface ProductTableProps {
   products: Product[];
@@ -32,7 +33,9 @@ export default function ProductTable({
         accessorKey: 'code',
         header: 'Código',
         cell: (info) => (
-          <span className="font-mono text-sm">{info.getValue() as string}</span>
+          <span className="font-mono text-sm whitespace-nowrap text-gray-700 dark:text-slate-300">
+            {(info.getValue() as string) || '—'}
+          </span>
         ),
       },
       {
@@ -65,7 +68,11 @@ export default function ProductTable({
         accessorFn: (row) => row.prices.USD,
         cell: (info) => {
           const price = info.getValue() as number | null;
-          return price ? `$${price.toFixed(2)}` : '—';
+          return (
+            <span className="font-mono text-sm tabular-nums">
+              {price ? `$${price.toFixed(2)}` : '—'}
+            </span>
+          );
         },
       },
       {
@@ -76,32 +83,26 @@ export default function ProductTable({
           const min = info.row.original.stockMin;
           const isLow = stock <= min;
 
-          return (
-            <span
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-                stock <= 0
-                  ? 'bg-red-100 text-red-700'
-                  : isLow
-                    ? 'bg-amber-100 text-amber-800'
-                    : 'bg-green-100 text-green-700'
-              }`}
-            >
-              {isLow && <AlertTriangle className="h-3 w-3" />}
-              {stock <= 0 ? 'Agotado' : `${stock} und`}
-            </span>
-          );
+          if (stock <= 0) {
+            return <StatusPill tone="crit">Agotado</StatusPill>;
+          }
+          if (isLow) {
+            return <StatusPill tone="warn">{stock} und · bajo</StatusPill>;
+          }
+          return <StatusPill tone="ok">{stock} und</StatusPill>;
         },
       },
       {
         id: 'actions',
         header: 'Acciones',
         cell: (info) => (
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-1.5">
             <button
               onClick={() => onEdit(info.row.original)}
-              className="hover:text-brand-primary rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+              className="hover:border-tsuma-primary hover:text-tsuma-primary flex items-center gap-1.5 rounded-md border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors dark:border-slate-700 dark:text-slate-300"
             >
-              <Pencil size={18} />
+              <Pencil size={13} />
+              Editar
             </button>
             <button
               onClick={() => {
@@ -111,9 +112,10 @@ export default function ProductTable({
                   onDelete(info.row.original.id);
                 }
               }}
-              className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-slate-400"
+              className="flex items-center gap-1.5 rounded-md border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-red-300 hover:text-red-600 dark:border-slate-700 dark:text-slate-300"
             >
-              <Trash2 size={18} />
+              <Trash2 size={13} />
+              Eliminar
             </button>
           </div>
         ),
@@ -151,7 +153,7 @@ export default function ProductTable({
             Busca rápido por código, nombre o categoría.
           </p>
         </div>
-        <div className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-slate-800 dark:text-slate-400">
+        <div className="rounded-full bg-gray-100 px-3 py-1 font-mono text-xs font-medium text-gray-600 dark:bg-slate-800 dark:text-slate-400">
           {products.length} productos totales
         </div>
       </div>
@@ -159,7 +161,7 @@ export default function ProductTable({
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search
-            className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 dark:text-slate-400 dark:text-slate-500"
+            className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 dark:text-slate-500"
             size={20}
           />
           <input
@@ -167,12 +169,12 @@ export default function ProductTable({
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder="Buscar productos..."
-            className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pr-4 pl-10 text-sm focus:bg-white focus:ring-1 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:bg-slate-950 dark:focus:bg-slate-900"
+            className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pr-4 pl-10 text-sm focus:bg-white focus:ring-1 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:focus:bg-slate-900"
           />
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-slate-800">
+      <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-slate-800">
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-slate-950">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -180,7 +182,7 @@ export default function ProductTable({
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 text-left text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-slate-400"
+                    className="border-b border-gray-200 px-4 py-2.5 text-left font-mono text-[0.65rem] font-semibold tracking-widest whitespace-nowrap text-gray-500 uppercase dark:border-slate-800 dark:text-slate-500"
                   >
                     {header.isPlaceholder
                       ? null
@@ -193,12 +195,12 @@ export default function ProductTable({
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-gray-100 bg-white dark:bg-slate-900">
+          <tbody className="divide-y divide-gray-100 bg-white dark:divide-slate-800 dark:bg-slate-900">
             {table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="transition-colors hover:bg-gray-50 dark:bg-slate-950 dark:hover:bg-slate-800"
+                  className="transition-colors hover:bg-gray-50 dark:hover:bg-slate-800"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td
@@ -217,11 +219,11 @@ export default function ProductTable({
               <tr>
                 <td colSpan={columns.length} className="px-6 py-16">
                   <div className="flex flex-col items-center justify-center text-center">
-                    <Package className="mb-4 h-12 w-12 text-gray-300 dark:text-slate-300 dark:text-slate-600" />
+                    <Package className="mb-4 h-12 w-12 text-gray-300 dark:text-slate-700" />
                     <p className="text-lg font-medium text-gray-700 dark:text-slate-300">
                       No hay productos para mostrar
                     </p>
-                    <p className="mt-1 text-sm text-gray-400 dark:text-slate-400 dark:text-slate-500">
+                    <p className="mt-1 text-sm text-gray-400 dark:text-slate-500">
                       Ajusta la búsqueda o agrega tu primer producto.
                     </p>
                   </div>
@@ -241,14 +243,14 @@ export default function ProductTable({
           <button
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:text-slate-600 dark:hover:bg-slate-800"
+            className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             Anterior
           </button>
           <button
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="bg-brand-primary hover:bg-brand-primary-dark rounded-lg px-3 py-1.5 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300 dark:bg-slate-600"
+            className="bg-brand-primary hover:bg-brand-primary-dark rounded-lg px-3 py-1.5 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300 dark:disabled:bg-slate-700"
           >
             Siguiente
           </button>
