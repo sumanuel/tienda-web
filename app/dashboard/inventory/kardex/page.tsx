@@ -8,7 +8,7 @@ import { generateKardex } from '@/lib/inventory';
 import { KardexEntry } from '@/types/inventory';
 import { Product } from '@/types/product';
 import KardexView from '@/components/inventory/KardexView';
-import { FileDown } from 'lucide-react';
+import { FileDown, BarChart3, FileSearch } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function KardexPage() {
@@ -94,27 +94,43 @@ export default function KardexPage() {
   };
 
   if (loading) {
-    return <div className="p-6">Cargando productos...</div>;
+    return (
+      <div className="min-h-screen space-y-6 bg-gray-50 p-6 dark:bg-slate-950">
+        <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="h-7 w-48 rounded bg-gray-200 dark:bg-slate-700" />
+          <div className="mt-3 h-4 w-72 rounded bg-gray-100 dark:bg-slate-800" />
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Kardex de Productos</h1>
-        <p className="text-gray-600 dark:text-slate-400">
-          Historial detallado de movimientos por producto
-        </p>
+    <div className="min-h-screen space-y-6 bg-gray-50 p-6 dark:bg-slate-950">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400">
+            <BarChart3 className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
+              Kardex de Productos
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-slate-400">
+              Historial detallado de movimientos por producto.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Selector de Producto */}
-      <div className="mb-6 flex items-end gap-4">
+      <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:flex-row md:items-end dark:border-slate-800 dark:bg-slate-900">
         <div className="flex-1">
           <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
             Seleccionar Producto
           </label>
           <select
             onChange={(e) => handleProductChange(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
+            className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:bg-white focus:ring-1 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:bg-slate-900"
           >
             <option value="">Seleccionar producto</option>
             {products.map((product) => (
@@ -128,9 +144,9 @@ export default function KardexPage() {
         {selectedProduct && kardex.length > 0 && (
           <button
             onClick={exportToCSV}
-            className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-800"
+            className="hover:border-tsuma-primary hover:text-tsuma-primary flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors dark:border-slate-800 dark:text-slate-300"
           >
-            <FileDown size={20} />
+            <FileDown size={18} />
             Exportar CSV
           </button>
         )}
@@ -138,7 +154,7 @@ export default function KardexPage() {
 
       {/* Vista de Kardex */}
       {generatingKardex && (
-        <div className="py-12 text-center">
+        <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <p className="text-gray-500 dark:text-slate-400">
             Generando kardex...
           </p>
@@ -154,8 +170,9 @@ export default function KardexPage() {
       )}
 
       {!generatingKardex && !selectedProduct && (
-        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-gray-500 dark:text-slate-400">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white p-12 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <FileSearch className="mb-4 h-12 w-12 text-gray-300 dark:text-slate-700" />
+          <p className="text-lg font-medium text-gray-700 dark:text-slate-300">
             Selecciona un producto para ver su kardex
           </p>
         </div>

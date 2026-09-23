@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { calculateInventoryValuation } from '@/lib/inventory';
 import { PageContainer } from '@/components/common/PageContainer';
+import { IconChip } from '@/components/common/IconChip';
 import { DollarSign, Package, TrendingUp } from 'lucide-react';
 
 export default function ValuationPage() {
@@ -57,22 +58,29 @@ export default function ValuationPage() {
       loadingMessage="Calculando valorización..."
     >
       {valuation && (
-        <div className="p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold">Valorización de Inventario</h1>
-            <p className="text-gray-600 dark:text-slate-400">
-              Valor total del inventario actual
-            </p>
+        <div className="min-h-screen space-y-6 bg-gray-50 p-6 dark:bg-slate-950">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400">
+                <TrendingUp className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
+                  Valorización de Inventario
+                </h1>
+                <p className="text-sm text-gray-500 dark:text-slate-400">
+                  Valor total del inventario actual.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* KPIs */}
-          <div className="mb-6 grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {/* Valor Total */}
-            <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-              <div className="mb-2 flex items-center gap-3">
-                <div className="rounded-full bg-blue-100 p-2">
-                  <DollarSign size={24} className="text-blue-600" />
-                </div>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex items-center gap-3">
+                <IconChip icon={DollarSign} tone="info" className="h-11 w-11" />
                 <div>
                   <p className="text-sm text-gray-600 dark:text-slate-400">
                     Valor Total
@@ -85,11 +93,9 @@ export default function ValuationPage() {
             </div>
 
             {/* Total de Items */}
-            <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-              <div className="mb-2 flex items-center gap-3">
-                <div className="rounded-full bg-green-100 p-2">
-                  <Package size={24} className="text-green-600" />
-                </div>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex items-center gap-3">
+                <IconChip icon={Package} tone="accent" className="h-11 w-11" />
                 <div>
                   <p className="text-sm text-gray-600 dark:text-slate-400">
                     Total de Unidades
@@ -102,11 +108,13 @@ export default function ValuationPage() {
             </div>
 
             {/* Valor Promedio */}
-            <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-              <div className="mb-2 flex items-center gap-3">
-                <div className="rounded-full bg-purple-100 p-2">
-                  <TrendingUp size={24} className="text-purple-600" />
-                </div>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex items-center gap-3">
+                <IconChip
+                  icon={TrendingUp}
+                  tone="warning"
+                  className="h-11 w-11"
+                />
                 <div>
                   <p className="text-sm text-gray-600 dark:text-slate-400">
                     Valor Promedio/Unidad
@@ -123,8 +131,8 @@ export default function ValuationPage() {
           </div>
 
           {/* Valorización por Categoría */}
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-            <h2 className="mb-4 text-lg font-semibold">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="mb-4 text-lg font-semibold text-gray-800 dark:text-slate-200">
               Valorización por Categoría
             </h2>
 
@@ -144,13 +152,13 @@ export default function ValuationPage() {
                           <span className="font-medium text-gray-900 dark:text-slate-100">
                             {category}
                           </span>
-                          <span className="text-sm text-gray-600 dark:text-slate-400">
+                          <span className="font-mono text-sm text-gray-600 dark:text-slate-400">
                             ${value.toFixed(2)} ({percentage.toFixed(1)}%)
                           </span>
                         </div>
-                        <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-slate-700">
+                        <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-slate-800">
                           <div
-                            className="h-2 rounded-full bg-blue-600"
+                            className="bg-tsuma-primary h-2 rounded-full"
                             style={{ width: `${percentage}%` }}
                           />
                         </div>

@@ -10,13 +10,22 @@ import {
   ColumnDef,
   flexRender,
 } from '@tanstack/react-table';
-import { InventoryMovement } from '@/types/inventory';
-import { Search } from 'lucide-react';
+import { InventoryMovement, MovementType } from '@/types/inventory';
+import { Search, ArrowRightLeft } from 'lucide-react';
 import { format } from 'date-fns';
+import { StatusPill, StatusPillTone } from '@/components/common/StatusPill';
 
 interface MovementsTableProps {
   movements: InventoryMovement[];
 }
+
+const typeMeta: Record<MovementType, { label: string; tone: StatusPillTone }> =
+  {
+    entry: { label: 'Entrada', tone: 'ok' },
+    exit: { label: 'Salida', tone: 'crit' },
+    sale: { label: 'Venta', tone: 'info' },
+    adjustment: { label: 'Ajuste', tone: 'mute' },
+  };
 
 export default function MovementsTable({ movements }: MovementsTableProps) {
   const [globalFilter, setGlobalFilter] = useState('');
@@ -26,45 +35,33 @@ export default function MovementsTable({ movements }: MovementsTableProps) {
       {
         accessorKey: 'createdAt',
         header: 'Fecha',
-        cell: (info) => format(info.getValue() as Date, 'dd/MM/yyyy HH:mm'),
+        cell: (info) => (
+          <span className="font-mono text-sm whitespace-nowrap text-gray-700 dark:text-slate-300">
+            {format(info.getValue() as Date, 'dd/MM/yyyy HH:mm')}
+          </span>
+        ),
       },
       {
         accessorKey: 'type',
         header: 'Tipo',
         cell: (info) => {
-          const type = info.getValue() as string;
-          const badge =
-            type === 'entry'
-              ? 'bg-green-100 text-green-700'
-              : type === 'exit'
-                ? 'bg-red-100 text-red-700'
-                : type === 'sale'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300';
-
-          const label =
-            type === 'entry'
-              ? 'Entrada'
-              : type === 'exit'
-                ? 'Salida'
-                : type === 'sale'
-                  ? 'Venta'
-                  : 'Ajuste';
-
-          return (
-            <span className={`rounded px-2 py-1 text-xs font-medium ${badge}`}>
-              {label}
-            </span>
-          );
+          const meta = typeMeta[info.getValue() as MovementType];
+          return <StatusPill tone={meta.tone}>{meta.label}</StatusPill>;
         },
       },
       {
         header: 'Producto',
         accessorFn: (row) => `${row.productCode} - ${row.productName}`,
-        cell: (info) => {
-          const value = info.getValue() as string;
-          return <span className="font-medium">{value}</span>;
-        },
+        cell: (info) => (
+          <div className="flex flex-col">
+            <span className="font-medium text-gray-900 dark:text-slate-100">
+              {info.row.original.productName}
+            </span>
+            <span className="font-mono text-xs text-gray-500 dark:text-slate-500">
+              {info.row.original.productCode || '—'}
+            </span>
+          </div>
+        ),
       },
       {
         accessorKey: 'quantity',
@@ -75,8 +72,8 @@ export default function MovementsTable({ movements }: MovementsTableProps) {
             <span
               className={
                 qty > 0
-                  ? 'font-semibold text-green-600'
-                  : 'font-semibold text-red-600'
+                  ? 'text-tsuma-primary-dark font-mono text-sm font-semibold tabular-nums'
+                  : 'font-mono text-sm font-semibold text-red-600 tabular-nums dark:text-red-400'
               }
             >
               {qty > 0 ? '+' : ''}
@@ -88,19 +85,38 @@ export default function MovementsTable({ movements }: MovementsTableProps) {
       {
         accessorKey: 'stockBefore',
         header: 'Stock Anterior',
+        cell: (info) => (
+          <span className="font-mono text-sm text-gray-600 tabular-nums dark:text-slate-400">
+            {info.getValue() as number}
+          </span>
+        ),
       },
       {
         accessorKey: 'stockAfter',
         header: 'Stock Nuevo',
+        cell: (info) => (
+          <span className="font-mono text-sm font-semibold text-gray-900 tabular-nums dark:text-slate-100">
+            {info.getValue() as number}
+          </span>
+        ),
       },
       {
         accessorKey: 'reason',
         header: 'Razón',
-        cell: (info) => info.getValue() || '—',
+        cell: (info) => (
+          <span className="text-sm text-gray-600 dark:text-slate-400">
+            {(info.getValue() as string) || '—'}
+          </span>
+        ),
       },
       {
         accessorKey: 'userName',
         header: 'Usuario',
+        cell: (info) => (
+          <span className="text-sm text-gray-600 dark:text-slate-400">
+            {info.getValue() as string}
+          </span>
+        ),
       },
     ],
     []
@@ -125,26 +141,36 @@ export default function MovementsTable({ movements }: MovementsTableProps) {
   });
 
   return (
-    <div className="space-y-4">
-      {/* Búsqueda */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search
-            className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 dark:text-slate-400 dark:text-slate-500"
-            size={20}
-          />
-          <input
-            type="text"
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            placeholder="Buscar movimientos..."
-            className="w-full rounded-lg border border-gray-300 py-2 pr-4 pl-10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
-          />
+    <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-200">
+            Registro de movimientos
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-slate-400">
+            Entradas, salidas, ventas y ajustes de tu inventario.
+          </p>
+        </div>
+        <div className="rounded-full bg-gray-100 px-3 py-1 font-mono text-xs font-medium text-gray-600 dark:bg-slate-800 dark:text-slate-400">
+          {movements.length} registros
         </div>
       </div>
 
-      {/* Tabla */}
-      <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-slate-800">
+      <div className="relative">
+        <Search
+          className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 dark:text-slate-500"
+          size={20}
+        />
+        <input
+          type="text"
+          value={globalFilter}
+          onChange={(e) => setGlobalFilter(e.target.value)}
+          placeholder="Buscar movimientos..."
+          className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pr-4 pl-10 text-sm focus:bg-white focus:ring-1 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:focus:bg-slate-900"
+        />
+      </div>
+
+      <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm dark:border-slate-800">
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-slate-950">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -152,7 +178,7 @@ export default function MovementsTable({ movements }: MovementsTableProps) {
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-slate-300"
+                    className="border-b border-gray-200 px-4 py-2.5 text-left font-mono text-[0.65rem] font-semibold tracking-widest whitespace-nowrap text-gray-500 uppercase dark:border-slate-800 dark:text-slate-500"
                   >
                     {header.isPlaceholder
                       ? null
@@ -165,49 +191,73 @@ export default function MovementsTable({ movements }: MovementsTableProps) {
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white dark:bg-slate-900">
-            {table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className="hover:bg-gray-50 dark:bg-slate-950 dark:hover:bg-slate-800"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className="px-4 py-3 text-sm text-gray-900 dark:text-slate-100"
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
+          <tbody className="divide-y divide-gray-100 bg-white dark:divide-slate-800 dark:bg-slate-900">
+            {table.getRowModel().rows.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="px-4 py-12 text-center">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <ArrowRightLeft className="mb-4 h-12 w-12 text-gray-300 dark:text-slate-700" />
+                    <p className="text-lg font-medium text-gray-700 dark:text-slate-300">
+                      {globalFilter
+                        ? 'No se encontraron movimientos'
+                        : 'No hay movimientos registrados'}
+                    </p>
+                    <p className="mt-1 text-sm text-gray-400 dark:text-slate-500">
+                      {globalFilter
+                        ? 'Prueba con otro criterio de búsqueda.'
+                        : 'Registra tu primer movimiento de inventario.'}
+                    </p>
+                  </div>
+                </td>
               </tr>
-            ))}
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <tr
+                  key={row.id}
+                  className="transition-colors hover:bg-gray-50 dark:hover:bg-slate-800"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td
+                      key={cell.id}
+                      className="px-4 py-3 text-sm text-gray-900 dark:text-slate-100"
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Paginación */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-700 dark:text-slate-300">
-          Mostrando {table.getRowModel().rows.length} de {movements.length}{' '}
-          movimientos
+      {table.getRowModel().rows.length > 0 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-600 dark:text-slate-400">
+            Mostrando {table.getRowModel().rows.length} de {movements.length}{' '}
+            movimientos
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              className="bg-brand-primary hover:bg-brand-primary-dark rounded-lg px-3 py-1.5 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300 dark:disabled:bg-slate-700"
+            >
+              Siguiente
+            </button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-            className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:bg-gray-300 dark:bg-slate-600"
-          >
-            Anterior
-          </button>
-          <button
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-            className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:bg-gray-300 dark:bg-slate-600"
-          >
-            Siguiente
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

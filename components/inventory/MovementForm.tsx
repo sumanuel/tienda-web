@@ -24,6 +24,12 @@ interface MovementFormProps {
   onCancel: () => void;
 }
 
+const inputClass =
+  'focus:border-brand-primary focus:ring-brand-primary w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:bg-white focus:ring-1 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:bg-slate-900';
+
+const labelClass =
+  'mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300';
+
 export default function MovementForm({
   products,
   onSubmit,
@@ -69,13 +75,8 @@ export default function MovementForm({
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
       {/* Tipo de Movimiento */}
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
-          Tipo de Movimiento *
-        </label>
-        <select
-          {...register('type')}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
-        >
+        <label className={labelClass}>Tipo de Movimiento *</label>
+        <select {...register('type')} className={inputClass}>
           <option value="entry">Entrada (Compra/Ajuste Positivo)</option>
           <option value="exit">Salida (Merma/Ajuste Negativo)</option>
           <option value="adjustment">Ajuste General</option>
@@ -84,13 +85,8 @@ export default function MovementForm({
 
       {/* Producto */}
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
-          Producto *
-        </label>
-        <select
-          {...register('productId')}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
-        >
+        <label className={labelClass}>Producto *</label>
+        <select {...register('productId')} className={inputClass}>
           <option value="">Seleccionar producto</option>
           {products.map((product) => (
             <option key={product.id} value={product.id}>
@@ -99,7 +95,7 @@ export default function MovementForm({
           ))}
         </select>
         {errors.productId && (
-          <p className="mt-1 text-sm text-red-600">
+          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
             {errors.productId.message}
           </p>
         )}
@@ -107,14 +103,14 @@ export default function MovementForm({
 
       {/* Info del Producto Seleccionado */}
       {selectedProduct && (
-        <div className="rounded-lg bg-blue-50 p-4">
-          <p className="text-sm text-gray-700 dark:text-slate-300">
+        <div className="bg-tsuma-primary-light rounded-xl p-4">
+          <p className="text-tsuma-primary-dark text-sm">
             <strong>Stock Actual:</strong> {selectedProduct.stock} unidades
           </p>
-          <p className="text-sm text-gray-700 dark:text-slate-300">
+          <p className="text-tsuma-primary-dark text-sm">
             <strong>Stock Mínimo:</strong> {selectedProduct.stockMin} unidades
           </p>
-          <p className="text-sm text-gray-700 dark:text-slate-300">
+          <p className="text-tsuma-primary-dark text-sm">
             <strong>Costo Unitario:</strong> ${selectedProduct.cost.toFixed(2)}
           </p>
         </div>
@@ -122,61 +118,51 @@ export default function MovementForm({
 
       {/* Cantidad */}
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
-          Cantidad *
-        </label>
+        <label className={labelClass}>Cantidad *</label>
         <input
           {...register('quantity', { valueAsNumber: true })}
           type="number"
           min="1"
           step="1"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
+          className={inputClass}
         />
         {errors.quantity && (
-          <p className="mt-1 text-sm text-red-600">{errors.quantity.message}</p>
+          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+            {errors.quantity.message}
+          </p>
         )}
       </div>
 
       {/* Costo Unitario (solo para entradas) */}
       {movementType === 'entry' && (
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
-            Costo Unitario (opcional)
-          </label>
+          <label className={labelClass}>Costo Unitario (opcional)</label>
           <input
             {...register('unitCost', { valueAsNumber: true })}
             type="number"
             min="0"
             step="0.01"
             placeholder={selectedProduct ? `${selectedProduct.cost}` : '0.00'}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
+            className={inputClass}
           />
         </div>
       )}
 
       {/* Razón */}
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
-          Razón
-        </label>
+        <label className={labelClass}>Razón</label>
         <input
           {...register('reason')}
           type="text"
           placeholder="Ej: Compra a proveedor, Producto dañado, Ajuste de inventario"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
+          className={inputClass}
         />
       </div>
 
       {/* Notas */}
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
-          Notas
-        </label>
-        <textarea
-          {...register('notes')}
-          rows={3}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-slate-700"
-        />
+        <label className={labelClass}>Notas</label>
+        <textarea {...register('notes')} rows={3} className={inputClass} />
       </div>
 
       {/* Botones */}
@@ -184,14 +170,14 @@ export default function MovementForm({
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400 dark:bg-slate-600"
+          className="bg-brand-primary hover:bg-brand-primary-dark rounded-xl px-6 py-2.5 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300 dark:disabled:bg-slate-700"
         >
           {loading ? 'Registrando...' : 'Registrar Movimiento'}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-gray-300 px-6 py-2 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-800"
+          className="rounded-xl border border-gray-200 px-6 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
         >
           Cancelar
         </button>
