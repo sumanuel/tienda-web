@@ -273,7 +273,7 @@ export function CustomerSelector({
             </Button>
             <Button
               onClick={handleCreateCustomer}
-              className="bg-[#2D7A5B] hover:bg-[#236449]"
+              className="bg-brand-primary hover:bg-brand-primary-dark"
             >
               Crear Cliente
             </Button>

@@ -255,7 +255,7 @@ export function SaleDetailModal({
 
                 <div className="flex justify-between">
                   <span className="text-lg font-semibold">Total:</span>
-                  <span className="text-2xl font-bold text-[#2D7A5B]">
+                  <span className="text-brand-primary text-2xl font-bold">
                     {formatCurrency(sale.total, sale.currency as Currency)}
                   </span>
                 </div>
