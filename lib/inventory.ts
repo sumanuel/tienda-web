@@ -92,7 +92,12 @@ export async function getInventoryMovements(
       productId: movement.productId,
       productName: movement.productName,
       productCode: movement.productCode,
-      type: movement.type === 'sale' ? 'exit' : 'entry', // Mapear tipos
+      type:
+        movement.type === 'sale' ||
+        movement.type === 'purchase' ||
+        movement.type === 'purchase_return'
+          ? movement.type
+          : 'entry', // Mapear tipos
       quantity: movement.quantity,
       stockBefore: movement.stockBefore,
       stockAfter: movement.stockAfter,

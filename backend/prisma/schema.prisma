@@ -8,16 +8,18 @@ datasource db {
 }
 
 model User {
-  id                   String         @id @default(uuid())
-  email                String         @unique
-  password             String
-  name                 String
-  role                 String         @default("owner")
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
-  stores               Store[]
-  exchangeRatesCreated ExchangeRate[]
-  salesCreated         Sale[]         @relation("SalesCashier")
+  id                     String           @id @default(uuid())
+  email                  String           @unique
+  password               String
+  name                   String
+  role                   String           @default("owner")
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  stores                 Store[]
+  exchangeRatesCreated   ExchangeRate[]
+  salesCreated           Sale[]           @relation("SalesCashier")
+  purchasesCreated       Purchase[]       @relation("PurchasesUser")
+  purchaseReturnsCreated PurchaseReturn[] @relation("PurchaseReturnsUser")
 
   @@map("users")
 }
@@ -41,36 +43,40 @@ model Store {
   suppliers          Supplier[]
   exchangeRates      ExchangeRate[]
   receivables        Receivable[]
+  purchases          Purchase[]
+  purchaseReturns    PurchaseReturn[]
 
   @@map("stores")
 }
 
 model Product {
-  id                 String              @id @default(uuid())
-  name               String
-  description        String?
-  sku                String?
-  barcode            String?
-  category           String
-  price              Float
-  priceVES           Float               @default(0)
-  priceUSD           Float               @default(0)
-  priceEUR           Float               @default(0)
-  cost               Float               @default(0)
-  costCurrency       String?             @default("USD")
-  additionalCost     Float?              @default(0)
-  margin             Float?              @default(30)
-  iva                Float?              @default(0)
-  stock              Int                 @default(0)
-  minStock           Int                 @default(10)
-  trackInventory     Boolean             @default(true)
-  image              String?
-  storeId            String
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  inventoryMovements InventoryMovement[]
-  store              Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  saleItems          SaleItem[]
+  id                  String               @id @default(uuid())
+  name                String
+  description         String?
+  sku                 String?
+  barcode             String?
+  category            String
+  price               Float
+  priceVES            Float                @default(0)
+  priceUSD            Float                @default(0)
+  priceEUR            Float                @default(0)
+  cost                Float                @default(0)
+  costCurrency        String?              @default("USD")
+  additionalCost      Float?               @default(0)
+  margin              Float?               @default(30)
+  iva                 Float?               @default(0)
+  stock               Int                  @default(0)
+  minStock            Int                  @default(10)
+  trackInventory      Boolean              @default(true)
+  image               String?
+  storeId             String
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  inventoryMovements  InventoryMovement[]
+  store               Store                @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  saleItems           SaleItem[]
+  purchaseItems       PurchaseItem[]
+  purchaseReturnItems PurchaseReturnItem[]
 
   @@unique([sku, storeId])
   @@unique([barcode, storeId])
@@ -81,37 +87,37 @@ model Product {
 }
 
 model Sale {
-  id                   String       @id @default(uuid())
-  saleNumber           String       @unique
-  storeId              String
-  customerId           String?
-  userId               String
-  subtotal             Float
-  tax                  Float
-  discount             Float        @default(0)
-  total                Float
-  currency             String       @default("VES")
-  localCurrency        String       @default("VES")
-  referenceCurrency    String       @default("USD")
-  exchangeRate         Float        @default(0)
-  totalReference       Float?
-  paymentMethod        String
-  referenceNumber      String?
-  paid                 Float        @default(0)
-  change               Float        @default(0)
-  status               String       @default("completed")
-  notes                String?
-  cancelReason         String?
-  cancelledAt          DateTime?
-  cancelledBy          String?
-  monetarySnapshot     Json?
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
-  store                Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  customer             Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  cashier              User         @relation("SalesCashier", fields: [userId], references: [id], onDelete: Restrict)
-  items                SaleItem[]
-  receivable           Receivable?
+  id                String      @id @default(uuid())
+  saleNumber        String      @unique
+  storeId           String
+  customerId        String?
+  userId            String
+  subtotal          Float
+  tax               Float
+  discount          Float       @default(0)
+  total             Float
+  currency          String      @default("VES")
+  localCurrency     String      @default("VES")
+  referenceCurrency String      @default("USD")
+  exchangeRate      Float       @default(0)
+  totalReference    Float?
+  paymentMethod     String
+  referenceNumber   String?
+  paid              Float       @default(0)
+  change            Float       @default(0)
+  status            String      @default("completed")
+  notes             String?
+  cancelReason      String?
+  cancelledAt       DateTime?
+  cancelledBy       String?
+  monetarySnapshot  Json?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  store             Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer          Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  cashier           User        @relation("SalesCashier", fields: [userId], references: [id], onDelete: Restrict)
+  items             SaleItem[]
+  receivable        Receivable?
 
   @@index([storeId, createdAt(sort: Desc)])
   @@index([storeId, customerId])
@@ -121,45 +127,160 @@ model Sale {
 }
 
 model SaleItem {
-  id                   String   @id @default(uuid())
-  saleId               String
-  productId            String
-  productName          String
-  quantity             Float
-  price                Float
-  localPrice           Float
-  referencePrice       Float
-  subtotal             Float
-  subtotalLocal        Float
-  subtotalReference    Float
-  priceSnapshot        Json?
-  iva                  Float    @default(0)
-  createdAt            DateTime @default(now())
-  sale                 Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  product              Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  id                String   @id @default(uuid())
+  saleId            String
+  productId         String
+  productName       String
+  quantity          Float
+  price             Float
+  localPrice        Float
+  referencePrice    Float
+  subtotal          Float
+  subtotalLocal     Float
+  subtotalReference Float
+  priceSnapshot     Json?
+  iva               Float    @default(0)
+  createdAt         DateTime @default(now())
+  sale              Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
 
   @@index([saleId])
   @@index([productId])
   @@map("sale_items")
 }
 
+// ========================================
+// COMPRAS (PURCHASES)
+// ========================================
+
+model Purchase {
+  id                String                @id @default(uuid())
+  purchaseNumber    String                @unique
+  storeId           String
+  supplierId        String
+  userId            String
+  invoiceNumber     String?
+  subtotal          Float
+  tax               Float
+  discount          Float                 @default(0)
+  total             Float
+  currency          String                @default("VES")
+  localCurrency     String                @default("VES")
+  referenceCurrency String                @default("USD")
+  exchangeRate      Float                 @default(0)
+  totalReference    Float?
+  paymentMethod     String
+  dueDate           DateTime?
+  paid              Float                 @default(0)
+  status            String                @default("completed")
+  notes             String?
+  cancelReason      String?
+  cancelledAt       DateTime?
+  cancelledBy       String?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  store             Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  supplier          Supplier              @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  user              User                  @relation("PurchasesUser", fields: [userId], references: [id], onDelete: Restrict)
+  items             PurchaseItem[]
+  transactions      SupplierTransaction[]
+  returns           PurchaseReturn[]
+
+  @@index([storeId, createdAt(sort: Desc)])
+  @@index([storeId, supplierId])
+  @@index([storeId, status])
+  @@index([purchaseNumber])
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id                String   @id @default(uuid())
+  purchaseId        String
+  productId         String
+  productName       String
+  quantity          Float
+  cost              Float
+  localCost         Float
+  referenceCost     Float
+  subtotal          Float
+  subtotalLocal     Float
+  subtotalReference Float
+  costSnapshot      Json?
+  createdAt         DateTime @default(now())
+  purchase          Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([purchaseId])
+  @@index([productId])
+  @@map("purchase_items")
+}
+
+model PurchaseReturn {
+  id                String                @id @default(uuid())
+  returnNumber      String                @unique
+  storeId           String
+  supplierId        String
+  purchaseId        String?
+  userId            String
+  reason            String
+  subtotal          Float
+  total             Float
+  currency          String                @default("VES")
+  localCurrency     String                @default("VES")
+  referenceCurrency String                @default("USD")
+  exchangeRate      Float                 @default(0)
+  totalReference    Float?
+  status            String                @default("completed")
+  createdAt         DateTime              @default(now())
+  store             Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  supplier          Supplier              @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  purchase          Purchase?             @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+  user              User                  @relation("PurchaseReturnsUser", fields: [userId], references: [id], onDelete: Restrict)
+  items             PurchaseReturnItem[]
+  transactions      SupplierTransaction[]
+
+  @@index([storeId, createdAt(sort: Desc)])
+  @@index([storeId, supplierId])
+  @@index([purchaseId])
+  @@index([returnNumber])
+  @@map("purchase_returns")
+}
+
+model PurchaseReturnItem {
+  id               String         @id @default(uuid())
+  purchaseReturnId String
+  productId        String
+  productName      String
+  quantity         Float
+  cost             Float
+  subtotal         Float
+  purchaseItemId   String?
+  createdAt        DateTime       @default(now())
+  purchaseReturn   PurchaseReturn @relation(fields: [purchaseReturnId], references: [id], onDelete: Cascade)
+  product          Product        @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([purchaseReturnId])
+  @@index([productId])
+  @@map("purchase_return_items")
+}
+
 model Customer {
-  id                   String                @id @default(uuid())
-  name                 String
-  email                String?
-  phone                String?
-  address              String?
-  documentNumber       String?
-  documentType         String?               @default("V")
-  taxId                String?
-  balance              Float                 @default(0)
-  storeId              String
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  transactions         CustomerTransaction[]
-  store                Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  sales                Sale[]
-  receivables          Receivable[]
+  id             String                @id @default(uuid())
+  name           String
+  email          String?
+  phone          String?
+  address        String?
+  documentNumber String?
+  documentType   String?               @default("V")
+  taxId          String?
+  balance        Float                 @default(0)
+  storeId        String
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  transactions   CustomerTransaction[]
+  store          Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sales          Sale[]
+  receivables    Receivable[]
 
   @@unique([storeId, documentNumber])
   @@index([storeId])
@@ -187,38 +308,45 @@ model CustomerTransaction {
 }
 
 model Supplier {
-  id           String                @id @default(uuid())
-  name         String
-  email        String?
-  phone        String?
-  address      String?
-  taxId        String?
-  balance      Float                 @default(0)
-  storeId      String
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
-  transactions SupplierTransaction[]
-  store        Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  id              String                @id @default(uuid())
+  name            String
+  email           String?
+  phone           String?
+  address         String?
+  taxId           String?
+  balance         Float                 @default(0)
+  storeId         String
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  transactions    SupplierTransaction[]
+  store           Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  purchases       Purchase[]
+  purchaseReturns PurchaseReturn[]
 
   @@index([storeId])
   @@map("suppliers")
 }
 
 model SupplierTransaction {
-  id         String    @id @default(uuid())
-  supplierId String
-  type       String
-  amount     Float
-  balance    Float
-  dueDate    DateTime?
-  notes      String?
-  createdAt  DateTime  @default(now())
-  supplier   Supplier  @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  id               String          @id @default(uuid())
+  supplierId       String
+  type             String
+  amount           Float
+  balance          Float
+  dueDate          DateTime?
+  notes            String?
+  purchaseId       String?
+  purchaseReturnId String?
+  createdAt        DateTime        @default(now())
+  supplier         Supplier        @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  purchase         Purchase?       @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+  purchaseReturn   PurchaseReturn? @relation(fields: [purchaseReturnId], references: [id], onDelete: SetNull)
 
   @@index([supplierId])
   @@index([type])
   @@index([createdAt])
   @@index([dueDate])
+  @@index([purchaseId])
   @@map("supplier_transactions")
 }
 
@@ -273,29 +401,29 @@ model ExchangeRate {
 // ========================================
 
 model Receivable {
-  id                      String              @id @default(uuid())
-  storeId                 String
-  saleId                  String?             @unique
-  customerId              String
-  customerName            String
-  documentNumber          String?
-  amount                  Float
-  baseCurrency            String              @default("USD")
-  referenceAmount         Float
-  exchangeRateAtCreation  Float               @default(0)
-  amountPaid              Float               @default(0)
-  balance                 Float
-  description             String?
-  dueDate                 DateTime?
-  invoiceNumber           String?
-  status                  String              @default("pending")
-  createdAt               DateTime            @default(now())
-  updatedAt               DateTime            @updatedAt
-  paidAt                  DateTime?
-  store                   Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  customer                Customer            @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  sale                    Sale?               @relation(fields: [saleId], references: [id], onDelete: SetNull)
-  payments                ReceivablePayment[]
+  id                     String              @id @default(uuid())
+  storeId                String
+  saleId                 String?             @unique
+  customerId             String
+  customerName           String
+  documentNumber         String?
+  amount                 Float
+  baseCurrency           String              @default("USD")
+  referenceAmount        Float
+  exchangeRateAtCreation Float               @default(0)
+  amountPaid             Float               @default(0)
+  balance                Float
+  description            String?
+  dueDate                DateTime?
+  invoiceNumber          String?
+  status                 String              @default("pending")
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  paidAt                 DateTime?
+  store                  Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer               Customer            @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  sale                   Sale?               @relation(fields: [saleId], references: [id], onDelete: SetNull)
+  payments               ReceivablePayment[]
 
   @@index([storeId, status])
   @@index([storeId, customerId])

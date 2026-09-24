@@ -25,6 +25,8 @@ const typeMeta: Record<MovementType, { label: string; tone: StatusPillTone }> =
     exit: { label: 'Salida', tone: 'crit' },
     sale: { label: 'Venta', tone: 'info' },
     adjustment: { label: 'Ajuste', tone: 'mute' },
+    purchase: { label: 'Compra', tone: 'ok' },
+    purchase_return: { label: 'Dev. Compra', tone: 'crit' },
   };
 
 export default function MovementsTable({ movements }: MovementsTableProps) {

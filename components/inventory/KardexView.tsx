@@ -16,6 +16,10 @@ const typeMeta: Record<string, { label: string; tone: StatusPillTone }> = {
   exit: { label: 'Salida', tone: 'crit' },
   sale: { label: 'Venta', tone: 'info' },
   adjustment: { label: 'Ajuste', tone: 'mute' },
+  purchase: { label: 'Compra', tone: 'ok' },
+  purchase_return: { label: 'Dev. Compra', tone: 'crit' },
+  purchase_cancellation: { label: 'Compra Cancelada', tone: 'mute' },
+  sale_cancellation: { label: 'Venta Cancelada', tone: 'mute' },
 };
 
 export default function KardexView({

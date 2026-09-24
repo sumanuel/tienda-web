@@ -20,6 +20,8 @@ import {
   Receipt,
   ArrowRightLeft,
   X,
+  ShoppingBag,
+  Undo2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { IconChip, type IconChipTone } from '@/components/common/IconChip';
@@ -68,6 +70,23 @@ const menuSections: MenuSection[] = [
         icon: Receipt,
         label: 'Historial de Ventas',
         tone: 'accent',
+      },
+    ],
+  },
+  {
+    label: 'Compras',
+    items: [
+      {
+        href: '/dashboard/purchases',
+        icon: ShoppingBag,
+        label: 'Historial de Compras',
+        tone: 'warning',
+      },
+      {
+        href: '/dashboard/purchases/returns',
+        icon: Undo2,
+        label: 'Devoluciones',
+        tone: 'warning',
       },
     ],
   },

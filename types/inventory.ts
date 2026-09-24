@@ -1,4 +1,10 @@
-export type MovementType = 'entry' | 'exit' | 'adjustment' | 'sale';
+export type MovementType =
+  | 'entry'
+  | 'exit'
+  | 'adjustment'
+  | 'sale'
+  | 'purchase'
+  | 'purchase_return';
 
 export interface InventoryMovement {
   id: string;
