@@ -85,7 +85,7 @@ export function CartItem({
           <Button
             size="sm"
             variant="ghost"
-            className="h-8 w-8 p-0 text-red-600 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-50 hover:text-red-700"
+            className="h-8 w-8 p-0 text-red-600 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
             onClick={() => onRemove(item.productId)}
           >
             <Trash2 className="h-4 w-4" />

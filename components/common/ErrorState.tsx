@@ -31,10 +31,10 @@ export function ErrorState({
       <Card className="w-full max-w-md p-8">
         <div className="flex flex-col items-center text-center">
           <div
-            className={`mb-4 rounded-full p-3 ${isAuthError ? 'bg-orange-100' : 'bg-red-100'}`}
+            className={`mb-4 rounded-full p-3 ${isAuthError ? 'bg-orange-100 dark:bg-orange-950' : 'bg-red-100 dark:bg-red-950'}`}
           >
             <AlertCircle
-              className={`h-8 w-8 ${isAuthError ? 'text-orange-600' : 'text-red-600'}`}
+              className={`h-8 w-8 ${isAuthError ? 'text-orange-600 dark:text-orange-400' : 'text-red-600 dark:text-red-400'}`}
             />
           </div>
 
@@ -58,7 +58,7 @@ export function ErrorState({
             {showRetry && onRetry && !isAuthError && (
               <Button
                 onClick={onRetry}
-                className="flex-1 bg-[#2D7A5B] hover:bg-[#236449]"
+                className="bg-brand-primary hover:bg-brand-primary-dark flex-1"
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Reintentar
@@ -68,7 +68,7 @@ export function ErrorState({
             {isAuthError && (
               <Button
                 onClick={() => (window.location.href = '/login')}
-                className="flex-1 bg-[#2D7A5B] hover:bg-[#236449]"
+                className="bg-brand-primary hover:bg-brand-primary-dark flex-1"
               >
                 Iniciar Sesión
               </Button>

@@ -58,7 +58,7 @@ export function CancelSaleButton({
         size="sm"
         variant="outline"
         onClick={() => setShowDialog(true)}
-        className="text-red-600 hover:bg-red-50 hover:text-red-700"
+        className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
       >
         <X className="h-4 w-4" />
       </Button>
@@ -67,14 +67,14 @@ export function CancelSaleButton({
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
+              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
               Cancelar Venta {saleNumber}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3">
-              <p className="text-sm text-red-800">
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950">
+              <p className="text-sm text-red-800 dark:text-red-300">
                 <strong>Advertencia:</strong> Esta acción revertirá el stock de
                 los productos vendidos y cancelará la cuenta por cobrar asociada
                 (si existe).

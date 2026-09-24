@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CancelSaleButton } from './CancelSaleButton';
+import { StatusPill } from '@/components/common/StatusPill';
 import { formatCurrency, type Currency } from '@/lib/currency';
 import {
   Calendar,
@@ -57,13 +58,11 @@ export function SaleDetailModal({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return (
-          <Badge className="bg-green-100 text-green-800">Completada</Badge>
-        );
+        return <StatusPill tone="ok">Completada</StatusPill>;
       case 'cancelled':
-        return <Badge variant="destructive">Cancelada</Badge>;
+        return <StatusPill tone="crit">Cancelada</StatusPill>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <StatusPill tone="mute">{status}</StatusPill>;
     }
   };
 
@@ -280,11 +279,13 @@ export function SaleDetailModal({
                 <Separator />
                 <div>
                   <div className="mb-3 flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-orange-600" />
-                    <h3 className="font-semibold">Cuenta por Cobrar</h3>
+                    <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                    <h3 className="font-semibold text-gray-900 dark:text-slate-100">
+                      Cuenta por Cobrar
+                    </h3>
                   </div>
 
-                  <div className="space-y-2 rounded-lg border border-orange-200 bg-orange-50 p-4">
+                  <div className="space-y-2 rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600 dark:text-slate-400">
                         Monto original:
@@ -309,7 +310,7 @@ export function SaleDetailModal({
                     </div>
                     <div className="flex justify-between">
                       <span className="font-semibold">Saldo pendiente:</span>
-                      <span className="font-bold text-orange-700">
+                      <span className="font-bold text-orange-700 dark:text-orange-400">
                         {formatCurrency(
                           sale.receivable.balance,
                           sale.receivable.baseCurrency as Currency
@@ -345,11 +346,13 @@ export function SaleDetailModal({
                 <Separator />
                 <div>
                   <div className="mb-3 flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-red-600" />
-                    <h3 className="font-semibold text-red-700">Cancelación</h3>
+                    <FileText className="h-5 w-5 text-red-600 dark:text-red-400" />
+                    <h3 className="font-semibold text-red-700 dark:text-red-400">
+                      Cancelación
+                    </h3>
                   </div>
 
-                  <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-4">
+                  <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
                     {sale.cancelReason && (
                       <div>
                         <p className="mb-1 text-sm text-gray-600 dark:text-slate-400">

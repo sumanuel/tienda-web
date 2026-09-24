@@ -217,11 +217,11 @@ export default function ProductFormWithCalculations({
   if (!activeRate || activeRate.usdToVes === 0) {
     return (
       <div className="space-y-6">
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-800 dark:bg-amber-950">
           <div className="flex items-start gap-3">
-            <DollarSign className="h-6 w-6 text-amber-600" />
+            <DollarSign className="h-6 w-6 text-amber-600 dark:text-amber-400" />
             <div className="flex-1">
-              <p className="text-lg font-semibold text-amber-800">
+              <p className="text-lg font-semibold text-amber-800 dark:text-amber-300">
                 ¡Tasa de cambio USD no configurada!
               </p>
               <p className="mt-2 text-sm text-gray-700 dark:text-slate-300">

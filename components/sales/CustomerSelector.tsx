@@ -182,14 +182,14 @@ export function CustomerSelector({
 
       {/* Cliente seleccionado */}
       {selectedCustomer && (
-        <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3">
-          <User className="h-4 w-4 text-green-600" />
+        <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-950">
+          <User className="h-4 w-4 text-green-600 dark:text-green-400" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-green-900">
+            <p className="text-sm font-medium text-green-900 dark:text-green-300">
               {selectedCustomer.name}
             </p>
             {selectedCustomer.documentNumber !== '1' && (
-              <p className="text-xs text-green-700">
+              <p className="text-xs text-green-700 dark:text-green-400">
                 Doc: {selectedCustomer.documentNumber}
               </p>
             )}

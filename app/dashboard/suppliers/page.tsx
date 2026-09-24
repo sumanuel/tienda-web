@@ -190,8 +190,11 @@ export default function SuppliersPage() {
 
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-amber-100 p-3">
-              <BadgeDollarSign className="text-amber-700" size={24} />
+            <div className="rounded-xl bg-amber-100 p-3 dark:bg-amber-950">
+              <BadgeDollarSign
+                className="text-amber-700 dark:text-amber-400"
+                size={24}
+              />
             </div>
             <div>
               <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-slate-400">
@@ -206,8 +209,11 @@ export default function SuppliersPage() {
 
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-red-100 p-3">
-              <DollarSign className="text-red-600" size={24} />
+            <div className="rounded-xl bg-red-100 p-3 dark:bg-red-950">
+              <DollarSign
+                className="text-red-600 dark:text-red-400"
+                size={24}
+              />
             </div>
             <div>
               <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-slate-400">
@@ -351,7 +357,7 @@ export default function SuppliersPage() {
                   setViewingSupplier(null);
                   setSupplierProducts([]);
                 }}
-                className="rounded-xl bg-gray-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 dark:bg-slate-600 dark:bg-slate-700"
+                className="rounded-xl bg-gray-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 dark:bg-slate-700 dark:hover:bg-slate-600"
               >
                 Cerrar
               </button>
