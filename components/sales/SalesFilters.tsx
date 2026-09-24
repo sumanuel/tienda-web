@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -12,7 +11,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
-import { Search, Filter, X } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Search, Filter, X, Calendar as CalendarIcon } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface SalesFilters {
   startDate?: string;
@@ -27,6 +34,52 @@ interface SalesFilters {
 interface SalesFiltersProps {
   filters: SalesFilters;
   onFiltersChange: (filters: SalesFilters) => void;
+}
+
+interface DateFieldProps {
+  id: string;
+  label: string;
+  value?: string;
+  onChange: (value: string) => void;
+}
+
+function DateField({ id, label, value, onChange }: DateFieldProps) {
+  const [open, setOpen] = useState(false);
+  const selectedDate = value ? parseISO(value) : undefined;
+
+  return (
+    <div>
+      <Label htmlFor={id}>{label}</Label>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            id={id}
+            type="button"
+            className="focus:border-brand-primary focus:ring-brand-primary mt-1.5 flex w-full items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:ring-1 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+          >
+            <CalendarIcon className="h-4 w-4 text-gray-500 dark:text-slate-400" />
+            <span className="font-mono">
+              {selectedDate
+                ? format(selectedDate, 'dd MMM yyyy', { locale: es })
+                : 'Seleccionar fecha'}
+            </span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            defaultMonth={selectedDate}
+            onSelect={(date) => {
+              if (!date) return;
+              onChange(format(date, 'yyyy-MM-dd'));
+              setOpen(false);
+            }}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
 }
 
 export function SalesFilters({ filters, onFiltersChange }: SalesFiltersProps) {
@@ -78,30 +131,24 @@ export function SalesFilters({ filters, onFiltersChange }: SalesFiltersProps) {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Fecha desde */}
-        <div>
-          <Label htmlFor="startDate">Desde</Label>
-          <Input
-            id="startDate"
-            type="date"
-            value={localFilters.startDate || ''}
-            onChange={(e) =>
-              setLocalFilters({ ...localFilters, startDate: e.target.value })
-            }
-          />
-        </div>
+        <DateField
+          id="startDate"
+          label="Desde"
+          value={localFilters.startDate}
+          onChange={(value) =>
+            setLocalFilters({ ...localFilters, startDate: value })
+          }
+        />
 
         {/* Fecha hasta */}
-        <div>
-          <Label htmlFor="endDate">Hasta</Label>
-          <Input
-            id="endDate"
-            type="date"
-            value={localFilters.endDate || ''}
-            onChange={(e) =>
-              setLocalFilters({ ...localFilters, endDate: e.target.value })
-            }
-          />
-        </div>
+        <DateField
+          id="endDate"
+          label="Hasta"
+          value={localFilters.endDate}
+          onChange={(value) =>
+            setLocalFilters({ ...localFilters, endDate: value })
+          }
+        />
 
         {/* Método de pago */}
         <div>
