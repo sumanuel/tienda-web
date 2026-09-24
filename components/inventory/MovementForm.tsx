@@ -111,7 +111,8 @@ export default function MovementForm({
             <strong>Stock Mínimo:</strong> {selectedProduct.stockMin} unidades
           </p>
           <p className="text-tsuma-primary-dark text-sm">
-            <strong>Costo Unitario:</strong> ${selectedProduct.cost.toFixed(2)}
+            <strong>Costo Unitario:</strong> {selectedProduct.costCurrency}{' '}
+            {selectedProduct.cost.toFixed(2)}
           </p>
         </div>
       )}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useReportsStore } from '@/store/reportsStore';
 import { getFinancialReport } from '@/lib/reports/financialReports';
 import { exportFinancialReportToExcel } from '@/lib/export/excelExporter';
@@ -24,11 +25,14 @@ import {
   Wallet,
 } from 'lucide-react';
 import { IconChip } from '@/components/common/IconChip';
+import { DualCurrency } from '@/components/common/DualCurrency';
 
 const COLORS = ['#1f7a59', '#3b82f6', '#f59e0b', '#ef4444'];
 
 export default function FinancialReportPage() {
   const { profile } = useAuthStore();
+  const { activeRate } = useExchangeRates(profile?.storeId || '');
+  const exchangeRate = activeRate?.usdToVes;
   const { dateRange, setDateRange } = useReportsStore();
   const [reportData, setReportData] = useState<FinancialReportData | null>(
     null
@@ -115,9 +119,13 @@ export default function FinancialReportPage() {
             </span>
             <IconChip icon={TrendingUp} tone="accent" className="h-9 w-9" />
           </div>
-          <p className="text-tsuma-primary-dark font-mono text-2xl font-bold tabular-nums">
-            ${reportData?.totalRevenue.toFixed(2) || '0.00'}
-          </p>
+          <DualCurrency
+            usd={reportData?.totalRevenue ?? 0}
+            exchangeRate={exchangeRate}
+            size="lg"
+            align="left"
+            primaryClassName="text-tsuma-primary-dark"
+          />
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -127,9 +135,13 @@ export default function FinancialReportPage() {
             </span>
             <IconChip icon={TrendingDown} tone="danger" className="h-9 w-9" />
           </div>
-          <p className="font-mono text-2xl font-bold text-red-600 tabular-nums dark:text-red-400">
-            ${reportData?.totalExpenses.toFixed(2) || '0.00'}
-          </p>
+          <DualCurrency
+            usd={reportData?.totalExpenses ?? 0}
+            exchangeRate={exchangeRate}
+            size="lg"
+            align="left"
+            primaryClassName="text-red-600 dark:text-red-400"
+          />
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -139,9 +151,12 @@ export default function FinancialReportPage() {
             </span>
             <IconChip icon={DollarSign} tone="info" className="h-9 w-9" />
           </div>
-          <p className="font-mono text-2xl font-bold text-gray-900 tabular-nums dark:text-slate-100">
-            ${reportData?.grossProfit.toFixed(2) || '0.00'}
-          </p>
+          <DualCurrency
+            usd={reportData?.grossProfit ?? 0}
+            exchangeRate={exchangeRate}
+            size="lg"
+            align="left"
+          />
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -163,18 +178,26 @@ export default function FinancialReportPage() {
           <h3 className="mb-2 text-lg font-semibold text-gray-800 dark:text-slate-200">
             Cuentas por Cobrar
           </h3>
-          <p className="text-tsuma-primary-dark font-mono text-4xl font-bold tabular-nums">
-            ${reportData?.accountsReceivable.toFixed(2) || '0.00'}
-          </p>
+          <DualCurrency
+            usd={reportData?.accountsReceivable ?? 0}
+            exchangeRate={exchangeRate}
+            size="lg"
+            align="left"
+            primaryClassName="text-tsuma-primary-dark text-3xl"
+          />
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <h3 className="mb-2 text-lg font-semibold text-gray-800 dark:text-slate-200">
             Cuentas por Pagar
           </h3>
-          <p className="font-mono text-4xl font-bold text-red-600 tabular-nums dark:text-red-400">
-            ${reportData?.accountsPayable.toFixed(2) || '0.00'}
-          </p>
+          <DualCurrency
+            usd={reportData?.accountsPayable ?? 0}
+            exchangeRate={exchangeRate}
+            size="lg"
+            align="left"
+            primaryClassName="text-3xl text-red-600 dark:text-red-400"
+          />
         </div>
       </div>
 
@@ -219,23 +242,32 @@ export default function FinancialReportPage() {
               <span className="text-gray-600 dark:text-slate-400">
                 Ingresos
               </span>
-              <span className="text-tsuma-primary-dark font-mono text-lg font-semibold tabular-nums">
-                ${reportData?.totalRevenue.toFixed(2) || '0.00'}
-              </span>
+              <DualCurrency
+                usd={reportData?.totalRevenue ?? 0}
+                exchangeRate={exchangeRate}
+                size="sm"
+                primaryClassName="text-tsuma-primary-dark"
+              />
             </div>
             <div className="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-slate-800">
               <span className="text-gray-600 dark:text-slate-400">Egresos</span>
-              <span className="font-mono text-lg font-semibold text-red-600 tabular-nums dark:text-red-400">
-                ${reportData?.totalExpenses.toFixed(2) || '0.00'}
-              </span>
+              <DualCurrency
+                usd={reportData?.totalExpenses ?? 0}
+                exchangeRate={exchangeRate}
+                size="sm"
+                primaryClassName="text-red-600 dark:text-red-400"
+              />
             </div>
             <div className="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-slate-800">
               <span className="font-semibold text-gray-600 dark:text-slate-400">
                 Utilidad Bruta
               </span>
-              <span className="font-mono text-xl font-bold text-blue-600 tabular-nums dark:text-blue-400">
-                ${reportData?.grossProfit.toFixed(2) || '0.00'}
-              </span>
+              <DualCurrency
+                usd={reportData?.grossProfit ?? 0}
+                exchangeRate={exchangeRate}
+                size="md"
+                primaryClassName="text-blue-600 dark:text-blue-400"
+              />
             </div>
             <div className="flex items-center justify-between">
               <span className="text-gray-600 dark:text-slate-400">Margen</span>

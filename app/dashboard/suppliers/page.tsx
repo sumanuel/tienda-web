@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useSuppliersStore } from '@/store/suppliersStore';
 import {
   getSuppliers,
@@ -18,6 +19,7 @@ import { Supplier, SupplierFormData } from '@/types/supplier';
 import SuppliersTable from '@/components/suppliers/SuppliersTable';
 import SupplierForm from '@/components/suppliers/SupplierForm';
 import { SidePanel } from '@/components/common/SidePanel';
+import { DualCurrency } from '@/components/common/DualCurrency';
 import {
   Plus,
   X,
@@ -37,6 +39,8 @@ export default function SuppliersPage() {
     updateSupplier: updateSupplierInStore,
     removeSupplier,
   } = useSuppliersStore();
+  const { activeRate } = useExchangeRates(profile?.storeId || '');
+  const exchangeRate = activeRate?.usdToVes;
 
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -219,9 +223,12 @@ export default function SuppliersPage() {
               <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-slate-400">
                 Total por Pagar
               </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
-                ${stats.totalBalance.toFixed(2)}
-              </p>
+              <DualCurrency
+                usd={stats.totalBalance}
+                exchangeRate={exchangeRate}
+                size="lg"
+                align="left"
+              />
             </div>
           </div>
         </div>
@@ -258,6 +265,7 @@ export default function SuppliersPage() {
         }}
         onDelete={handleDelete}
         onView={handleView}
+        exchangeRate={exchangeRate}
       />
 
       {viewingSupplier && (
@@ -290,9 +298,12 @@ export default function SuppliersPage() {
                   <p className="text-sm text-gray-600 dark:text-slate-400">
                     Balance Actual
                   </p>
-                  <p className="text-lg font-bold text-red-600">
-                    ${viewingSupplier.balance.toFixed(2)}
-                  </p>
+                  <DualCurrency
+                    usd={viewingSupplier.balance}
+                    exchangeRate={exchangeRate}
+                    primaryClassName="text-red-600 dark:text-red-400"
+                    align="left"
+                  />
                 </div>
                 {viewingSupplier.contactPerson && (
                   <div>
@@ -338,9 +349,14 @@ export default function SuppliersPage() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold">
-                          ${product.prices?.USD?.toFixed(2) || 'N/A'}
-                        </p>
+                        {product.prices?.USD ? (
+                          <DualCurrency
+                            usd={product.prices.USD}
+                            exchangeRate={exchangeRate}
+                          />
+                        ) : (
+                          <p className="text-lg font-bold">N/A</p>
+                        )}
                         <p className="text-sm text-gray-600 dark:text-slate-400">
                           {product.category}
                         </p>

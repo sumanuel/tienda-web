@@ -102,10 +102,14 @@ export default function KardexView({
                       {entry.balance}
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-sm text-gray-600 tabular-nums dark:text-slate-400">
-                      {entry.unitCost ? `$${entry.unitCost.toFixed(2)}` : '—'}
+                      {entry.unitCost
+                        ? `USD ${entry.unitCost.toFixed(2)}`
+                        : '—'}
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-sm text-gray-900 tabular-nums dark:text-slate-100">
-                      {entry.totalCost ? `$${entry.totalCost.toFixed(2)}` : '—'}
+                      {entry.totalCost
+                        ? `USD ${entry.totalCost.toFixed(2)}`
+                        : '—'}
                     </td>
                   </tr>
                 );

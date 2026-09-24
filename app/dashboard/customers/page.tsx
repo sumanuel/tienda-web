@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useCustomersStore } from '@/store/customersStore';
 import {
   getCustomers,
@@ -18,6 +19,7 @@ import { Customer, CustomerFormData } from '@/types/customer';
 import CustomersTable from '@/components/customers/CustomersTable';
 import CustomerForm from '@/components/customers/CustomerForm';
 import { SidePanel } from '@/components/common/SidePanel';
+import { DualCurrency } from '@/components/common/DualCurrency';
 import {
   Plus,
   X,
@@ -37,6 +39,8 @@ export default function CustomersPage() {
     updateCustomer: updateCustomerInStore,
     removeCustomer,
   } = useCustomersStore();
+  const { activeRate } = useExchangeRates(profile?.storeId || '');
+  const exchangeRate = activeRate?.usdToVes;
 
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -220,9 +224,12 @@ export default function CustomersPage() {
               <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-slate-400">
                 Total por Cobrar
               </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
-                ${stats.totalBalance.toFixed(2)}
-              </p>
+              <DualCurrency
+                usd={stats.totalBalance}
+                exchangeRate={exchangeRate}
+                size="lg"
+                align="left"
+              />
             </div>
           </div>
         </div>
@@ -259,6 +266,7 @@ export default function CustomersPage() {
         }}
         onDelete={handleDelete}
         onView={handleView}
+        exchangeRate={exchangeRate}
       />
 
       {viewingCustomer && (
@@ -291,9 +299,12 @@ export default function CustomersPage() {
                   <p className="text-sm text-gray-600 dark:text-slate-400">
                     Balance Actual
                   </p>
-                  <p className="text-lg font-bold text-orange-600">
-                    ${viewingCustomer.balance.toFixed(2)}
-                  </p>
+                  <DualCurrency
+                    usd={viewingCustomer.balance}
+                    exchangeRate={exchangeRate}
+                    primaryClassName="text-orange-600 dark:text-orange-400"
+                    align="left"
+                  />
                 </div>
                 {viewingCustomer.phone && (
                   <div>
@@ -333,14 +344,12 @@ export default function CustomersPage() {
                           {new Date(sale.createdAt).toLocaleString('es-VE')}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold">
-                          ${sale.total.toFixed(2)}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-slate-400">
-                          {sale.currency}
-                        </p>
-                      </div>
+                      <DualCurrency
+                        ves={sale.currency === 'VES' ? sale.total : undefined}
+                        usd={sale.currency === 'USD' ? sale.total : undefined}
+                        exchangeRate={exchangeRate}
+                        primaryClassName="text-lg"
+                      />
                     </div>
                   </div>
                 ))}

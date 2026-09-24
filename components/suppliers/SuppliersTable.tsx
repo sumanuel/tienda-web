@@ -16,13 +16,14 @@ import {
 } from '@tanstack/react-table';
 import { Supplier } from '@/types/supplier';
 import { Search, Edit, Trash2, Eye, TruckIcon } from 'lucide-react';
-import { StatusPill } from '@/components/common/StatusPill';
+import { DualCurrency } from '@/components/common/DualCurrency';
 
 interface SuppliersTableProps {
   suppliers: Supplier[];
   onEdit: (supplier: Supplier) => void;
   onDelete: (supplierId: string) => void;
   onView: (supplier: Supplier) => void;
+  exchangeRate?: number;
 }
 
 export default function SuppliersTable({
@@ -30,6 +31,7 @@ export default function SuppliersTable({
   onEdit,
   onDelete,
   onView,
+  exchangeRate,
 }: SuppliersTableProps) {
   const [globalFilter, setGlobalFilter] = useState('');
 
@@ -86,9 +88,16 @@ export default function SuppliersTable({
         cell: (info) => {
           const balance = info.getValue() as number;
           return (
-            <StatusPill tone={balance > 0 ? 'crit' : 'ok'}>
-              ${balance.toFixed(2)}
-            </StatusPill>
+            <DualCurrency
+              usd={balance}
+              exchangeRate={exchangeRate}
+              size="sm"
+              primaryClassName={
+                balance > 0
+                  ? 'text-red-700 dark:text-red-400'
+                  : 'text-tsuma-primary-dark'
+              }
+            />
           );
         },
       },
@@ -126,7 +135,7 @@ export default function SuppliersTable({
         ),
       },
     ],
-    [onEdit, onDelete, onView]
+    [onEdit, onDelete, onView, exchangeRate]
   );
 
   const table = useReactTable({

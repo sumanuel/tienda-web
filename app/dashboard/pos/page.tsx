@@ -351,9 +351,9 @@ export default function POSPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="VES">Bs. (VES)</SelectItem>
-              <SelectItem value="USD">$ (USD)</SelectItem>
-              <SelectItem value="EUR">€ (EUR)</SelectItem>
+              <SelectItem value="VES">VES</SelectItem>
+              <SelectItem value="USD">USD</SelectItem>
+              <SelectItem value="EUR">EUR</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -377,7 +377,6 @@ export default function POSPage() {
             <Cart
               items={cart.items}
               summary={cart.summary}
-              currency={currency}
               onIncrement={cart.incrementItem}
               onDecrement={cart.decrementItem}
               onRemove={cart.removeItem}

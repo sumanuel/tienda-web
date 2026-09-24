@@ -2,14 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useRouter } from 'next/navigation';
 import { calculateInventoryValuation } from '@/lib/inventory';
 import { PageContainer } from '@/components/common/PageContainer';
 import { IconChip } from '@/components/common/IconChip';
+import { DualCurrency } from '@/components/common/DualCurrency';
+import { formatCurrency } from '@/lib/currency';
 import { DollarSign, Package, TrendingUp } from 'lucide-react';
 
 export default function ValuationPage() {
   const { profile } = useAuth();
+  const { activeRate } = useExchangeRates(profile?.storeId || '');
+  const exchangeRate = activeRate?.usdToVes;
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,9 +90,11 @@ export default function ValuationPage() {
                   <p className="text-sm text-gray-600 dark:text-slate-400">
                     Valor Total
                   </p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
-                    ${valuation.totalValue.toFixed(2)}
-                  </p>
+                  <DualCurrency
+                    usd={valuation.totalValue}
+                    exchangeRate={exchangeRate}
+                    align="left"
+                  />
                 </div>
               </div>
             </div>
@@ -119,12 +126,15 @@ export default function ValuationPage() {
                   <p className="text-sm text-gray-600 dark:text-slate-400">
                     Valor Promedio/Unidad
                   </p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
-                    $
-                    {valuation.totalItems > 0
-                      ? (valuation.totalValue / valuation.totalItems).toFixed(2)
-                      : '0.00'}
-                  </p>
+                  <DualCurrency
+                    usd={
+                      valuation.totalItems > 0
+                        ? valuation.totalValue / valuation.totalItems
+                        : 0
+                    }
+                    exchangeRate={exchangeRate}
+                    align="left"
+                  />
                 </div>
               </div>
             </div>
@@ -153,7 +163,14 @@ export default function ValuationPage() {
                             {category}
                           </span>
                           <span className="font-mono text-sm text-gray-600 dark:text-slate-400">
-                            ${value.toFixed(2)} ({percentage.toFixed(1)}%)
+                            {formatCurrency(
+                              exchangeRate ? value * exchangeRate : 0,
+                              'VES'
+                            )}{' '}
+                            <span className="text-xs">
+                              ≈ {formatCurrency(value, 'USD')}
+                            </span>{' '}
+                            ({percentage.toFixed(1)}%)
                           </span>
                         </div>
                         <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-slate-800">

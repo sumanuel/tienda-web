@@ -29,18 +29,21 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { DualCurrency } from '@/components/common/DualCurrency';
 import toast from 'react-hot-toast';
 
 interface CustomerPaymentFormProps {
   customer: Customer;
   onSuccess: () => void;
   onCancel: () => void;
+  exchangeRate?: number;
 }
 
 export function CustomerPaymentForm({
   customer,
   onSuccess,
   onCancel,
+  exchangeRate,
 }: CustomerPaymentFormProps) {
   const { user, profile } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,7 +56,7 @@ export function CustomerPaymentForm({
       .positive('El monto debe ser positivo')
       .max(
         customer.balance,
-        `No puede exceder el saldo actual ($${customer.balance.toFixed(2)})`
+        `No puede exceder el saldo actual (USD ${customer.balance.toFixed(2)})`
       ),
     paymentMethod: z.enum(['cash', 'card', 'transfer'] as const),
     notes: z.string().optional(),
@@ -117,10 +120,14 @@ export function CustomerPaymentForm({
           <p className="text-muted-foreground text-sm">
             {customer.name} ({customer.document})
           </p>
-          <p className="mt-1 text-sm font-medium">
-            Saldo actual:{' '}
-            <span className="text-red-600">${customer.balance.toFixed(2)}</span>
-          </p>
+          <p className="mt-1 mb-1 text-sm font-medium">Saldo actual:</p>
+          <DualCurrency
+            usd={customer.balance}
+            exchangeRate={exchangeRate}
+            align="left"
+            size="sm"
+            primaryClassName="text-red-600 dark:text-red-400"
+          />
         </div>
 
         {/* Monto */}

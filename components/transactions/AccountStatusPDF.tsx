@@ -46,7 +46,7 @@ export function AccountStatusPDF({
     doc.setFontSize(14);
     doc.setTextColor(220, 38, 38); // text-red-600
     doc.text(
-      `Saldo Actual: $${accountStatus.currentBalance.toFixed(2)}`,
+      `Saldo Actual: USD ${accountStatus.currentBalance.toFixed(2)}`,
       14,
       51
     );
@@ -54,16 +54,20 @@ export function AccountStatusPDF({
 
     // Resumen
     doc.setFontSize(10);
-    doc.text(`Total Cargos: $${accountStatus.totalCharges.toFixed(2)}`, 14, 61);
     doc.text(
-      `Total ${type === 'customer' ? 'Abonos' : 'Pagos'}: $${accountStatus.totalPayments.toFixed(2)}`,
+      `Total Cargos: USD ${accountStatus.totalCharges.toFixed(2)}`,
+      14,
+      61
+    );
+    doc.text(
+      `Total ${type === 'customer' ? 'Abonos' : 'Pagos'}: USD ${accountStatus.totalPayments.toFixed(2)}`,
       14,
       67
     );
     if (accountStatus.overdueAmount > 0) {
       doc.setTextColor(220, 38, 38);
       doc.text(
-        `Saldo Vencido: $${accountStatus.overdueAmount.toFixed(2)}`,
+        `Saldo Vencido: USD ${accountStatus.overdueAmount.toFixed(2)}`,
         14,
         73
       );
@@ -74,9 +78,9 @@ export function AccountStatusPDF({
     const tableData = accountStatus.transactions.map((t) => [
       format(t.createdAt, 'dd/MM/yyyy', { locale: es }),
       t.type === 'charge' ? 'Cargo' : type === 'customer' ? 'Abono' : 'Pago',
-      `$${t.amount.toFixed(2)}`,
+      `USD ${t.amount.toFixed(2)}`,
       t.paymentMethod || '-',
-      `$${t.balanceAfter.toFixed(2)}`,
+      `USD ${t.balanceAfter.toFixed(2)}`,
       t.notes || '-',
     ]);
 

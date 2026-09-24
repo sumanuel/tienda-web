@@ -13,6 +13,7 @@ import {
 import { Product } from '@/types/product';
 import { Pencil, Trash2, Search, Package } from 'lucide-react';
 import { StatusPill } from '@/components/common/StatusPill';
+import { DualCurrency } from '@/components/common/DualCurrency';
 
 interface ProductTableProps {
   products: Product[];
@@ -64,15 +65,17 @@ export default function ProductTable({
         ),
       },
       {
-        header: 'Precio (USD)',
+        id: 'price',
+        header: 'Precio',
         accessorFn: (row) => row.prices.USD,
         cell: (info) => {
-          const price = info.getValue() as number | null;
-          return (
-            <span className="font-mono text-sm tabular-nums">
-              {price ? `$${price.toFixed(2)}` : '—'}
-            </span>
-          );
+          const product = info.row.original;
+          const usd = product.prices.USD;
+          const ves = product.prices.VES;
+          if (!usd && !ves) {
+            return <span className="font-mono text-sm">—</span>;
+          }
+          return <DualCurrency ves={ves ?? 0} usd={usd ?? 0} size="sm" />;
         },
       },
       {

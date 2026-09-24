@@ -16,13 +16,14 @@ import {
 } from '@tanstack/react-table';
 import { Customer } from '@/types/customer';
 import { Search, Edit, Trash2, Eye, Users } from 'lucide-react';
-import { StatusPill } from '@/components/common/StatusPill';
+import { DualCurrency } from '@/components/common/DualCurrency';
 
 interface CustomersTableProps {
   customers: Customer[];
   onEdit: (customer: Customer) => void;
   onDelete: (customerId: string) => void;
   onView: (customer: Customer) => void;
+  exchangeRate?: number;
 }
 
 export default function CustomersTable({
@@ -30,6 +31,7 @@ export default function CustomersTable({
   onEdit,
   onDelete,
   onView,
+  exchangeRate,
 }: CustomersTableProps) {
   const [globalFilter, setGlobalFilter] = useState('');
 
@@ -77,9 +79,16 @@ export default function CustomersTable({
         cell: (info) => {
           const balance = info.getValue() as number;
           return (
-            <StatusPill tone={balance > 0 ? 'warn' : 'ok'}>
-              ${balance.toFixed(2)}
-            </StatusPill>
+            <DualCurrency
+              usd={balance}
+              exchangeRate={exchangeRate}
+              size="sm"
+              primaryClassName={
+                balance > 0
+                  ? 'text-amber-700 dark:text-amber-400'
+                  : 'text-tsuma-primary-dark'
+              }
+            />
           );
         },
       },
@@ -88,10 +97,15 @@ export default function CustomersTable({
         header: 'Límite Crédito',
         cell: (info) => {
           const limit = info.getValue() as number | undefined;
+          if (!limit) {
+            return (
+              <span className="font-mono text-sm text-gray-600 dark:text-slate-400">
+                —
+              </span>
+            );
+          }
           return (
-            <span className="font-mono text-sm text-gray-600 dark:text-slate-400">
-              {limit ? `$${limit.toFixed(2)}` : '—'}
-            </span>
+            <DualCurrency usd={limit} exchangeRate={exchangeRate} size="sm" />
           );
         },
       },
@@ -129,7 +143,7 @@ export default function CustomersTable({
         ),
       },
     ],
-    [onEdit, onDelete, onView]
+    [onEdit, onDelete, onView, exchangeRate]
   );
 
   const table = useReactTable({

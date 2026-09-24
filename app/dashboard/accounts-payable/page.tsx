@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { getPayablesSummary } from '@/lib/accountsReceivable';
 import { getSuppliersWithBalance } from '@/lib/suppliers';
 import {
@@ -38,6 +39,7 @@ import { AccountStatusPDF } from '@/components/transactions/AccountStatusPDF';
 import { DollarSign, AlertTriangle, Building2, FileText } from 'lucide-react';
 import { IconChip } from '@/components/common/IconChip';
 import { StatusPill } from '@/components/common/StatusPill';
+import { DualCurrency } from '@/components/common/DualCurrency';
 import { differenceInDays } from 'date-fns';
 
 type UpcomingPayableRow = {
@@ -55,6 +57,8 @@ type UpcomingPayableRow = {
 export default function AccountsPayablePage() {
   const { profile } = useAuth();
   const router = useRouter();
+  const { activeRate } = useExchangeRates(profile?.storeId || '');
+  const exchangeRate = activeRate?.usdToVes;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -195,9 +199,13 @@ export default function AccountsPayablePage() {
               <IconChip icon={DollarSign} tone="danger" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                ${summary.totalPayable.toFixed(2)}
-              </div>
+              <DualCurrency
+                usd={summary.totalPayable}
+                exchangeRate={exchangeRate}
+                size="lg"
+                align="left"
+                primaryClassName="text-red-600 dark:text-red-400"
+              />
               <p className="text-muted-foreground text-xs">
                 {summary.suppliersWithBalance} proveedores con saldo
               </p>
@@ -212,9 +220,13 @@ export default function AccountsPayablePage() {
               <IconChip icon={AlertTriangle} tone="warning" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                ${summary.upcomingAmount.toFixed(2)}
-              </div>
+              <DualCurrency
+                usd={summary.upcomingAmount}
+                exchangeRate={exchangeRate}
+                size="lg"
+                align="left"
+                primaryClassName="text-amber-600 dark:text-amber-400"
+              />
               <p className="text-muted-foreground text-xs">
                 {upcomingPayables.length} proveedores próximos a vencer
               </p>
@@ -229,9 +241,13 @@ export default function AccountsPayablePage() {
               <IconChip icon={Building2} tone="danger" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                ${summary.overdueAmount.toFixed(2)}
-              </div>
+              <DualCurrency
+                usd={summary.overdueAmount}
+                exchangeRate={exchangeRate}
+                size="lg"
+                align="left"
+                primaryClassName="text-red-600 dark:text-red-400"
+              />
               <p className="text-muted-foreground text-xs">
                 Requiere atención inmediata
               </p>
@@ -286,8 +302,13 @@ export default function AccountsPayablePage() {
                           {supplier.name}
                         </TableCell>
                         <TableCell>{supplier.rif}</TableCell>
-                        <TableCell className="text-right font-medium text-red-600 dark:text-red-400">
-                          ${supplier.balance.toFixed(2)}
+                        <TableCell className="text-right">
+                          <DualCurrency
+                            usd={supplier.balance}
+                            exchangeRate={exchangeRate}
+                            size="sm"
+                            primaryClassName="text-red-600 dark:text-red-400"
+                          />
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-center gap-2">
@@ -353,8 +374,12 @@ export default function AccountsPayablePage() {
                           <TableCell className="font-medium">
                             {status.name}
                           </TableCell>
-                          <TableCell className="text-right font-medium">
-                            ${Math.abs(status.balance).toFixed(2)}
+                          <TableCell className="text-right">
+                            <DualCurrency
+                              usd={Math.abs(status.balance)}
+                              exchangeRate={exchangeRate}
+                              size="sm"
+                            />
                           </TableCell>
                           <TableCell className="text-center">
                             {daysUntilDue !== null ? (
@@ -408,6 +433,7 @@ export default function AccountsPayablePage() {
                 supplier={selectedSupplier}
                 onSuccess={handlePaymentSuccess}
                 onCancel={() => setShowPaymentDialog(false)}
+                exchangeRate={exchangeRate}
               />
             )}
           </DialogContent>
@@ -432,12 +458,15 @@ export default function AccountsPayablePage() {
                     <p className="text-muted-foreground text-sm">
                       {accountStatus.rif}
                     </p>
-                    <p className="mt-2 text-sm font-medium">
-                      Saldo Actual:{' '}
-                      <span className="text-red-600 dark:text-red-400">
-                        ${accountStatus.currentBalance.toFixed(2)}
-                      </span>
+                    <p className="mt-2 mb-1 text-sm font-medium">
+                      Saldo Actual:
                     </p>
+                    <DualCurrency
+                      usd={accountStatus.currentBalance}
+                      exchangeRate={exchangeRate}
+                      align="left"
+                      primaryClassName="text-red-600 dark:text-red-400"
+                    />
                   </div>
                   <AccountStatusPDF
                     accountStatus={accountStatus}
@@ -447,6 +476,7 @@ export default function AccountsPayablePage() {
 
                 <SupplierTransactionsList
                   supplierId={accountStatus.supplierId!}
+                  exchangeRate={exchangeRate}
                 />
               </div>
             )}

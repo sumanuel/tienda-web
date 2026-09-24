@@ -4,13 +4,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { ShoppingCart } from 'lucide-react';
 import { CartItem } from './CartItem';
-import { formatCurrency, type Currency } from '@/lib/currency';
+import { DualCurrency } from '@/components/common/DualCurrency';
 import type { CartItem as CartItemType, CartSummary } from '@/hooks/useCart';
 
 interface CartProps {
   items: CartItemType[];
   summary: CartSummary;
-  currency: Currency;
   onIncrement: (productId: string) => void;
   onDecrement: (productId: string) => void;
   onRemove: (productId: string) => void;
@@ -19,24 +18,12 @@ interface CartProps {
 export function Cart({
   items,
   summary,
-  currency,
   onIncrement,
   onDecrement,
   onRemove,
 }: CartProps) {
-  const displaySubtotal =
-    currency === 'VES'
-      ? summary.subtotalLocal
-      : currency === 'USD'
-        ? summary.subtotalReference
-        : summary.subtotal;
-
-  const displayTotal =
-    currency === 'VES'
-      ? summary.totalLocal
-      : currency === 'USD'
-        ? summary.totalReference
-        : summary.total;
+  const taxLocal = summary.totalLocal - summary.subtotalLocal;
+  const taxReference = summary.totalReference - summary.subtotalReference;
 
   return (
     <div className="flex h-full flex-col bg-white dark:bg-slate-900">
@@ -69,7 +56,6 @@ export function Cart({
               <CartItem
                 key={item.productId}
                 item={item}
-                currency={currency}
                 onIncrement={onIncrement}
                 onDecrement={onDecrement}
                 onRemove={onRemove}
@@ -90,43 +76,41 @@ export function Cart({
       {items.length > 0 && (
         <div className="border-t border-gray-200 bg-gray-50 p-5 dark:border-slate-800 dark:bg-slate-950">
           <div className="space-y-2">
-            <div className="flex justify-between text-sm">
+            <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600 dark:text-slate-400">
                 Subtotal:
               </span>
-              <span className="font-medium">
-                {formatCurrency(displaySubtotal, currency)}
-              </span>
+              <DualCurrency
+                ves={summary.subtotalLocal}
+                usd={summary.subtotalReference}
+                size="sm"
+                primaryClassName="font-medium"
+              />
             </div>
 
             {summary.tax > 0 && (
-              <div className="flex justify-between text-sm">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600 dark:text-slate-400">IVA:</span>
-                <span className="font-medium">
-                  {formatCurrency(summary.tax, currency)}
-                </span>
+                <DualCurrency
+                  ves={taxLocal}
+                  usd={taxReference}
+                  size="sm"
+                  primaryClassName="font-medium"
+                />
               </div>
             )}
 
             <Separator />
 
-            <div className="flex justify-between">
+            <div className="flex items-center justify-between">
               <span className="text-lg font-semibold">Total:</span>
-              <span className="text-brand-primary text-2xl font-bold">
-                {formatCurrency(displayTotal, currency)}
-              </span>
+              <DualCurrency
+                ves={summary.totalLocal}
+                usd={summary.totalReference}
+                size="lg"
+                primaryClassName="text-brand-primary"
+              />
             </div>
-
-            {currency === 'VES' && summary.totalReference > 0 && (
-              <div className="mt-2 text-center text-xs text-gray-500 dark:text-slate-400">
-                ≈ {formatCurrency(summary.totalReference, 'USD')}
-              </div>
-            )}
-            {currency === 'USD' && summary.totalLocal > 0 && (
-              <div className="mt-2 text-center text-xs text-gray-500 dark:text-slate-400">
-                ≈ {formatCurrency(summary.totalLocal, 'VES')}
-              </div>
-            )}
           </div>
         </div>
       )}

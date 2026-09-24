@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { getInventoryReport } from '@/lib/reports/inventoryReports';
 import { exportInventoryReportToExcel } from '@/lib/export/excelExporter';
 import { InventoryReportData } from '@/types/reports';
@@ -28,6 +29,7 @@ import {
   Boxes,
 } from 'lucide-react';
 import { IconChip } from '@/components/common/IconChip';
+import { DualCurrency } from '@/components/common/DualCurrency';
 
 const COLORS = [
   '#1f7a59',
@@ -40,6 +42,8 @@ const COLORS = [
 
 export default function InventoryReportPage() {
   const { profile } = useAuthStore();
+  const { activeRate } = useExchangeRates(profile?.storeId || '');
+  const exchangeRate = activeRate?.usdToVes;
   const [reportData, setReportData] = useState<InventoryReportData | null>(
     null
   );
@@ -122,9 +126,12 @@ export default function InventoryReportPage() {
             </span>
             <IconChip icon={DollarSign} tone="info" className="h-9 w-9" />
           </div>
-          <p className="font-mono text-2xl font-bold text-gray-900 tabular-nums dark:text-slate-100">
-            ${reportData?.totalValue.toFixed(2) || '0.00'}
-          </p>
+          <DualCurrency
+            usd={reportData?.totalValue ?? 0}
+            exchangeRate={exchangeRate}
+            size="lg"
+            align="left"
+          />
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -178,7 +185,7 @@ export default function InventoryReportPage() {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="value" fill="#1f7a59" name="Valor ($)" />
+              <Bar dataKey="value" fill="#1f7a59" name="Valor (USD)" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -229,7 +236,7 @@ export default function InventoryReportPage() {
                   Cantidad
                 </th>
                 <th className="border-b border-gray-200 px-4 py-2.5 text-right font-mono text-[0.65rem] font-semibold tracking-widest whitespace-nowrap text-gray-500 uppercase dark:border-slate-800 dark:text-slate-500">
-                  Valor ($)
+                  Valor (USD)
                 </th>
               </tr>
             </thead>
@@ -257,8 +264,12 @@ export default function InventoryReportPage() {
                     <td className="px-4 py-3 text-right font-mono text-sm text-gray-900 tabular-nums dark:text-slate-100">
                       {category.quantity}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-sm font-semibold text-gray-900 tabular-nums dark:text-slate-100">
-                      ${category.value.toFixed(2)}
+                    <td className="px-4 py-3 text-right">
+                      <DualCurrency
+                        usd={category.value}
+                        exchangeRate={exchangeRate}
+                        size="sm"
+                      />
                     </td>
                   </tr>
                 ))

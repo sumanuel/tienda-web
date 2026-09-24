@@ -91,18 +91,12 @@ export function formatCurrency(
   currency: Currency,
   locale: string = 'es-VE'
 ): string {
-  const symbols: Record<Currency, string> = {
-    VES: 'Bs.',
-    USD: '$',
-    EUR: '€',
-  };
-
   const formatted = new Intl.NumberFormat(locale, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
 
-  return `${symbols[currency]} ${formatted}`;
+  return `${currency} ${formatted}`;
 }
 
 /**
@@ -112,16 +106,10 @@ export function formatCurrencyCompact(
   amount: number,
   currency: Currency
 ): string {
-  const symbols: Record<Currency, string> = {
-    VES: 'Bs.',
-    USD: '$',
-    EUR: '€',
-  };
-
   const isInteger = amount % 1 === 0;
   const formatted = isInteger ? amount.toFixed(0) : amount.toFixed(2);
 
-  return `${symbols[currency]} ${formatted}`;
+  return `${currency} ${formatted}`;
 }
 
 /**
@@ -194,12 +182,7 @@ export function roundTo2Decimals(value: number): number {
  * Obtener símbolo de moneda
  */
 export function getCurrencySymbol(currency: Currency): string {
-  const symbols: Record<Currency, string> = {
-    VES: 'Bs.',
-    USD: '$',
-    EUR: '€',
-  };
-  return symbols[currency];
+  return currency;
 }
 
 /**
@@ -261,6 +244,33 @@ export function calculateWithTax(
     subtotal: roundTo2Decimals(subtotal),
     tax,
     total,
+  };
+}
+
+/**
+ * Formatear un monto en VES (principal) y USD (referencia) a la vez.
+ * Si no se conocen ambos montos directamente, se puede derivar uno del
+ * otro pasando la tasa de cambio activa.
+ */
+export function formatDualCurrency(params: {
+  ves?: number;
+  usd?: number;
+  exchangeRate?: number;
+  locale?: string;
+}): { primary: string; secondary: string } {
+  const { locale = 'es-VE', exchangeRate } = params;
+  let { ves, usd } = params;
+
+  if (ves === undefined && usd !== undefined && exchangeRate) {
+    ves = usd * exchangeRate;
+  }
+  if (usd === undefined && ves !== undefined && exchangeRate) {
+    usd = ves / exchangeRate;
+  }
+
+  return {
+    primary: formatCurrency(ves ?? 0, 'VES', locale),
+    secondary: formatCurrency(usd ?? 0, 'USD', locale),
   };
 }
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useReportsStore } from '@/store/reportsStore';
 import { getSalesReport } from '@/lib/reports/salesReports';
 import { exportSalesReportToExcel } from '@/lib/export/excelExporter';
@@ -32,11 +33,14 @@ import {
   Package,
 } from 'lucide-react';
 import { IconChip } from '@/components/common/IconChip';
+import { DualCurrency } from '@/components/common/DualCurrency';
 
 const COLORS = ['#1f7a59', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function SalesReportPage() {
   const { profile } = useAuthStore();
+  const { activeRate } = useExchangeRates(profile?.storeId || '');
+  const exchangeRate = activeRate?.usdToVes;
   const { dateRange, setDateRange } = useReportsStore();
   const [reportData, setReportData] = useState<SalesReportData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -122,9 +126,12 @@ export default function SalesReportPage() {
             </span>
             <IconChip icon={DollarSign} tone="accent" className="h-9 w-9" />
           </div>
-          <p className="font-mono text-2xl font-bold text-gray-900 tabular-nums dark:text-slate-100">
-            ${reportData?.totalSales.toFixed(2) || '0.00'}
-          </p>
+          <DualCurrency
+            usd={reportData?.totalSales ?? 0}
+            exchangeRate={exchangeRate}
+            size="lg"
+            align="left"
+          />
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -146,9 +153,12 @@ export default function SalesReportPage() {
             </span>
             <IconChip icon={TrendingUp} tone="neutral" className="h-9 w-9" />
           </div>
-          <p className="font-mono text-2xl font-bold text-gray-900 tabular-nums dark:text-slate-100">
-            ${reportData?.averageTicket.toFixed(2) || '0.00'}
-          </p>
+          <DualCurrency
+            usd={reportData?.averageTicket ?? 0}
+            exchangeRate={exchangeRate}
+            size="lg"
+            align="left"
+          />
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -185,7 +195,7 @@ export default function SalesReportPage() {
                 type="monotone"
                 dataKey="total"
                 stroke="#1f7a59"
-                name="Ventas ($)"
+                name="Ventas (USD)"
               />
             </LineChart>
           </ResponsiveContainer>
@@ -203,7 +213,7 @@ export default function SalesReportPage() {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="total" fill="#1f7a59" name="Ventas ($)" />
+              <Bar dataKey="total" fill="#1f7a59" name="Ventas (USD)" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -273,7 +283,7 @@ export default function SalesReportPage() {
                   Cantidad
                 </th>
                 <th className="border-b border-gray-200 px-4 py-2.5 text-right font-mono text-[0.65rem] font-semibold tracking-widest whitespace-nowrap text-gray-500 uppercase dark:border-slate-800 dark:text-slate-500">
-                  Total ($)
+                  Total (USD)
                 </th>
               </tr>
             </thead>
@@ -301,8 +311,12 @@ export default function SalesReportPage() {
                     <td className="px-4 py-3 text-right font-mono text-sm text-gray-900 tabular-nums dark:text-slate-100">
                       {product.quantity}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-sm font-semibold text-gray-900 tabular-nums dark:text-slate-100">
-                      ${product.total.toFixed(2)}
+                    <td className="px-4 py-3 text-right">
+                      <DualCurrency
+                        usd={product.total}
+                        exchangeRate={exchangeRate}
+                        size="sm"
+                      />
                     </td>
                   </tr>
                 ))

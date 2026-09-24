@@ -104,7 +104,7 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Ventas del Día"
-          value="$0.00"
+          value="VES 0,00"
           subtitle="Próximamente con datos reales"
           icon={DollarSign}
           tone="accent"
@@ -118,7 +118,7 @@ export default function DashboardPage() {
 
         <MetricCard
           title="Ventas del Mes"
-          value="$0.00"
+          value="VES 0,00"
           subtitle="vs mes pasado: 0%"
           icon={Calendar}
           tone="accent"

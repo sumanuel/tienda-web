@@ -139,7 +139,7 @@ export default function CustomerForm({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-              Límite de Crédito ($)
+              Límite de Crédito (USD)
             </label>
             <input
               {...register('creditLimit', { valueAsNumber: true })}

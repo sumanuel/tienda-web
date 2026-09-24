@@ -16,9 +16,11 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DualCurrency } from '@/components/common/DualCurrency';
 
 interface SupplierTransactionsListProps {
   supplierId: string;
+  exchangeRate?: number;
 }
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -29,6 +31,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 
 export function SupplierTransactionsList({
   supplierId,
+  exchangeRate,
 }: SupplierTransactionsListProps) {
   const [transactions, setTransactions] = useState<SupplierTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,8 +111,12 @@ export function SupplierTransactionsList({
                     </span>
                   )}
                 </TableCell>
-                <TableCell className="text-right font-medium">
-                  ${transaction.amount.toFixed(2)}
+                <TableCell className="text-right">
+                  <DualCurrency
+                    usd={transaction.amount}
+                    exchangeRate={exchangeRate}
+                    size="sm"
+                  />
                 </TableCell>
                 <TableCell>
                   {transaction.paymentMethod
@@ -117,7 +124,11 @@ export function SupplierTransactionsList({
                     : '-'}
                 </TableCell>
                 <TableCell className="text-right">
-                  ${transaction.balanceAfter.toFixed(2)}
+                  <DualCurrency
+                    usd={transaction.balanceAfter}
+                    exchangeRate={exchangeRate}
+                    size="sm"
+                  />
                 </TableCell>
                 <TableCell className="text-muted-foreground max-w-xs truncate text-sm">
                   {transaction.notes || '-'}

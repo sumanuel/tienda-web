@@ -2,12 +2,12 @@
 
 import { Button } from '@/components/ui/button';
 import { Minus, Plus, Trash2 } from 'lucide-react';
-import { formatCurrency, type Currency } from '@/lib/currency';
+import { formatCurrency } from '@/lib/currency';
+import { DualCurrency } from '@/components/common/DualCurrency';
 import type { CartItem as CartItemType } from '@/hooks/useCart';
 
 interface CartItemProps {
   item: CartItemType;
-  currency: Currency;
   onIncrement: (productId: string) => void;
   onDecrement: (productId: string) => void;
   onRemove: (productId: string) => void;
@@ -15,25 +15,10 @@ interface CartItemProps {
 
 export function CartItem({
   item,
-  currency,
   onIncrement,
   onDecrement,
   onRemove,
 }: CartItemProps) {
-  const displayPrice =
-    currency === 'VES'
-      ? item.localPrice
-      : currency === 'USD'
-        ? item.referencePrice
-        : item.price;
-
-  const displaySubtotal =
-    currency === 'VES'
-      ? item.subtotalLocal
-      : currency === 'USD'
-        ? item.subtotalReference
-        : item.subtotal;
-
   return (
     <div className="group flex gap-3 border-b py-3 last:border-b-0">
       {/* Información del producto */}
@@ -45,7 +30,7 @@ export function CartItem({
           </p>
         )}
         <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
-          {formatCurrency(displayPrice, currency)} × {item.quantity}
+          {formatCurrency(item.localPrice, 'VES')} × {item.quantity}
         </p>
       </div>
 
@@ -77,10 +62,13 @@ export function CartItem({
         </div>
 
         {/* Subtotal y botón eliminar */}
-        <div className="flex min-w-[100px] items-center justify-end gap-2">
-          <span className="text-sm font-semibold">
-            {formatCurrency(displaySubtotal, currency)}
-          </span>
+        <div className="flex min-w-[110px] items-center justify-end gap-2">
+          <DualCurrency
+            ves={item.subtotalLocal}
+            usd={item.subtotalReference}
+            size="sm"
+            primaryClassName="font-semibold"
+          />
 
           <Button
             size="sm"

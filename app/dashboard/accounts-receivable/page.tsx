@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { getReceivablesSummary } from '@/lib/accountsReceivable';
 import { getCustomersWithBalance } from '@/lib/customers';
 import {
@@ -47,6 +48,8 @@ import {
 import { DollarSign, AlertCircle, Users, FileText } from 'lucide-react';
 import { IconChip } from '@/components/common/IconChip';
 import { StatusPill } from '@/components/common/StatusPill';
+import { DualCurrency } from '@/components/common/DualCurrency';
+import { formatCurrency } from '@/lib/currency';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -69,6 +72,8 @@ type OverdueCustomerRow = {
 export default function AccountsReceivablePage() {
   const { profile } = useAuth();
   const router = useRouter();
+  const { activeRate } = useExchangeRates(profile?.storeId || '');
+  const exchangeRate = activeRate?.usdToVes;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -213,9 +218,12 @@ export default function AccountsReceivablePage() {
               <IconChip icon={DollarSign} tone="accent" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                ${summary.totalReceivable.toFixed(2)}
-              </div>
+              <DualCurrency
+                usd={summary.totalReceivable}
+                exchangeRate={exchangeRate}
+                size="lg"
+                align="left"
+              />
               <p className="text-muted-foreground text-xs">
                 {summary.customersWithBalance} clientes con saldo
               </p>
@@ -230,9 +238,13 @@ export default function AccountsReceivablePage() {
               <IconChip icon={AlertCircle} tone="danger" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                ${summary.overdueAmount.toFixed(2)}
-              </div>
+              <DualCurrency
+                usd={summary.overdueAmount}
+                exchangeRate={exchangeRate}
+                size="lg"
+                align="left"
+                primaryClassName="text-red-600 dark:text-red-400"
+              />
               <p className="text-muted-foreground text-xs">
                 {overdueCustomers.length} clientes con saldo vencido
               </p>
@@ -247,9 +259,13 @@ export default function AccountsReceivablePage() {
               <IconChip icon={Users} tone="accent" />
             </CardHeader>
             <CardContent>
-              <div className="text-tsuma-primary-dark text-2xl font-bold">
-                ${summary.currentAmount.toFixed(2)}
-              </div>
+              <DualCurrency
+                usd={summary.currentAmount}
+                exchangeRate={exchangeRate}
+                size="lg"
+                align="left"
+                primaryClassName="text-tsuma-primary-dark"
+              />
               <p className="text-muted-foreground text-xs">Sin vencimiento</p>
             </CardContent>
           </Card>
@@ -303,8 +319,13 @@ export default function AccountsReceivablePage() {
                           {customer.name}
                         </TableCell>
                         <TableCell>{customer.document}</TableCell>
-                        <TableCell className="text-right font-medium text-red-600 dark:text-red-400">
-                          ${customer.balance.toFixed(2)}
+                        <TableCell className="text-right">
+                          <DualCurrency
+                            usd={customer.balance}
+                            exchangeRate={exchangeRate}
+                            size="sm"
+                            primaryClassName="text-red-600 dark:text-red-400"
+                          />
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-center gap-2">
@@ -365,8 +386,12 @@ export default function AccountsReceivablePage() {
                           {status.name}
                         </TableCell>
                         <TableCell>{status.document}</TableCell>
-                        <TableCell className="text-right font-medium">
-                          ${status.balance.toFixed(2)}
+                        <TableCell className="text-right">
+                          <DualCurrency
+                            usd={status.balance}
+                            exchangeRate={exchangeRate}
+                            size="sm"
+                          />
                         </TableCell>
                         <TableCell className="text-center">
                           <StatusPill tone="crit">
@@ -407,7 +432,9 @@ export default function AccountsReceivablePage() {
                     <XAxis dataKey="name" />
                     <YAxis />
                     <Tooltip
-                      formatter={(value) => `$${Number(value).toFixed(2)}`}
+                      formatter={(value) =>
+                        formatCurrency(Number(value), 'USD')
+                      }
                     />
                     <Bar dataKey="amount" fill="#dc2626" />
                   </BarChart>
@@ -423,9 +450,12 @@ export default function AccountsReceivablePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${summary.agingData.current.toFixed(2)}
-                  </div>
+                  <DualCurrency
+                    usd={summary.agingData.current}
+                    exchangeRate={exchangeRate}
+                    size="lg"
+                    align="left"
+                  />
                 </CardContent>
               </Card>
 
@@ -436,9 +466,13 @@ export default function AccountsReceivablePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                    ${summary.agingData.days30.toFixed(2)}
-                  </div>
+                  <DualCurrency
+                    usd={summary.agingData.days30}
+                    exchangeRate={exchangeRate}
+                    size="lg"
+                    align="left"
+                    primaryClassName="text-amber-600 dark:text-amber-400"
+                  />
                 </CardContent>
               </Card>
 
@@ -449,9 +483,13 @@ export default function AccountsReceivablePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    ${summary.agingData.days60.toFixed(2)}
-                  </div>
+                  <DualCurrency
+                    usd={summary.agingData.days60}
+                    exchangeRate={exchangeRate}
+                    size="lg"
+                    align="left"
+                    primaryClassName="text-orange-600 dark:text-orange-400"
+                  />
                 </CardContent>
               </Card>
 
@@ -462,9 +500,13 @@ export default function AccountsReceivablePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                    ${summary.agingData.days90.toFixed(2)}
-                  </div>
+                  <DualCurrency
+                    usd={summary.agingData.days90}
+                    exchangeRate={exchangeRate}
+                    size="lg"
+                    align="left"
+                    primaryClassName="text-red-600 dark:text-red-400"
+                  />
                 </CardContent>
               </Card>
             </div>
@@ -482,6 +524,7 @@ export default function AccountsReceivablePage() {
                 customer={selectedCustomer}
                 onSuccess={handlePaymentSuccess}
                 onCancel={() => setShowPaymentDialog(false)}
+                exchangeRate={exchangeRate}
               />
             )}
           </DialogContent>
@@ -506,12 +549,15 @@ export default function AccountsReceivablePage() {
                     <p className="text-muted-foreground text-sm">
                       {accountStatus.document}
                     </p>
-                    <p className="mt-2 text-sm font-medium">
-                      Saldo Actual:{' '}
-                      <span className="text-red-600 dark:text-red-400">
-                        ${accountStatus.currentBalance.toFixed(2)}
-                      </span>
+                    <p className="mt-2 mb-1 text-sm font-medium">
+                      Saldo Actual:
                     </p>
+                    <DualCurrency
+                      usd={accountStatus.currentBalance}
+                      exchangeRate={exchangeRate}
+                      align="left"
+                      primaryClassName="text-red-600 dark:text-red-400"
+                    />
                   </div>
                   <AccountStatusPDF
                     accountStatus={accountStatus}
@@ -521,6 +567,7 @@ export default function AccountsReceivablePage() {
 
                 <CustomerTransactionsList
                   customerId={accountStatus.customerId!}
+                  exchangeRate={exchangeRate}
                 />
               </div>
             )}
