@@ -12,6 +12,7 @@ import {
 } from '@tanstack/react-table';
 import { Product } from '@/types/product';
 import { Pencil, Trash2, Search, Package } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
 import { StatusPill } from '@/components/common/StatusPill';
 import { DualCurrency } from '@/components/common/DualCurrency';
 
@@ -26,6 +27,7 @@ export default function ProductTable({
   onEdit,
   onDelete,
 }: ProductTableProps) {
+  const { confirm, dialog } = useConfirm();
   const [globalFilter, setGlobalFilter] = useState('');
 
   const columns = useMemo<ColumnDef<Product>[]>(
@@ -108,12 +110,14 @@ export default function ProductTable({
               Editar
             </button>
             <button
-              onClick={() => {
-                if (
-                  confirm(`¿Eliminar producto "${info.row.original.name}"?`)
-                ) {
-                  onDelete(info.row.original.id);
-                }
+              onClick={async () => {
+                const ok = await confirm({
+                  title: `¿Eliminar producto "${info.row.original.name}"?`,
+                  description: 'Esta acción no se puede deshacer.',
+                  confirmLabel: 'Eliminar',
+                  destructive: true,
+                });
+                if (ok) onDelete(info.row.original.id);
               }}
               className="flex items-center gap-1.5 rounded-md border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-red-300 hover:text-red-600 dark:border-slate-700 dark:text-slate-300"
             >
@@ -124,7 +128,7 @@ export default function ProductTable({
         ),
       },
     ],
-    [onEdit, onDelete]
+    [onEdit, onDelete, confirm]
   );
 
   const table = useReactTable({
@@ -259,6 +263,7 @@ export default function ProductTable({
           </button>
         </div>
       </div>
+      {dialog}
     </div>
   );
 }

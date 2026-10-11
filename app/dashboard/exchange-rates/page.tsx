@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'react-hot-toast';
+import { useConfirm } from '@/hooks/useConfirm';
 import { useAuth } from '@/hooks/useAuth';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { TasaActivaCard } from '@/components/dashboard/TasaActivaCard';
@@ -9,6 +11,7 @@ import { SidePanel } from '@/components/common/SidePanel';
 import { ArrowRightLeft, AlertTriangle, Plus } from 'lucide-react';
 
 export default function ExchangeRatesPage() {
+  const { confirm, dialog } = useConfirm();
   const { profile } = useAuth();
   const { rates, activeRate, loading, error, updateRate, refetch } =
     useExchangeRates(profile?.storeId || '');
@@ -27,15 +30,17 @@ export default function ExchangeRatesPage() {
 
     const rateValue = parseFloat(formData.rate);
     if (isNaN(rateValue) || rateValue <= 0) {
-      alert('Por favor ingresa una tasa válida');
+      toast.error('Por favor ingresa una tasa válida');
       return;
     }
 
-    const confirmMessage = `¿Estás seguro de actualizar la tasa ${formData.fromCurrency} → ${formData.toCurrency} a ${rateValue.toFixed(2)}?\n\nEsto recalculará automáticamente los precios de TODOS los productos.`;
-
-    if (!confirm(confirmMessage)) {
-      return;
-    }
+    const ok = await confirm({
+      title: `¿Actualizar la tasa ${formData.fromCurrency} → ${formData.toCurrency} a ${rateValue.toFixed(2)}?`,
+      description:
+        'Esto recalculará automáticamente los precios de TODOS los productos.',
+      confirmLabel: 'Actualizar tasa',
+    });
+    if (!ok) return;
 
     try {
       setSubmitting(true);
@@ -46,7 +51,7 @@ export default function ExchangeRatesPage() {
         source: formData.source,
       });
 
-      alert(
+      toast.success(
         'Tasa actualizada exitosamente. Los precios de productos han sido recalculados.'
       );
       setShowForm(false);
@@ -59,7 +64,7 @@ export default function ExchangeRatesPage() {
       await refetch();
     } catch (err) {
       console.error('Error al actualizar tasa:', err);
-      alert('Error al actualizar la tasa. Intenta nuevamente.');
+      toast.error('Error al actualizar la tasa. Intenta nuevamente.');
     } finally {
       setSubmitting(false);
     }
@@ -284,6 +289,7 @@ export default function ExchangeRatesPage() {
 
       {/* Historial */}
       <RateHistoryTable rates={rates} loading={loading} />
+      {dialog}
     </div>
   );
 }

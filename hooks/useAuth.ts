@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { getUserProfile, isAuthenticated } from '@/lib/auth';
 import { useAuthStore } from '@/store/authStore';
 
+let profileRequest: Promise<void> | null = null;
+
 export function useAuth() {
   const {
     profile,
@@ -16,21 +18,17 @@ export function useAuth() {
   } = useAuthStore();
 
   useEffect(() => {
-    async function loadUserProfile() {
+    // El perfil se pide una sola vez por sesión, aunque haya muchos useAuth montados
+    if (useAuthStore.getState().profile || profileRequest) return;
+
+    profileRequest = (async () => {
       setLoading(true);
 
-      // Verificar si hay token en localStorage
       if (isAuthenticated()) {
         try {
           const userProfile = await getUserProfile();
-
-          if (userProfile) {
-            setProfile(userProfile);
-            setIsAuthenticated(true);
-          } else {
-            setProfile(null);
-            setIsAuthenticated(false);
-          }
+          setProfile(userProfile);
+          setIsAuthenticated(!!userProfile);
         } catch (error) {
           console.error('Error loading user profile:', error);
           setProfile(null);
@@ -42,9 +40,8 @@ export function useAuth() {
       }
 
       setLoading(false);
-    }
-
-    loadUserProfile();
+      profileRequest = null;
+    })();
   }, [setProfile, setLoading, setIsAuthenticated]);
 
   return { profile, loading, isAuthenticated: isAuth };

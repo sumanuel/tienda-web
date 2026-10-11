@@ -14,6 +14,7 @@ import {
 import { Search, UserPlus, User } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { apiClient } from '@/lib/api';
+import { toast } from 'react-hot-toast';
 
 interface Customer {
   id: string;
@@ -101,7 +102,7 @@ export function CustomerSelector({
     if (!onCreateCustomer) return;
 
     if (!newCustomer.name.trim() || !newCustomer.documentNumber.trim()) {
-      alert('Nombre y documento son obligatorios');
+      toast.error('Nombre y documento son obligatorios');
       return;
     }
 
@@ -111,7 +112,7 @@ export function CustomerSelector({
       setShowCreateModal(false);
       setNewCustomer({ name: '', documentNumber: '', phone: '', address: '' });
     } catch (error: any) {
-      alert(error.message || 'Error al crear cliente');
+      toast.error(error.message || 'Error al crear cliente');
     }
   };
 

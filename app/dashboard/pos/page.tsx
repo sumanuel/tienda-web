@@ -28,6 +28,7 @@ import {
   Receipt,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '@/hooks/useConfirm';
 import type { Currency } from '@/lib/currency';
 
 interface Product {
@@ -56,6 +57,7 @@ interface Customer {
 type PaymentMethod = 'cash' | 'card' | 'transfer' | 'pago_movil' | 'por_cobrar';
 
 export default function POSPage() {
+  const { confirm, dialog } = useConfirm();
   const router = useRouter();
   const { profile } = useAuth();
   const [currency, setCurrency] = useState<Currency>('VES');
@@ -97,7 +99,7 @@ export default function POSPage() {
       try {
         const response = await apiClient.get<{
           products: Product[];
-        }>(`/api/products?storeId=${storeId}&limit=100`);
+        }>(`/api/products?storeId=${storeId}&limit=1000`);
 
         setProducts(response.products || []);
       } catch (error: any) {
@@ -208,6 +210,7 @@ export default function POSPage() {
 
   // Procesar venta
   const handleProcessSale = async () => {
+    if (processing) return;
     setShowValidationErrors(true);
 
     const errors = validateSale();
@@ -260,7 +263,7 @@ export default function POSPage() {
 
         // Recargar productos para actualizar stock
         const response = await apiClient.get<{ products: Product[] }>(
-          `/api/products?storeId=${storeId}&limit=100`
+          `/api/products?storeId=${storeId}&limit=1000`
         );
         setProducts(response.products || []);
 
@@ -285,6 +288,22 @@ export default function POSPage() {
     }
   };
 
+  const handleClearCart = async () => {
+    if (cart.items.length === 0) return;
+    const ok = await confirm({
+      title: '¿Limpiar el carrito?',
+      description: 'Se quitarán todos los productos del carrito.',
+      confirmLabel: 'Limpiar',
+      destructive: true,
+    });
+    if (!ok) return;
+    cart.clearCart();
+    setSelectedCustomer(null);
+    setPaymentMethod('cash');
+    setReferenceNumber('');
+    setShowValidationErrors(false);
+  };
+
   // Atajos de teclado
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -293,21 +312,21 @@ export default function POSPage() {
         e.preventDefault();
         handleProcessSale();
       }
-      // Escape: Limpiar carrito
+      // Escape: Limpiar carrito (no si hay un diálogo o campo en uso)
       if (e.key === 'Escape') {
+        const target = e.target as HTMLElement | null;
+        const typing =
+          target instanceof HTMLInputElement ||
+          target instanceof HTMLTextAreaElement;
+        if (typing || document.querySelector('[role="dialog"]')) return;
         e.preventDefault();
-        if (cart.items.length > 0 && confirm('¿Limpiar el carrito?')) {
-          cart.clearCart();
-          setSelectedCustomer(null);
-          setPaymentMethod('cash');
-          setReferenceNumber('');
-        }
+        handleClearCart();
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [cart, handleProcessSale]);
+  }, [cart, handleProcessSale, handleClearCart]);
 
   if (!profile) {
     return (
@@ -422,18 +441,7 @@ export default function POSPage() {
               <Button
                 variant="outline"
                 className="flex-1 rounded-xl border-gray-200 dark:border-slate-800"
-                onClick={() => {
-                  if (
-                    cart.items.length > 0 &&
-                    confirm('¿Limpiar el carrito?')
-                  ) {
-                    cart.clearCart();
-                    setSelectedCustomer(null);
-                    setPaymentMethod('cash');
-                    setReferenceNumber('');
-                    setShowValidationErrors(false);
-                  }
-                }}
+                onClick={handleClearCart}
                 disabled={cart.isEmpty || processing}
               >
                 Limpiar (ESC)
@@ -460,6 +468,7 @@ export default function POSPage() {
           </Card>
         </div>
       </div>
+      {dialog}
     </div>
   );
 }

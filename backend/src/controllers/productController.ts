@@ -7,6 +7,9 @@ import {
 } from '../utils/priceCalculator';
 import { productSelect, serializeProduct } from '../utils/productSerializer';
 
+// Máximo de productos por respuesta (el catálogo se pagina con page/limit)
+const MAX_PRODUCTS_PER_PAGE = 1000;
+
 // GET /api/products
 export async function listProducts(req: AuthRequest, res: Response) {
   try {
@@ -14,7 +17,7 @@ export async function listProducts(req: AuthRequest, res: Response) {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
-    const { storeId, category, search, inStock } = req.query;
+    const { storeId, category, search, inStock, page, limit } = req.query;
 
     // Validar que storeId pertenece al usuario
     if (storeId && typeof storeId === 'string') {
@@ -32,8 +35,7 @@ export async function listProducts(req: AuthRequest, res: Response) {
       }
     }
 
-    const products = await prisma.product.findMany({
-      where: {
+    const where = {
         ...(storeId && typeof storeId === 'string' && { storeId }),
         ...(category && typeof category === 'string' && { category }),
         ...(search &&
@@ -48,12 +50,34 @@ export async function listProducts(req: AuthRequest, res: Response) {
         store: {
           userId: req.user.userId, // Solo productos de tiendas del usuario
         },
-      },
-      select: productSelect,
-      orderBy: { name: 'asc' },
-    });
+    };
 
-    res.json({ products: products.map(serializeProduct) });
+    const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
+    const limitNum = Math.min(
+      Math.max(parseInt(String(limit), 10) || MAX_PRODUCTS_PER_PAGE, 1),
+      MAX_PRODUCTS_PER_PAGE
+    );
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        select: productSelect,
+        orderBy: { name: 'asc' },
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum,
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    res.json({
+      products: products.map(serializeProduct),
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        pages: Math.ceil(total / limitNum),
+      },
+    });
   } catch (error) {
     console.error('List products error:', error);
     res.status(500).json({ error: 'Error al listar productos' });

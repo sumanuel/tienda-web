@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { IconChip } from '@/components/common/IconChip';
 import { DualCurrency } from '@/components/common/DualCurrency';
+import { toast } from 'react-hot-toast';
 
 const COLORS = [
   '#1f7a59',
@@ -73,7 +74,7 @@ export default function InventoryReportPage() {
   }
 
   function handleExportPDF() {
-    alert('Exportación a PDF en desarrollo');
+    toast('Exportación a PDF en desarrollo');
   }
 
   if (loading) {

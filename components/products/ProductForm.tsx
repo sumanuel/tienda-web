@@ -7,6 +7,7 @@ import { ProductFormData } from '@/types/product';
 import { useState } from 'react';
 import { Upload } from 'lucide-react';
 import Image from 'next/image';
+import { toast } from 'react-hot-toast';
 
 const productSchema = z.object({
   code: z.string().optional(),
@@ -100,13 +101,13 @@ export default function ProductForm({
     if (file) {
       // ✅ Validar tipo MIME
       if (!file.type.startsWith('image/')) {
-        alert('Solo se permiten archivos de imagen');
+        toast.error('Solo se permiten archivos de imagen');
         return;
       }
 
       // ✅ Validar tamaño (máx 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen es muy grande (máximo 5MB)');
+        toast.error('La imagen es muy grande (máximo 5MB)');
         return;
       }
 

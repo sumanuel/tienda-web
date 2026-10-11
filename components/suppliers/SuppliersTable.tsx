@@ -16,6 +16,7 @@ import {
 } from '@tanstack/react-table';
 import { Supplier } from '@/types/supplier';
 import { Search, Edit, Trash2, Eye, TruckIcon } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
 import { DualCurrency } from '@/components/common/DualCurrency';
 
 interface SuppliersTableProps {
@@ -33,6 +34,7 @@ export default function SuppliersTable({
   onView,
   exchangeRate,
 }: SuppliersTableProps) {
+  const { confirm, dialog } = useConfirm();
   const [globalFilter, setGlobalFilter] = useState('');
 
   const columns = useMemo<ColumnDef<Supplier>[]>(
@@ -121,10 +123,14 @@ export default function SuppliersTable({
               <Edit size={13} />
             </button>
             <button
-              onClick={() => {
-                if (confirm(`¿Eliminar proveedor ${row.original.name}?`)) {
-                  onDelete(row.original.id);
-                }
+              onClick={async () => {
+                const ok = await confirm({
+                  title: `¿Eliminar proveedor ${row.original.name}?`,
+                  description: 'Esta acción no se puede deshacer.',
+                  confirmLabel: 'Eliminar',
+                  destructive: true,
+                });
+                if (ok) onDelete(row.original.id);
               }}
               className="flex items-center gap-1.5 rounded-md border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-red-300 hover:text-red-600 dark:border-slate-700 dark:text-slate-300"
               title="Eliminar"
@@ -135,7 +141,7 @@ export default function SuppliersTable({
         ),
       },
     ],
-    [onEdit, onDelete, onView, exchangeRate]
+    [onEdit, onDelete, onView, exchangeRate, confirm]
   );
 
   const table = useReactTable({
@@ -273,6 +279,7 @@ export default function SuppliersTable({
           </div>
         </div>
       )}
+      {dialog}
     </div>
   );
 }

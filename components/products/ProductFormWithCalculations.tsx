@@ -13,6 +13,7 @@ import {
 } from '@/lib/utils/priceCalculator';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'react-hot-toast';
 
 const inputClassName =
   'w-full rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-brand-primary focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-900 focus:ring-1 focus:ring-brand-primary focus:outline-none';
@@ -154,13 +155,13 @@ export default function ProductFormWithCalculations({
     if (file) {
       // Validar tipo MIME
       if (!file.type.startsWith('image/')) {
-        alert('Solo se permiten archivos de imagen');
+        toast.error('Solo se permiten archivos de imagen');
         return;
       }
 
       // Validar tamaño (máx 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen es muy grande (máximo 5MB)');
+        toast.error('La imagen es muy grande (máximo 5MB)');
         return;
       }
 
@@ -175,7 +176,7 @@ export default function ProductFormWithCalculations({
 
   const handleFormSubmit = async (data: ProductFormValues) => {
     if (!calculatedPrices) {
-      alert('Por favor verifica los datos de costo y margen');
+      toast.error('Por favor verifica los datos de costo y margen');
       return;
     }
 
