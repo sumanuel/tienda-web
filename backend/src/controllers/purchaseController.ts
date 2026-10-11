@@ -6,6 +6,7 @@ import {
   validateCancelPurchase,
   validatePurchasesQuery,
 } from '../utils/purchaseValidator';
+import { parseRangeStart, parseRangeEnd } from '../utils/dateRange';
 
 /**
  * Genera un número consecutivo único para compras
@@ -107,12 +108,10 @@ export async function listPurchases(req: AuthRequest, res: Response) {
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate && typeof startDate === 'string') {
-        where.createdAt.gte = new Date(startDate);
+        where.createdAt.gte = parseRangeStart(startDate);
       }
       if (endDate && typeof endDate === 'string') {
-        const end = new Date(endDate);
-        end.setUTCHours(23, 59, 59, 999);
-        where.createdAt.lte = end;
+        where.createdAt.lte = parseRangeEnd(endDate);
       }
     }
 
@@ -289,9 +288,7 @@ export async function createPurchase(req: AuthRequest, res: Response) {
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      const purchaseNumber = await generatePurchaseNumber(
-        purchaseData.storeId
-      );
+      const purchaseNumber = await generatePurchaseNumber(purchaseData.storeId);
 
       const purchase = await tx.purchase.create({
         data: {
@@ -644,15 +641,13 @@ export async function getPurchaseStats(req: AuthRequest, res: Response) {
     };
 
     if (startDate && typeof startDate === 'string') {
-      whereClause.createdAt = { gte: new Date(startDate) };
+      whereClause.createdAt = { gte: parseRangeStart(startDate) };
     }
 
     if (endDate && typeof endDate === 'string') {
-      const end = new Date(endDate);
-      end.setUTCHours(23, 59, 59, 999);
       whereClause.createdAt = {
         ...whereClause.createdAt,
-        lte: end,
+        lte: parseRangeEnd(endDate),
       };
     }
 

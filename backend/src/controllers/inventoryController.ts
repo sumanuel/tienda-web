@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/prisma';
+import { AuthRequest } from '../middleware/authMiddleware';
+import { parseRangeStart, parseRangeEnd } from '../utils/dateRange';
 
 /**
  * Listar movimientos de inventario
@@ -7,7 +9,7 @@ import { prisma } from '../config/prisma';
  */
 export const listMovements = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const {
       storeId,
       productId,
@@ -50,10 +52,10 @@ export const listMovements = async (req: Request, res: Response) => {
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) {
-        where.createdAt.gte = new Date(startDate as string);
+        where.createdAt.gte = parseRangeStart(startDate as string);
       }
       if (endDate) {
-        where.createdAt.lte = new Date(endDate as string);
+        where.createdAt.lte = parseRangeEnd(endDate as string);
       }
     }
 
@@ -104,7 +106,7 @@ export const listMovements = async (req: Request, res: Response) => {
  */
 export const createAdjustment = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { storeId, productId, quantity, type, reason, notes } = req.body;
 
     // Validaciones
@@ -227,7 +229,7 @@ export const createAdjustment = async (req: Request, res: Response) => {
  */
 export const getStockReport = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { storeId, category, groupBy = 'category' } = req.query;
 
     if (!storeId) {
@@ -342,7 +344,7 @@ export const getStockReport = async (req: Request, res: Response) => {
  */
 export const getLowStock = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { storeId } = req.query;
 
     if (!storeId) {
@@ -428,7 +430,7 @@ export const getLowStock = async (req: Request, res: Response) => {
  */
 export const getProductMovements = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { productId } = req.params;
     const { limit = '20' } = req.query;
 

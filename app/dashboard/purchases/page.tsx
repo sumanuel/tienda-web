@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { todayLocal } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { usePurchases } from '@/hooks/usePurchases';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
@@ -34,7 +35,7 @@ export default function PurchasesPage() {
     total: 0,
     pages: 1,
   });
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayLocal();
   const [filters, setFilters] = useState<Filters>({
     startDate: today,
     endDate: today,

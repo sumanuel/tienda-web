@@ -6,6 +6,7 @@ import {
   validateCancelSale,
   validateSalesQuery,
 } from '../utils/saleValidator';
+import { parseRangeStart, parseRangeEnd } from '../utils/dateRange';
 
 /**
  * Genera un número consecutivo único para ventas
@@ -115,12 +116,10 @@ export async function listSales(req: AuthRequest, res: Response) {
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate && typeof startDate === 'string') {
-        where.createdAt.gte = new Date(startDate);
+        where.createdAt.gte = parseRangeStart(startDate);
       }
       if (endDate && typeof endDate === 'string') {
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        where.createdAt.lte = end;
+        where.createdAt.lte = parseRangeEnd(endDate);
       }
     }
 
@@ -689,15 +688,13 @@ export async function getSalesStats(req: AuthRequest, res: Response) {
     };
 
     if (startDate && typeof startDate === 'string') {
-      whereClause.createdAt = { gte: new Date(startDate) };
+      whereClause.createdAt = { gte: parseRangeStart(startDate) };
     }
 
     if (endDate && typeof endDate === 'string') {
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
       whereClause.createdAt = {
         ...whereClause.createdAt,
-        lte: end,
+        lte: parseRangeEnd(endDate),
       };
     }
 

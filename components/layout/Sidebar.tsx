@@ -11,7 +11,6 @@ import {
   Users,
   TruckIcon,
   BarChart3,
-  Settings,
   Store,
   PackageSearch,
   DollarSign,
@@ -79,7 +78,7 @@ const menuSections: MenuSection[] = [
       {
         href: '/dashboard/purchases',
         icon: ShoppingBag,
-        label: 'Historial de Compras',
+        label: 'Compras',
         tone: 'warning',
       },
       {
@@ -155,12 +154,6 @@ const menuSections: MenuSection[] = [
         href: '/dashboard/reports',
         icon: BarChart3,
         label: 'Reportes',
-        tone: 'info',
-      },
-      {
-        href: '/dashboard/settings',
-        icon: Settings,
-        label: 'Configuración',
         tone: 'info',
       },
     ],

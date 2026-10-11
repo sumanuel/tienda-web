@@ -177,7 +177,7 @@ export function useSales() {
 
       try {
         const response = await apiClient.post<{ message: string; sale: Sale }>(
-          '/sales',
+          '/api/sales',
           data
         );
         return response.sale;
@@ -211,7 +211,7 @@ export function useSales() {
         });
 
         const response = await apiClient.get<SalesResponse>(
-          `/sales?${params.toString()}`
+          `/api/sales?${params.toString()}`
         );
         return response;
       } catch (err: any) {
@@ -234,7 +234,7 @@ export function useSales() {
     setError(null);
 
     try {
-      const response = await apiClient.get<{ sale: Sale }>(`/sales/${id}`);
+      const response = await apiClient.get<{ sale: Sale }>(`/api/sales/${id}`);
       return response.sale;
     } catch (err: any) {
       const errorMessage =
@@ -255,7 +255,7 @@ export function useSales() {
       setError(null);
 
       try {
-        await apiClient.delete(`/sales/${id}`, { reason });
+        await apiClient.delete(`/api/sales/${id}`, { reason });
         return true;
       } catch (err: any) {
         const errorMessage =
@@ -293,7 +293,7 @@ export function useSales() {
         });
 
         const response = await apiClient.get<SalesStats>(
-          `/sales/stats/summary?${params.toString()}`
+          `/api/sales/stats/summary?${params.toString()}`
         );
         return response;
       } catch (err: any) {

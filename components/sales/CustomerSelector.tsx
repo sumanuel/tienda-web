@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Search, UserPlus, User } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
+import { apiClient } from '@/lib/api';
 
 interface Customer {
   id: string;
@@ -63,13 +64,10 @@ export function CustomerSelector({
 
       setIsSearching(true);
       try {
-        const response = await fetch(
+        const data = await apiClient.get<{ customers: Customer[] }>(
           `/api/customers?storeId=${storeId}&search=${encodeURIComponent(debouncedSearch)}&limit=10`
         );
-        if (response.ok) {
-          const data = await response.json();
-          setSearchResults(data.customers || []);
-        }
+        setSearchResults(data.customers || []);
       } catch (error) {
         console.error('Error buscando clientes:', error);
       } finally {

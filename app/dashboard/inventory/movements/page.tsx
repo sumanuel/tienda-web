@@ -25,7 +25,7 @@ export default function InventoryMovementsPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [profile?.storeId]);
 
   const loadData = async () => {
     try {

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/prisma';
+import { AuthRequest } from '../middleware/authMiddleware';
 
 /**
  * Listar clientes
@@ -7,7 +8,7 @@ import { prisma } from '../config/prisma';
  */
 export const listCustomers = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { storeId, search, page = '1', limit = '50' } = req.query;
 
     if (!storeId) {
@@ -37,6 +38,9 @@ export const listCustomers = async (req: Request, res: Response) => {
         { email: { contains: search as string, mode: 'insensitive' } },
         { phone: { contains: search as string, mode: 'insensitive' } },
         { taxId: { contains: search as string, mode: 'insensitive' } },
+        {
+          documentNumber: { contains: search as string, mode: 'insensitive' },
+        },
       ];
     }
 
@@ -99,7 +103,7 @@ export const listCustomers = async (req: Request, res: Response) => {
  */
 export const getCustomer = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { id } = req.params;
 
     const customer = await prisma.customer.findFirst({
@@ -170,7 +174,7 @@ export const getCustomer = async (req: Request, res: Response) => {
  */
 export const createCustomer = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { storeId, name, email, phone, taxId, address } = req.body;
 
     // Validaciones
@@ -236,7 +240,7 @@ export const createCustomer = async (req: Request, res: Response) => {
  */
 export const updateCustomer = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { id } = req.params;
     const { name, email, phone, taxId, address } = req.body;
 
@@ -299,7 +303,7 @@ export const updateCustomer = async (req: Request, res: Response) => {
  */
 export const deleteCustomer = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { id } = req.params;
 
     // Verificar que el cliente existe y el usuario tiene acceso
@@ -349,7 +353,7 @@ export const deleteCustomer = async (req: Request, res: Response) => {
  */
 export const getCustomerTransactions = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { id } = req.params;
     const { limit = '20' } = req.query;
 
@@ -398,7 +402,7 @@ export const createCustomerTransaction = async (
   res: Response
 ) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { id } = req.params;
     const { type, amount, description } = req.body;
 
@@ -473,7 +477,7 @@ export const createCustomerTransaction = async (
  */
 export const getOverdueCustomers = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { storeId } = req.query;
 
     if (!storeId) {

@@ -97,7 +97,9 @@ export async function getInventoryMovements(
         movement.type === 'purchase' ||
         movement.type === 'purchase_return'
           ? movement.type
-          : 'entry', // Mapear tipos
+          : movement.quantity < 0
+            ? 'exit'
+            : 'entry', // Mapear tipos
       quantity: movement.quantity,
       stockBefore: movement.stockBefore,
       stockAfter: movement.stockAfter,

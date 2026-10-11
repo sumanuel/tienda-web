@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/prisma';
+import { AuthRequest } from '../middleware/authMiddleware';
 
 /**
  * Listar proveedores
@@ -7,7 +8,7 @@ import { prisma } from '../config/prisma';
  */
 export const listSuppliers = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { storeId, search, page = '1', limit = '50' } = req.query;
 
     if (!storeId) {
@@ -98,7 +99,7 @@ export const listSuppliers = async (req: Request, res: Response) => {
  */
 export const getSupplier = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { id } = req.params;
 
     const supplier = await prisma.supplier.findFirst({
@@ -157,7 +158,7 @@ export const getSupplier = async (req: Request, res: Response) => {
  */
 export const createSupplier = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { storeId, name, email, phone, taxId, address } = req.body;
 
     // Validaciones
@@ -223,7 +224,7 @@ export const createSupplier = async (req: Request, res: Response) => {
  */
 export const updateSupplier = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { id } = req.params;
     const { name, email, phone, taxId, address } = req.body;
 
@@ -286,7 +287,7 @@ export const updateSupplier = async (req: Request, res: Response) => {
  */
 export const deleteSupplier = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { id } = req.params;
 
     // Verificar que el proveedor existe y el usuario tiene acceso
@@ -335,7 +336,7 @@ export const deleteSupplier = async (req: Request, res: Response) => {
  */
 export const getSupplierTransactions = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { id } = req.params;
     const { limit = '20' } = req.query;
 
@@ -384,7 +385,7 @@ export const createSupplierTransaction = async (
   res: Response
 ) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { id } = req.params;
     const { type, amount, description } = req.body;
 
@@ -461,7 +462,7 @@ export const createSupplierTransaction = async (
  */
 export const getSupplierProducts = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { id } = req.params;
 
     // Verificar acceso al proveedor
@@ -517,7 +518,7 @@ export const getSupplierProducts = async (req: Request, res: Response) => {
  */
 export const getUpcomingPayables = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as AuthRequest).user!.userId;
     const { storeId, days = '7' } = req.query;
 
     if (!storeId) {

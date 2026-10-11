@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { todayLocal } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useSales } from '@/hooks/useSales';
 import { SalesTable } from '@/components/sales/SalesTable';
@@ -29,7 +30,7 @@ export default function SalesPage() {
     total: 0,
     pages: 1,
   });
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayLocal();
   const [filters, setFilters] = useState<Filters>({
     startDate: today,
     endDate: today,
@@ -63,6 +64,8 @@ export default function SalesPage() {
       if (response) {
         setSales(response.sales);
         setPagination(response.pagination);
+      } else {
+        toast.error('Error al cargar el historial de ventas');
       }
     } catch (error: any) {
       console.error('Error loading sales:', error);

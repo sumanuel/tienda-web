@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { todayLocal } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -90,7 +91,7 @@ export function SalesFilters({ filters, onFiltersChange }: SalesFiltersProps) {
   };
 
   const handleClearFilters = () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayLocal();
     const clearedFilters: SalesFilters = {
       startDate: today,
       endDate: today,

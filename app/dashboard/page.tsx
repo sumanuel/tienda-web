@@ -59,7 +59,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadAlerts();
-  }, []);
+  }, [profile?.storeId]);
 
   const loadAlerts = async () => {
     try {

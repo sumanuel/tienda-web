@@ -27,7 +27,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     loadProducts();
-  }, []);
+  }, [profile?.storeId]);
 
   const loadProducts = async () => {
     try {

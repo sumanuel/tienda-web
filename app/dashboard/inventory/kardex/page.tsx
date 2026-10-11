@@ -21,7 +21,7 @@ export default function KardexPage() {
 
   useEffect(() => {
     loadProducts();
-  }, []);
+  }, [profile?.storeId]);
 
   const loadProducts = async () => {
     try {
