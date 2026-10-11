@@ -1,42 +1,11 @@
 import { Response } from 'express';
 import { prisma } from '../config/prisma';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { nextDocumentNumber } from '../utils/documentNumber';
+import { changeStock } from '../utils/stock';
+import { lockSupplier } from '../utils/ledgerLock';
+import { BusinessError, sendError } from '../utils/errors';
 import { validatePurchaseReturnData } from '../utils/purchaseValidator';
-
-/**
- * Genera un número consecutivo único para devoluciones de compra
- */
-async function generateReturnNumber(
-  storeId: string,
-  prefix: string = 'DEV'
-): Promise<string> {
-  const lastReturn = await prisma.purchaseReturn.findFirst({
-    where: {
-      storeId,
-      returnNumber: {
-        startsWith: prefix,
-      },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-    select: {
-      returnNumber: true,
-    },
-  });
-
-  let nextNumber = 1;
-
-  if (lastReturn) {
-    const numberPart = lastReturn.returnNumber.split('-')[1];
-    if (numberPart) {
-      nextNumber = parseInt(numberPart, 10) + 1;
-    }
-  }
-
-  const paddedNumber = nextNumber.toString().padStart(6, '0');
-  return `${prefix}-${paddedNumber}`;
-}
 
 /**
  * GET /api/purchase-returns
@@ -204,25 +173,55 @@ export async function createPurchaseReturn(req: AuthRequest, res: Response) {
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      // Validar stock suficiente para devolver
-      for (const item of returnData.items) {
-        const product = await tx.product.findUnique({
-          where: { id: item.productId },
-          select: { stock: true, trackInventory: true, name: true },
+      const returnNumber = await nextDocumentNumber(
+        tx,
+        returnData.storeId,
+        'purchase_return'
+      );
+
+      if (returnData.purchaseId) {
+        const relatedPurchase = await tx.purchase.findFirst({
+          where: {
+            id: returnData.purchaseId,
+            storeId: returnData.storeId,
+            supplierId: returnData.supplierId,
+            status: 'completed',
+          },
+          select: { id: true },
         });
-
-        if (!product) {
-          throw new Error(`Producto ${item.productId} no encontrado`);
-        }
-
-        if (product.trackInventory && product.stock < item.quantity) {
-          throw new Error(
-            `Stock insuficiente para devolver "${product.name}". Disponible: ${product.stock}, Solicitado: ${item.quantity}`
+        if (!relatedPurchase) {
+          throw new BusinessError(
+            'La compra indicada no existe, no es de este proveedor o está cancelada',
+            404
           );
         }
       }
 
-      const returnNumber = await generateReturnNumber(returnData.storeId);
+      const productIds: string[] = [
+        ...new Set<string>(returnData.items.map((item: any) => item.productId)),
+      ];
+      const products = await tx.product.findMany({
+        where: { id: { in: productIds }, storeId: returnData.storeId },
+        select: {
+          id: true,
+          name: true,
+          sku: true,
+          barcode: true,
+          trackInventory: true,
+        },
+      });
+      const productMap = new Map(products.map((p) => [p.id, p]));
+      if (productMap.size !== productIds.length) {
+        throw new BusinessError(
+          'Uno o más productos no existen en esta tienda',
+          404
+        );
+      }
+
+      const operator = await tx.user.findUnique({
+        where: { id: userId },
+        select: { name: true },
+      });
 
       const purchaseReturn = await tx.purchaseReturn.create({
         data: {
@@ -242,60 +241,48 @@ export async function createPurchaseReturn(req: AuthRequest, res: Response) {
         },
       });
 
-      const returnItems = await Promise.all(
-        returnData.items.map(async (item: any) => {
-          const product = await tx.product.findUnique({
-            where: { id: item.productId },
-            select: { name: true },
-          });
+      const returnItems = [];
+      for (const item of returnData.items) {
+        const product = productMap.get(item.productId)!;
 
-          return tx.purchaseReturnItem.create({
+        returnItems.push(
+          await tx.purchaseReturnItem.create({
             data: {
               purchaseReturnId: purchaseReturn.id,
               productId: item.productId,
-              productName: product?.name || 'Producto sin nombre',
+              productName: product.name,
               quantity: item.quantity,
               cost: item.cost,
               subtotal: item.subtotal,
               purchaseItemId: item.purchaseItemId || null,
             },
-          });
-        })
-      );
+          })
+        );
 
-      // Decrementar stock (los productos vuelven al proveedor)
-      for (const item of returnData.items) {
-        const product = await tx.product.findUnique({
-          where: { id: item.productId },
-          select: {
-            trackInventory: true,
-            stock: true,
-            name: true,
-            sku: true,
-            barcode: true,
-          },
-        });
-
-        if (product?.trackInventory) {
-          await tx.product.update({
-            where: { id: item.productId },
-            data: { stock: { decrement: item.quantity } },
+        // Los productos vuelven al proveedor: baja de stock atómica
+        if (product.trackInventory) {
+          const { stockBefore, stockAfter } = await changeStock(tx, {
+            productId: product.id,
+            storeId: returnData.storeId,
+            delta: -item.quantity,
+            productName: product.name,
+            insufficientMessage: `Stock insuficiente para devolver "${product.name}"`,
           });
 
           await tx.inventoryMovement.create({
             data: {
-              productId: item.productId,
+              productId: product.id,
               productName: product.name,
               productCode:
-                product.sku || product.barcode || item.productId.slice(0, 8),
+                product.sku || product.barcode || product.id.slice(0, 8),
               type: 'purchase_return',
               quantity: -item.quantity,
-              stockBefore: product.stock,
-              stockAfter: product.stock - item.quantity,
+              stockBefore,
+              stockAfter,
               unitCost: item.cost,
               totalCost: item.subtotal,
               userId,
-              userName: 'Usuario',
+              userName: operator?.name || 'Usuario',
               reason: `Devolución ${returnNumber}: ${returnData.reason}`,
               storeId: returnData.storeId,
             },
@@ -304,19 +291,18 @@ export async function createPurchaseReturn(req: AuthRequest, res: Response) {
       }
 
       // Acreditar al proveedor (reduce la deuda / genera saldo a favor)
+      await lockSupplier(tx, returnData.supplierId);
       const currentBalance = await tx.supplierTransaction.aggregate({
         where: { supplierId: returnData.supplierId },
         _sum: { amount: true },
       });
-
-      const newBalance = (currentBalance._sum.amount || 0) - returnData.total;
 
       await tx.supplierTransaction.create({
         data: {
           supplierId: returnData.supplierId,
           type: 'payment',
           amount: -returnData.total,
-          balance: newBalance,
+          balance: (currentBalance._sum.amount || 0) - returnData.total,
           notes: `Devolución ${returnNumber}: ${returnData.reason}`,
           purchaseReturnId: purchaseReturn.id,
         },
@@ -345,11 +331,7 @@ export async function createPurchaseReturn(req: AuthRequest, res: Response) {
       message: 'Devolución de compra creada exitosamente',
       purchaseReturn: completeReturn,
     });
-  } catch (error: any) {
-    console.error('Error al crear devolución de compra:', error);
-    return res.status(500).json({
-      error: 'Error al crear la devolución de compra',
-      details: error.message,
-    });
+  } catch (error) {
+    return sendError(res, error, 'Error al crear la devolución de compra');
   }
 }

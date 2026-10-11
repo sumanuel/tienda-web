@@ -83,6 +83,11 @@ export function validatePurchaseData(data: PurchaseData): ValidationError[] {
           field: `items[${index}].subtotal`,
           message: 'El subtotal es inválido',
         });
+      } else if (Math.abs(item.subtotal - item.quantity * item.cost) > 0.01) {
+        errors.push({
+          field: `items[${index}].subtotal`,
+          message: 'El subtotal no coincide con cantidad × costo',
+        });
       }
     });
   }
@@ -266,7 +271,32 @@ export function validatePurchaseReturnData(
           message: 'La cantidad debe ser mayor a 0',
         });
       }
+      if (item.cost === undefined || item.cost < 0) {
+        errors.push({
+          field: `items[${index}].cost`,
+          message: 'El costo es inválido',
+        });
+      } else if (Math.abs(item.subtotal - item.quantity * item.cost) > 0.01) {
+        errors.push({
+          field: `items[${index}].subtotal`,
+          message: 'El subtotal no coincide con cantidad × costo',
+        });
+      }
     });
+
+    const itemsSubtotal = data.items.reduce(
+      (sum, item) => sum + (item.subtotal || 0),
+      0
+    );
+    if (
+      Math.abs(itemsSubtotal - data.subtotal) > 0.01 ||
+      Math.abs(data.subtotal - data.total) > 0.01
+    ) {
+      errors.push({
+        field: 'total',
+        message: 'El total no coincide con la suma de los productos devueltos',
+      });
+    }
   }
 
   if (data.total === undefined || data.total <= 0) {

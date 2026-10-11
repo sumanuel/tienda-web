@@ -5,6 +5,7 @@ import {
   calculateProductPrices,
   getActiveExchangeRates,
 } from '../utils/priceCalculator';
+import { productSelect, serializeProduct } from '../utils/productSerializer';
 
 // GET /api/products
 export async function listProducts(req: AuthRequest, res: Response) {
@@ -48,26 +49,11 @@ export async function listProducts(req: AuthRequest, res: Response) {
           userId: req.user.userId, // Solo productos de tiendas del usuario
         },
       },
-      select: {
-        id: true,
-        name: true,
-        sku: true,
-        barcode: true,
-        category: true,
-        price: true,
-        priceVES: true,
-        priceUSD: true,
-        priceEUR: true,
-        cost: true,
-        stock: true,
-        storeId: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: productSelect,
       orderBy: { name: 'asc' },
     });
 
-    res.json({ products });
+    res.json({ products: products.map(serializeProduct) });
   } catch (error) {
     console.error('List products error:', error);
     res.status(500).json({ error: 'Error al listar productos' });
@@ -90,29 +76,14 @@ export async function getProduct(req: AuthRequest, res: Response) {
           userId: req.user.userId, // Solo productos de tiendas del usuario
         },
       },
-      select: {
-        id: true,
-        name: true,
-        sku: true,
-        barcode: true,
-        category: true,
-        price: true,
-        priceVES: true,
-        priceUSD: true,
-        priceEUR: true,
-        cost: true,
-        stock: true,
-        storeId: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: productSelect,
     });
 
     if (!product) {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
 
-    res.json({ product });
+    res.json({ product: serializeProduct(product) });
   } catch (error) {
     console.error('Get product error:', error);
     res.status(500).json({ error: 'Error al obtener producto' });
@@ -128,9 +99,11 @@ export async function createProduct(req: AuthRequest, res: Response) {
 
     const {
       name,
-      sku,
+      sku: skuField,
+      code,
       barcode,
       category,
+      description,
       price,
       priceVES,
       priceUSD,
@@ -141,8 +114,12 @@ export async function createProduct(req: AuthRequest, res: Response) {
       margin,
       iva = 0,
       stock,
+      minStock,
+      trackInventory,
+      imageUrl,
       storeId,
     } = req.body;
+    const sku = skuField ?? code;
 
     // Validaciones
     if (!name || name.trim().length === 0) {
@@ -289,31 +266,18 @@ export async function createProduct(req: AuthRequest, res: Response) {
         margin: margin !== undefined ? parseFloat(margin) : null,
         iva: iva !== undefined ? parseFloat(iva) : 0,
         stock: stock !== undefined ? parseInt(stock) : 0,
+        ...(description && { description }),
+        ...(minStock !== undefined && { minStock: parseInt(minStock) }),
+        ...(trackInventory !== undefined && {
+          trackInventory: Boolean(trackInventory),
+        }),
+        ...(imageUrl && { image: imageUrl }),
         storeId,
       },
-      select: {
-        id: true,
-        name: true,
-        sku: true,
-        barcode: true,
-        category: true,
-        price: true,
-        priceVES: true,
-        priceUSD: true,
-        priceEUR: true,
-        cost: true,
-        costCurrency: true,
-        additionalCost: true,
-        margin: true,
-        iva: true,
-        stock: true,
-        storeId: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: productSelect,
     });
 
-    res.status(201).json({ product });
+    res.status(201).json({ product: serializeProduct(product) });
   } catch (error) {
     console.error('Create product error:', error);
     res.status(500).json({ error: 'Error al crear producto' });
@@ -330,16 +294,22 @@ export async function updateProduct(req: AuthRequest, res: Response) {
     const { id } = req.params;
     const {
       name,
-      sku,
+      sku: skuField,
+      code,
       barcode,
       category,
+      description,
       price,
       priceVES,
       priceUSD,
       priceEUR,
       cost,
       stock,
+      minStock,
+      trackInventory,
+      imageUrl,
     } = req.body;
+    const sku = skuField ?? code;
 
     // Verificar que el producto existe y pertenece al usuario
     const existingProduct = await prisma.product.findFirst({
@@ -433,26 +403,17 @@ export async function updateProduct(req: AuthRequest, res: Response) {
         ...(priceEUR !== undefined && { priceEUR: parseFloat(priceEUR) }),
         ...(cost !== undefined && { cost: parseFloat(cost) }),
         ...(stock !== undefined && { stock: parseInt(stock) }),
+        ...(description !== undefined && { description: description || null }),
+        ...(minStock !== undefined && { minStock: parseInt(minStock) }),
+        ...(trackInventory !== undefined && {
+          trackInventory: Boolean(trackInventory),
+        }),
+        ...(imageUrl !== undefined && { image: imageUrl || null }),
       },
-      select: {
-        id: true,
-        name: true,
-        sku: true,
-        barcode: true,
-        category: true,
-        price: true,
-        priceVES: true,
-        priceUSD: true,
-        priceEUR: true,
-        cost: true,
-        stock: true,
-        storeId: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: productSelect,
     });
 
-    res.json({ product });
+    res.json({ product: serializeProduct(product) });
   } catch (error) {
     console.error('Update product error:', error);
     res.status(500).json({ error: 'Error al actualizar producto' });

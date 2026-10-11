@@ -84,6 +84,9 @@ export function validateSaleData(data: SaleData): ValidationError[] {
 
   // 4. Validar método de pago
   const validPaymentMethods = [
+    'cash',
+    'card',
+    'transfer',
     'efectivo',
     'tarjeta',
     'transferencia',
@@ -98,7 +101,13 @@ export function validateSaleData(data: SaleData): ValidationError[] {
   }
 
   // 5. Validar referencia para métodos que la requieren
-  const methodsRequiringReference = ['tarjeta', 'transferencia', 'pago_movil'];
+  const methodsRequiringReference = [
+    'card',
+    'transfer',
+    'tarjeta',
+    'transferencia',
+    'pago_movil',
+  ];
   if (
     methodsRequiringReference.includes(data.paymentMethod) &&
     !data.referenceNumber
@@ -106,6 +115,13 @@ export function validateSaleData(data: SaleData): ValidationError[] {
     errors.push({
       field: 'referenceNumber',
       message: `El método de pago "${data.paymentMethod}" requiere un número de referencia`,
+    });
+  }
+
+  if (data.paymentMethod === 'por_cobrar' && !data.customerId) {
+    errors.push({
+      field: 'customerId',
+      message: 'Las ventas por cobrar requieren seleccionar un cliente',
     });
   }
 

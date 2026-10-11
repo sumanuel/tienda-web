@@ -719,6 +719,8 @@ class ApiClient {
     search?: string;
     category?: string;
     minStock?: number;
+    trackInventory?: boolean;
+    costCurrency?: string;
     maxStock?: number;
     page?: number;
     limit?: number;
@@ -747,6 +749,8 @@ class ApiClient {
         priceUSD: number;
         stock: number;
         minStock: number;
+        trackInventory: boolean;
+        costCurrency: string | null;
         imageUrl: string | null;
         createdAt: string;
         updatedAt: string;
@@ -775,6 +779,8 @@ class ApiClient {
         priceUSD: number;
         stock: number;
         minStock: number;
+        trackInventory: boolean;
+        costCurrency: string | null;
         imageUrl: string | null;
         createdAt: string;
         updatedAt: string;
@@ -794,6 +800,8 @@ class ApiClient {
     priceUSD: number;
     stock?: number;
     minStock?: number;
+    trackInventory?: boolean;
+    costCurrency?: string;
     imageUrl?: string;
   }) {
     return this.request<{
@@ -811,6 +819,8 @@ class ApiClient {
         priceUSD: number;
         stock: number;
         minStock: number;
+        trackInventory: boolean;
+        costCurrency: string | null;
         imageUrl: string | null;
         createdAt: string;
         updatedAt: string;
@@ -833,6 +843,8 @@ class ApiClient {
       priceVES?: number;
       priceUSD?: number;
       minStock?: number;
+      trackInventory?: boolean;
+      costCurrency?: string;
       imageUrl?: string;
     }
   ) {
@@ -851,6 +863,8 @@ class ApiClient {
         priceUSD: number;
         stock: number;
         minStock: number;
+        trackInventory: boolean;
+        costCurrency: string | null;
         imageUrl: string | null;
         createdAt: string;
         updatedAt: string;

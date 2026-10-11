@@ -1,47 +1,16 @@
 import { Response } from 'express';
 import { prisma } from '../config/prisma';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { nextDocumentNumber } from '../utils/documentNumber';
+import { changeStock } from '../utils/stock';
+import { lockSupplier } from '../utils/ledgerLock';
+import { BusinessError, sendError } from '../utils/errors';
 import {
   validatePurchaseData,
   validateCancelPurchase,
   validatePurchasesQuery,
 } from '../utils/purchaseValidator';
 import { parseRangeStart, parseRangeEnd } from '../utils/dateRange';
-
-/**
- * Genera un número consecutivo único para compras
- */
-async function generatePurchaseNumber(
-  storeId: string,
-  prefix: string = 'COM'
-): Promise<string> {
-  const lastPurchase = await prisma.purchase.findFirst({
-    where: {
-      storeId,
-      purchaseNumber: {
-        startsWith: prefix,
-      },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-    select: {
-      purchaseNumber: true,
-    },
-  });
-
-  let nextNumber = 1;
-
-  if (lastPurchase) {
-    const numberPart = lastPurchase.purchaseNumber.split('-')[1];
-    if (numberPart) {
-      nextNumber = parseInt(numberPart, 10) + 1;
-    }
-  }
-
-  const paddedNumber = nextNumber.toString().padStart(6, '0');
-  return `${prefix}-${paddedNumber}`;
-}
 
 /**
  * GET /api/purchases
@@ -288,7 +257,39 @@ export async function createPurchase(req: AuthRequest, res: Response) {
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      const purchaseNumber = await generatePurchaseNumber(purchaseData.storeId);
+      const purchaseNumber = await nextDocumentNumber(
+        tx,
+        purchaseData.storeId,
+        'purchase'
+      );
+
+      const productIds: string[] = [
+        ...new Set<string>(
+          purchaseData.items.map((item: any) => item.productId)
+        ),
+      ];
+      const products = await tx.product.findMany({
+        where: { id: { in: productIds }, storeId: purchaseData.storeId },
+        select: {
+          id: true,
+          name: true,
+          sku: true,
+          barcode: true,
+          trackInventory: true,
+        },
+      });
+      const productMap = new Map(products.map((p) => [p.id, p]));
+      if (productMap.size !== productIds.length) {
+        throw new BusinessError(
+          'Uno o más productos no existen en esta tienda',
+          404
+        );
+      }
+
+      const buyer = await tx.user.findUnique({
+        where: { id: userId },
+        select: { name: true },
+      });
 
       const purchase = await tx.purchase.create({
         data: {
@@ -317,18 +318,16 @@ export async function createPurchase(req: AuthRequest, res: Response) {
         },
       });
 
-      const purchaseItems = await Promise.all(
-        purchaseData.items.map(async (item: any) => {
-          const product = await tx.product.findUnique({
-            where: { id: item.productId },
-            select: { name: true },
-          });
+      const purchaseItems = [];
+      for (const item of purchaseData.items) {
+        const product = productMap.get(item.productId)!;
 
-          return tx.purchaseItem.create({
+        purchaseItems.push(
+          await tx.purchaseItem.create({
             data: {
               purchaseId: purchase.id,
               productId: item.productId,
-              productName: product?.name || 'Producto sin nombre',
+              productName: product.name,
               quantity: item.quantity,
               cost: item.cost,
               localCost: item.localCost,
@@ -338,47 +337,31 @@ export async function createPurchase(req: AuthRequest, res: Response) {
               subtotalReference: item.subtotalReference,
               costSnapshot: item.costSnapshot || null,
             },
-          });
-        })
-      );
+          })
+        );
 
-      // Incrementar stock de productos con trackInventory
-      for (const item of purchaseData.items) {
-        const product = await tx.product.findUnique({
-          where: { id: item.productId },
-          select: {
-            trackInventory: true,
-            stock: true,
-            name: true,
-            sku: true,
-            barcode: true,
-          },
-        });
-
-        if (product?.trackInventory) {
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                increment: item.quantity,
-              },
-            },
+        if (product.trackInventory) {
+          const { stockBefore, stockAfter } = await changeStock(tx, {
+            productId: product.id,
+            storeId: purchaseData.storeId,
+            delta: item.quantity,
+            productName: product.name,
           });
 
           await tx.inventoryMovement.create({
             data: {
-              productId: item.productId,
+              productId: product.id,
               productName: product.name,
               productCode:
-                product.sku || product.barcode || item.productId.slice(0, 8),
+                product.sku || product.barcode || product.id.slice(0, 8),
               type: 'purchase',
               quantity: item.quantity,
-              stockBefore: product.stock,
-              stockAfter: product.stock + item.quantity,
+              stockBefore,
+              stockAfter,
               unitCost: item.cost,
               totalCost: item.subtotal,
               userId,
-              userName: 'Usuario',
+              userName: buyer?.name || 'Usuario',
               reason: `Compra ${purchaseNumber}`,
               storeId: purchaseData.storeId,
             },
@@ -386,22 +369,21 @@ export async function createPurchase(req: AuthRequest, res: Response) {
         }
       }
 
-      // Si es compra a crédito, crear transacción de proveedor (deuda)
+      // Compra a crédito: deuda con el proveedor (libro serializado por proveedor)
       if (purchaseData.paymentMethod === 'credito') {
+        await lockSupplier(tx, purchaseData.supplierId);
+
         const currentBalance = await tx.supplierTransaction.aggregate({
           where: { supplierId: purchaseData.supplierId },
           _sum: { amount: true },
         });
-
-        const newBalance =
-          (currentBalance._sum.amount || 0) + purchaseData.total;
 
         await tx.supplierTransaction.create({
           data: {
             supplierId: purchaseData.supplierId,
             type: 'purchase',
             amount: purchaseData.total,
-            balance: newBalance,
+            balance: (currentBalance._sum.amount || 0) + purchaseData.total,
             dueDate: purchaseData.dueDate
               ? new Date(purchaseData.dueDate)
               : null,
@@ -454,12 +436,8 @@ export async function createPurchase(req: AuthRequest, res: Response) {
       message: 'Compra creada exitosamente',
       purchase: completePurchase,
     });
-  } catch (error: any) {
-    console.error('Error al crear compra:', error);
-    return res.status(500).json({
-      error: 'Error al crear la compra',
-      details: error.message,
-    });
+  } catch (error) {
+    return sendError(res, error, 'Error al crear la compra');
   }
 }
 
@@ -477,9 +455,8 @@ export async function cancelPurchase(req: AuthRequest, res: Response) {
     const { reason } = req.body;
     const userId = req.user.userId;
 
-    const purchaseId: string = typeof id === 'string' ? id : id[0];
-    const cancelReason: string =
-      typeof reason === 'string' ? reason : reason[0];
+    const purchaseId: string = Array.isArray(id) ? id[0] : id;
+    const cancelReason: string = typeof reason === 'string' ? reason : '';
 
     const validationErrors = validateCancelPurchase(purchaseId, cancelReason);
     if (validationErrors.length > 0) {
@@ -500,19 +477,24 @@ export async function cancelPurchase(req: AuthRequest, res: Response) {
         include: {
           items: true,
           transactions: true,
+          returns: { select: { id: true } },
         },
       });
 
       if (!purchase) {
-        throw new Error('Compra no encontrada');
+        throw new BusinessError('Compra no encontrada', 404);
       }
 
-      if (purchase.status === 'cancelled') {
-        throw new Error('La compra ya está cancelada');
+      if (purchase.returns.length > 0) {
+        throw new BusinessError(
+          'La compra tiene devoluciones registradas y no puede cancelarse',
+          409
+        );
       }
 
-      const updatedPurchase = await tx.purchase.update({
-        where: { id: purchaseId },
+      // Marcar como cancelada solo si no lo estaba (idempotente ante cancelaciones simultáneas)
+      const marked = await tx.purchase.updateMany({
+        where: { id: purchaseId, status: { not: 'cancelled' } },
         data: {
           status: 'cancelled',
           cancelReason,
@@ -520,14 +502,19 @@ export async function cancelPurchase(req: AuthRequest, res: Response) {
           cancelledAt: new Date(),
         },
       });
+      if (marked.count === 0) {
+        throw new BusinessError('La compra ya está cancelada', 409);
+      }
+      const updatedPurchase = await tx.purchase.findUniqueOrThrow({
+        where: { id: purchaseId },
+      });
 
-      // Revertir stock de productos
+      // Revertir stock de productos (falla si ya se vendió y no alcanza)
       for (const item of purchase.items) {
-        const product = await tx.product.findUnique({
-          where: { id: item.productId },
+        const product = await tx.product.findFirst({
+          where: { id: item.productId, storeId: purchase.storeId },
           select: {
             trackInventory: true,
-            stock: true,
             name: true,
             sku: true,
             barcode: true,
@@ -535,13 +522,12 @@ export async function cancelPurchase(req: AuthRequest, res: Response) {
         });
 
         if (product?.trackInventory) {
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                decrement: item.quantity,
-              },
-            },
+          const { stockBefore, stockAfter } = await changeStock(tx, {
+            productId: item.productId,
+            storeId: purchase.storeId,
+            delta: -item.quantity,
+            productName: product.name,
+            insufficientMessage: `No hay stock suficiente de "${product.name}" para revertir la compra (parte ya se vendió o salió del inventario)`,
           });
 
           await tx.inventoryMovement.create({
@@ -552,8 +538,8 @@ export async function cancelPurchase(req: AuthRequest, res: Response) {
                 product.sku || product.barcode || item.productId.slice(0, 8),
               type: 'purchase_cancellation',
               quantity: -item.quantity,
-              stockBefore: product.stock,
-              stockAfter: product.stock - item.quantity,
+              stockBefore,
+              stockAfter,
               unitCost: item.cost,
               totalCost: item.subtotal,
               userId,
@@ -565,23 +551,25 @@ export async function cancelPurchase(req: AuthRequest, res: Response) {
         }
       }
 
-      // Revertir deuda generada si la compra fue a crédito
-      if (purchase.transactions.length > 0) {
-        for (const transaction of purchase.transactions) {
+      // Revertir la deuda generada si la compra fue a crédito
+      const charges = purchase.transactions.filter(
+        (transaction) => transaction.type === 'purchase'
+      );
+      if (charges.length > 0) {
+        await lockSupplier(tx, purchase.supplierId);
+
+        for (const charge of charges) {
           const currentBalance = await tx.supplierTransaction.aggregate({
             where: { supplierId: purchase.supplierId },
             _sum: { amount: true },
           });
 
-          const newBalance =
-            (currentBalance._sum.amount || 0) - transaction.amount;
-
           await tx.supplierTransaction.create({
             data: {
               supplierId: purchase.supplierId,
               type: 'payment',
-              amount: -transaction.amount,
-              balance: newBalance,
+              amount: -charge.amount,
+              balance: (currentBalance._sum.amount || 0) - charge.amount,
               notes: `Reversión por cancelación de compra ${purchase.purchaseNumber}`,
               purchaseId: purchase.id,
             },
@@ -596,12 +584,8 @@ export async function cancelPurchase(req: AuthRequest, res: Response) {
       message: 'Compra cancelada exitosamente',
       purchase: result,
     });
-  } catch (error: any) {
-    console.error('Error al cancelar compra:', error);
-    return res.status(500).json({
-      error: 'Error al cancelar la compra',
-      details: error.message,
-    });
+  } catch (error) {
+    return sendError(res, error, 'Error al cancelar la compra');
   }
 }
 

@@ -7,41 +7,9 @@ import {
   validateSalesQuery,
 } from '../utils/saleValidator';
 import { parseRangeStart, parseRangeEnd } from '../utils/dateRange';
-
-/**
- * Genera un número consecutivo único para ventas
- */
-async function generateSaleNumber(
-  storeId: string,
-  prefix: string = 'VEN'
-): Promise<string> {
-  const lastSale = await prisma.sale.findFirst({
-    where: {
-      storeId,
-      saleNumber: {
-        startsWith: prefix,
-      },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-    select: {
-      saleNumber: true,
-    },
-  });
-
-  let nextNumber = 1;
-
-  if (lastSale) {
-    const numberPart = lastSale.saleNumber.split('-')[1];
-    if (numberPart) {
-      nextNumber = parseInt(numberPart, 10) + 1;
-    }
-  }
-
-  const paddedNumber = nextNumber.toString().padStart(6, '0');
-  return `${prefix}-${paddedNumber}`;
-}
+import { nextDocumentNumber } from '../utils/documentNumber';
+import { changeStock } from '../utils/stock';
+import { BusinessError, sendError } from '../utils/errors';
 
 /**
  * GET /api/sales
@@ -294,33 +262,62 @@ export async function createSale(req: AuthRequest, res: Response) {
 
     // 3. Ejecutar en transacción para garantizar integridad
     const result = await prisma.$transaction(async (tx) => {
-      // 3.1. Generar número de venta consecutivo
-      const saleNumber = await generateSaleNumber(saleData.storeId);
+      // 3.1. Número de venta consecutivo (atómico por tienda)
+      const saleNumber = await nextDocumentNumber(tx, saleData.storeId, 'sale');
 
-      // 3.2. Verificar stock de productos si tienen trackInventory = true
-      for (const item of saleData.items) {
-        const product = await tx.product.findUnique({
-          where: { id: item.productId },
-          select: { stock: true, trackInventory: true, name: true },
+      // 3.2. Productos y cliente deben pertenecer a la tienda de la venta
+      const productIds: string[] = [
+        ...new Set<string>(saleData.items.map((item: any) => item.productId)),
+      ];
+      const products = await tx.product.findMany({
+        where: { id: { in: productIds }, storeId: saleData.storeId },
+        select: {
+          id: true,
+          name: true,
+          sku: true,
+          barcode: true,
+          trackInventory: true,
+        },
+      });
+      const productMap = new Map(products.map((p) => [p.id, p]));
+      if (productMap.size !== productIds.length) {
+        throw new BusinessError(
+          'Uno o más productos no existen en esta tienda',
+          404
+        );
+      }
+
+      let customer: {
+        id: string;
+        name: string;
+        documentNumber: string | null;
+      } | null = null;
+      if (saleData.customerId) {
+        customer = await tx.customer.findFirst({
+          where: { id: saleData.customerId, storeId: saleData.storeId },
+          select: { id: true, name: true, documentNumber: true },
         });
-
-        if (!product) {
-          throw new Error(`Producto ${item.productId} no encontrado`);
-        }
-
-        if (product.trackInventory && product.stock < item.quantity) {
-          throw new Error(
-            `Stock insuficiente para el producto "${product.name}". Disponible: ${product.stock}, Requerido: ${item.quantity}`
-          );
+        if (!customer) {
+          throw new BusinessError('Cliente no encontrado en esta tienda', 404);
         }
       }
+      if (saleData.paymentMethod === 'por_cobrar' && !customer) {
+        throw new BusinessError(
+          'Debes seleccionar un cliente para ventas por cobrar'
+        );
+      }
+
+      const cashier = await tx.user.findUnique({
+        where: { id: userId },
+        select: { name: true },
+      });
 
       // 3.3. Crear la venta
       const sale = await tx.sale.create({
         data: {
           saleNumber,
           storeId: saleData.storeId,
-          customerId: saleData.customerId || null,
+          customerId: customer?.id ?? null,
           userId: userId,
           subtotal: saleData.subtotal,
           tax: saleData.tax,
@@ -341,19 +338,17 @@ export async function createSale(req: AuthRequest, res: Response) {
         },
       });
 
-      // 3.4. Crear items de venta
-      const saleItems = await Promise.all(
-        saleData.items.map(async (item: any) => {
-          const product = await tx.product.findUnique({
-            where: { id: item.productId },
-            select: { name: true },
-          });
+      // 3.4. Items y descuento de stock (atómico: nunca queda negativo)
+      const saleItems = [];
+      for (const item of saleData.items) {
+        const product = productMap.get(item.productId)!;
 
-          return tx.saleItem.create({
+        saleItems.push(
+          await tx.saleItem.create({
             data: {
               saleId: sale.id,
               productId: item.productId,
-              productName: product?.name || 'Producto sin nombre',
+              productName: product.name,
               quantity: item.quantity,
               price: item.price,
               localPrice: item.localPrice,
@@ -364,48 +359,31 @@ export async function createSale(req: AuthRequest, res: Response) {
               priceSnapshot: item.priceSnapshot || null,
               iva: item.iva || 0,
             },
-          });
-        })
-      );
+          })
+        );
 
-      // 3.5. Actualizar stock de productos con trackInventory
-      for (const item of saleData.items) {
-        const product = await tx.product.findUnique({
-          where: { id: item.productId },
-          select: {
-            trackInventory: true,
-            stock: true,
-            name: true,
-            sku: true,
-            barcode: true,
-          },
-        });
-
-        if (product?.trackInventory) {
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                decrement: item.quantity,
-              },
-            },
+        if (product.trackInventory) {
+          const { stockBefore, stockAfter } = await changeStock(tx, {
+            productId: product.id,
+            storeId: saleData.storeId,
+            delta: -item.quantity,
+            productName: product.name,
           });
 
-          // Registrar movimiento de inventario
           await tx.inventoryMovement.create({
             data: {
-              productId: item.productId,
+              productId: product.id,
               productName: product.name,
               productCode:
-                product.sku || product.barcode || item.productId.slice(0, 8),
+                product.sku || product.barcode || product.id.slice(0, 8),
               type: 'sale',
               quantity: -item.quantity,
-              stockBefore: product.stock,
-              stockAfter: product.stock - item.quantity,
+              stockBefore,
+              stockAfter,
               unitCost: item.price,
               totalCost: item.subtotal,
               userId: userId,
-              userName: 'Cajero',
+              userName: cashier?.name || 'Cajero',
               reason: `Venta ${saleNumber}`,
               storeId: saleData.storeId,
             },
@@ -413,43 +391,46 @@ export async function createSale(req: AuthRequest, res: Response) {
         }
       }
 
-      // 3.6. Si es venta a crédito (por_cobrar), crear cuenta por cobrar
-      if (saleData.paymentMethod === 'por_cobrar' && saleData.customerId) {
-        const customer = await tx.customer.findUnique({
-          where: { id: saleData.customerId },
-          select: { name: true, documentNumber: true },
+      // 3.5. Venta a crédito: cuenta por cobrar y cargo en el libro del cliente
+      if (saleData.paymentMethod === 'por_cobrar' && customer) {
+        await tx.receivable.create({
+          data: {
+            storeId: saleData.storeId,
+            saleId: sale.id,
+            customerId: customer.id,
+            customerName: customer.name,
+            documentNumber: customer.documentNumber || null,
+            amount: saleData.total,
+            baseCurrency: saleData.referenceCurrency || 'USD',
+            referenceAmount: saleData.totalReference || saleData.total,
+            exchangeRateAtCreation: saleData.exchangeRate || 1,
+            amountPaid: 0,
+            balance: saleData.total,
+            description: `Venta ${saleNumber}`,
+            invoiceNumber: saleNumber,
+            status: 'pending',
+          },
         });
 
-        if (customer) {
-          await tx.receivable.create({
-            data: {
-              storeId: saleData.storeId,
-              saleId: sale.id,
-              customerId: saleData.customerId,
-              customerName: customer.name,
-              documentNumber: customer.documentNumber || null,
-              amount: saleData.total,
-              baseCurrency: saleData.referenceCurrency || 'USD',
-              referenceAmount: saleData.totalReference || saleData.total,
-              exchangeRateAtCreation: saleData.exchangeRate || 1,
-              amountPaid: 0,
-              balance: saleData.total,
-              description: `Venta ${saleNumber}`,
-              invoiceNumber: saleNumber,
-              status: 'pending',
-            },
-          });
+        await tx.customer.update({
+          where: { id: customer.id },
+          data: { balance: { increment: saleData.total } },
+        });
 
-          // Actualizar balance del cliente
-          await tx.customer.update({
-            where: { id: saleData.customerId },
-            data: {
-              balance: {
-                increment: saleData.total,
-              },
-            },
-          });
-        }
+        const ledger = await tx.customerTransaction.aggregate({
+          where: { customerId: customer.id },
+          _sum: { amount: true },
+        });
+        await tx.customerTransaction.create({
+          data: {
+            customerId: customer.id,
+            type: 'credit',
+            amount: saleData.total,
+            balance: (ledger._sum.amount || 0) + saleData.total,
+            saleId: sale.id,
+            notes: `Venta ${saleNumber}`,
+          },
+        });
       }
 
       return { sale, items: saleItems };
@@ -494,12 +475,8 @@ export async function createSale(req: AuthRequest, res: Response) {
       message: 'Venta creada exitosamente',
       sale: completeSale,
     });
-  } catch (error: any) {
-    console.error('Error al crear venta:', error);
-    return res.status(500).json({
-      error: 'Error al crear la venta',
-      details: error.message,
-    });
+  } catch (error) {
+    return sendError(res, error, 'Error al crear la venta');
   }
 }
 
@@ -518,9 +495,8 @@ export async function cancelSale(req: AuthRequest, res: Response) {
     const userId = req.user.userId;
 
     // Asegurar que id y reason son strings
-    const saleId: string = typeof id === 'string' ? id : id[0];
-    const cancelReason: string =
-      typeof reason === 'string' ? reason : reason[0];
+    const saleId: string = Array.isArray(id) ? id[0] : id;
+    const cancelReason: string = typeof reason === 'string' ? reason : '';
 
     // Validar
     const validationErrors = validateCancelSale(saleId, cancelReason);
@@ -548,16 +524,12 @@ export async function cancelSale(req: AuthRequest, res: Response) {
       });
 
       if (!sale) {
-        throw new Error('Venta no encontrada');
+        throw new BusinessError('Venta no encontrada', 404);
       }
 
-      if (sale.status === 'cancelled') {
-        throw new Error('La venta ya está cancelada');
-      }
-
-      // Marcar venta como cancelada
-      const updatedSale = await tx.sale.update({
-        where: { id: saleId },
+      // Marcar como cancelada solo si no lo estaba (idempotente ante cancelaciones simultáneas)
+      const marked = await tx.sale.updateMany({
+        where: { id: saleId, status: { not: 'cancelled' } },
         data: {
           status: 'cancelled',
           cancelReason: cancelReason,
@@ -565,73 +537,86 @@ export async function cancelSale(req: AuthRequest, res: Response) {
           cancelledAt: new Date(),
         },
       });
+      if (marked.count === 0) {
+        throw new BusinessError('La venta ya está cancelada', 409);
+      }
+      const updatedSale = await tx.sale.findUniqueOrThrow({
+        where: { id: saleId },
+      });
 
       // Revertir stock de productos
-      if (sale.items) {
-        for (const item of sale.items) {
-          const product = await tx.product.findUnique({
-            where: { id: item.productId },
-            select: {
-              trackInventory: true,
-              stock: true,
-              name: true,
-              sku: true,
-              barcode: true,
-            },
-          });
-
-          if (product?.trackInventory) {
-            await tx.product.update({
-              where: { id: item.productId },
-              data: {
-                stock: {
-                  increment: item.quantity,
-                },
-              },
-            });
-
-            // Registrar movimiento de inventario de reversión
-            await tx.inventoryMovement.create({
-              data: {
-                productId: item.productId,
-                productName: product.name,
-                productCode:
-                  product.sku || product.barcode || item.productId.slice(0, 8),
-                type: 'sale_cancellation',
-                quantity: item.quantity,
-                stockBefore: product.stock,
-                stockAfter: product.stock + item.quantity,
-                unitCost: item.price,
-                totalCost: item.subtotal,
-                userId: userId,
-                userName: 'Cajero',
-                reason: `Cancelación de venta ${sale.saleNumber}: ${cancelReason}`,
-                storeId: sale.storeId,
-              },
-            });
-          }
-        }
-      }
-
-      // Si tiene cuenta por cobrar, cancelarla
-      if (sale.receivable) {
-        await tx.receivable.update({
-          where: { id: sale.receivable.id },
-          data: {
-            status: 'cancelled',
+      for (const item of sale.items) {
+        const product = await tx.product.findFirst({
+          where: { id: item.productId, storeId: sale.storeId },
+          select: {
+            trackInventory: true,
+            name: true,
+            sku: true,
+            barcode: true,
           },
         });
 
-        // Revertir balance del cliente
+        if (product?.trackInventory) {
+          const { stockBefore, stockAfter } = await changeStock(tx, {
+            productId: item.productId,
+            storeId: sale.storeId,
+            delta: item.quantity,
+            productName: product.name,
+          });
+
+          await tx.inventoryMovement.create({
+            data: {
+              productId: item.productId,
+              productName: product.name,
+              productCode:
+                product.sku || product.barcode || item.productId.slice(0, 8),
+              type: 'sale_cancellation',
+              quantity: item.quantity,
+              stockBefore,
+              stockAfter,
+              unitCost: item.price,
+              totalCost: item.subtotal,
+              userId: userId,
+              userName: 'Cajero',
+              reason: `Cancelación de venta ${sale.saleNumber}: ${cancelReason}`,
+              storeId: sale.storeId,
+            },
+          });
+        }
+      }
+
+      // Si tiene cuenta por cobrar, cancelarla y revertir la deuda del cliente
+      if (sale.receivable) {
+        await tx.receivable.update({
+          where: { id: sale.receivable.id },
+          data: { status: 'cancelled' },
+        });
+
         if (sale.customerId) {
           await tx.customer.update({
             where: { id: sale.customerId },
-            data: {
-              balance: {
-                decrement: sale.receivable.balance,
-              },
-            },
+            data: { balance: { decrement: sale.receivable.balance } },
           });
+
+          const charge = await tx.customerTransaction.findFirst({
+            where: { saleId: sale.id, type: 'credit' },
+          });
+          if (charge) {
+            const ledger = await tx.customerTransaction.aggregate({
+              where: { customerId: sale.customerId },
+              _sum: { amount: true },
+            });
+            await tx.customerTransaction.create({
+              data: {
+                customerId: sale.customerId,
+                type: 'payment',
+                amount: -charge.amount,
+                balance: (ledger._sum.amount || 0) - charge.amount,
+                saleId: sale.id,
+                notes: `Cancelación de venta ${sale.saleNumber}`,
+              },
+            });
+          }
         }
       }
 
@@ -642,12 +627,8 @@ export async function cancelSale(req: AuthRequest, res: Response) {
       message: 'Venta cancelada exitosamente',
       sale: result,
     });
-  } catch (error: any) {
-    console.error('Error al cancelar venta:', error);
-    return res.status(500).json({
-      error: 'Error al cancelar la venta',
-      details: error.message,
-    });
+  } catch (error) {
+    return sendError(res, error, 'Error al cancelar la venta');
   }
 }
 

@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/prisma';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { changeStock } from '../utils/stock';
+import { sendError } from '../utils/errors';
 import { parseRangeStart, parseRangeEnd } from '../utils/dateRange';
 
 /**
@@ -151,26 +153,24 @@ export const createAdjustment = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
 
-    // Validar que no resulte en stock negativo
-    const newStock = product.stock + quantityNum;
-    if (newStock < 0) {
-      return res.status(400).json({
-        error: `Stock insuficiente. Stock actual: ${product.stock}, ajuste: ${quantityNum}`,
-      });
+    // Las mermas siempre restan; el resto usa el signo recibido
+    const delta = type === 'damage' ? -Math.abs(quantityNum) : quantityNum;
+    if (delta === 0) {
+      return res.status(400).json({ error: 'quantity no puede ser 0' });
     }
 
     // Crear ajuste y actualizar stock en una transacción
     const result = await prisma.$transaction(async (tx) => {
-      // Calcular stock antes y después
-      const stockBefore = product.stock;
-      const stockAfter = newStock;
-
-      // Actualizar stock
-      const updatedProduct = await tx.product.update({
+      // Cambio atómico: no deja el stock negativo ni pisa ventas simultáneas
+      const { stockBefore, stockAfter } = await changeStock(tx, {
+        productId,
+        storeId,
+        delta,
+        productName: product.name,
+        insufficientMessage: `Stock insuficiente. Stock actual: ${product.stock}, ajuste: ${delta}`,
+      });
+      const updatedProduct = await tx.product.findUniqueOrThrow({
         where: { id: productId },
-        data: {
-          stock: newStock,
-        },
       });
 
       // Obtener información del usuario
@@ -187,11 +187,11 @@ export const createAdjustment = async (req: Request, res: Response) => {
           productCode: product.sku || product.barcode || productId.slice(0, 8),
           storeId,
           type,
-          quantity: quantityNum,
+          quantity: delta,
           stockBefore,
           stockAfter,
           unitCost: product.cost || 0,
-          totalCost: (product.cost || 0) * Math.abs(quantityNum),
+          totalCost: (product.cost || 0) * Math.abs(delta),
           userId,
           userName: user?.name || 'Usuario desconocido',
           reason: reason || null,
@@ -218,8 +218,7 @@ export const createAdjustment = async (req: Request, res: Response) => {
       newStock: result.updatedProduct.stock,
     });
   } catch (error) {
-    console.error('Create adjustment error:', error);
-    res.status(500).json({ error: 'Error al crear ajuste de inventario' });
+    sendError(res, error, 'Error al crear ajuste de inventario');
   }
 };
 

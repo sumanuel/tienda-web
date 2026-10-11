@@ -45,6 +45,7 @@ model Store {
   receivables        Receivable[]
   purchases          Purchase[]
   purchaseReturns    PurchaseReturn[]
+  documentCounters   DocumentCounter[]
 
   @@map("stores")
 }
@@ -88,7 +89,7 @@ model Product {
 
 model Sale {
   id                String      @id @default(uuid())
-  saleNumber        String      @unique
+  saleNumber        String
   storeId           String
   customerId        String?
   userId            String
@@ -119,6 +120,7 @@ model Sale {
   items             SaleItem[]
   receivable        Receivable?
 
+  @@unique([storeId, saleNumber])
   @@index([storeId, createdAt(sort: Desc)])
   @@index([storeId, customerId])
   @@index([storeId, status])
@@ -155,7 +157,7 @@ model SaleItem {
 
 model Purchase {
   id                String                @id @default(uuid())
-  purchaseNumber    String                @unique
+  purchaseNumber    String
   storeId           String
   supplierId        String
   userId            String
@@ -186,6 +188,7 @@ model Purchase {
   transactions      SupplierTransaction[]
   returns           PurchaseReturn[]
 
+  @@unique([storeId, purchaseNumber])
   @@index([storeId, createdAt(sort: Desc)])
   @@index([storeId, supplierId])
   @@index([storeId, status])
@@ -217,7 +220,7 @@ model PurchaseItem {
 
 model PurchaseReturn {
   id                String                @id @default(uuid())
-  returnNumber      String                @unique
+  returnNumber      String
   storeId           String
   supplierId        String
   purchaseId        String?
@@ -239,6 +242,7 @@ model PurchaseReturn {
   items             PurchaseReturnItem[]
   transactions      SupplierTransaction[]
 
+  @@unique([storeId, returnNumber])
   @@index([storeId, createdAt(sort: Desc)])
   @@index([storeId, supplierId])
   @@index([purchaseId])
@@ -444,4 +448,15 @@ model ReceivablePayment {
 
   @@index([receivableId])
   @@map("receivable_payments")
+}
+
+// Contador atómico por tienda y tipo de documento (VEN, COM, DEV)
+model DocumentCounter {
+  storeId    String
+  type       String
+  lastNumber Int
+  store      Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@id([storeId, type])
+  @@map("document_counters")
 }

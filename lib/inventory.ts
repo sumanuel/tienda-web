@@ -42,7 +42,8 @@ export async function registerInventoryMovement(
       storeId,
       productId: data.productId,
       type,
-      quantity: Math.abs(quantity),
+      // La merma siempre resta en el backend; entradas/salidas viajan con signo
+      quantity: type === 'damage' ? Math.abs(quantity) : quantity,
       reason: data.reason || undefined,
       notes: data.notes || undefined,
     });
