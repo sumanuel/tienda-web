@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/prisma';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { parsePagination } from '../utils/pagination';
 
 /**
  * Listar clientes
@@ -44,8 +45,11 @@ export const listCustomers = async (req: Request, res: Response) => {
       ];
     }
 
-    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
-    const take = parseInt(limit as string);
+    const {
+      page: pageNum,
+      limit: take,
+      skip,
+    } = parsePagination(page, limit);
 
     const [customers, total] = await Promise.all([
       prisma.customer.findMany({
@@ -86,9 +90,9 @@ export const listCustomers = async (req: Request, res: Response) => {
       customers: customersWithBalance,
       pagination: {
         total,
-        page: parseInt(page as string),
-        limit: parseInt(limit as string),
-        pages: Math.ceil(total / parseInt(limit as string)),
+        page: pageNum,
+        limit: take,
+        pages: Math.ceil(total / take),
       },
     });
   } catch (error) {
@@ -374,7 +378,7 @@ export const getCustomerTransactions = async (req: Request, res: Response) => {
     const transactions = await prisma.customerTransaction.findMany({
       where: { customerId: id },
       orderBy: { createdAt: 'desc' },
-      take: parseInt(limit as string),
+      take: parsePagination(undefined, limit).limit,
     });
 
     // Calcular balance

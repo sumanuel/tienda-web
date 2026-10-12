@@ -5,6 +5,7 @@ import { nextDocumentNumber } from '../utils/documentNumber';
 import { changeStock } from '../utils/stock';
 import { lockSupplier } from '../utils/ledgerLock';
 import { BusinessError, sendError } from '../utils/errors';
+import { parsePagination } from '../utils/pagination';
 import {
   validatePurchaseData,
   validateCancelPurchase,
@@ -84,9 +85,11 @@ export async function listPurchases(req: AuthRequest, res: Response) {
       }
     }
 
-    const pageNum = parseInt(page as string, 10);
-    const limitNum = parseInt(limit as string, 10);
-    const skip = (pageNum - 1) * limitNum;
+    const {
+      page: pageNum,
+      limit: limitNum,
+      skip,
+    } = parsePagination(page, limit, 1000);
 
     const [purchases, total] = await Promise.all([
       prisma.purchase.findMany({
@@ -140,9 +143,7 @@ export async function listPurchases(req: AuthRequest, res: Response) {
     });
   } catch (error: any) {
     console.error('Error al listar compras:', error);
-    return res
-      .status(500)
-      .json({ error: 'Error al listar compras', details: error.message });
+    return sendError(res, error, 'Error al listar compras');
   }
 }
 
@@ -207,9 +208,7 @@ export async function getPurchase(req: AuthRequest, res: Response) {
     return res.status(200).json({ purchase });
   } catch (error: any) {
     console.error('Error al obtener compra:', error);
-    return res
-      .status(500)
-      .json({ error: 'Error al obtener la compra', details: error.message });
+    return sendError(res, error, 'Error al obtener la compra');
   }
 }
 
@@ -673,8 +672,6 @@ export async function getPurchaseStats(req: AuthRequest, res: Response) {
     });
   } catch (error: any) {
     console.error('Error al obtener estadísticas de compras:', error);
-    return res
-      .status(500)
-      .json({ error: 'Error al obtener estadísticas', details: error.message });
+    return sendError(res, error, 'Error al obtener estadísticas');
   }
 }

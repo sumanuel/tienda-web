@@ -10,6 +10,7 @@ import { parseRangeStart, parseRangeEnd } from '../utils/dateRange';
 import { nextDocumentNumber } from '../utils/documentNumber';
 import { changeStock } from '../utils/stock';
 import { BusinessError, sendError } from '../utils/errors';
+import { parsePagination } from '../utils/pagination';
 
 /**
  * GET /api/sales
@@ -92,9 +93,11 @@ export async function listSales(req: AuthRequest, res: Response) {
     }
 
     // Paginación
-    const pageNum = parseInt(page as string, 10);
-    const limitNum = parseInt(limit as string, 10);
-    const skip = (pageNum - 1) * limitNum;
+    const {
+      page: pageNum,
+      limit: limitNum,
+      skip,
+    } = parsePagination(page, limit, 10000);
 
     // Obtener ventas y total
     const [sales, total] = await Promise.all([
@@ -149,9 +152,7 @@ export async function listSales(req: AuthRequest, res: Response) {
     });
   } catch (error: any) {
     console.error('Error al listar ventas:', error);
-    return res
-      .status(500)
-      .json({ error: 'Error al listar ventas', details: error.message });
+    return sendError(res, error, 'Error al listar ventas');
   }
 }
 
@@ -220,9 +221,7 @@ export async function getSale(req: AuthRequest, res: Response) {
     return res.status(200).json({ sale });
   } catch (error: any) {
     console.error('Error al obtener venta:', error);
-    return res
-      .status(500)
-      .json({ error: 'Error al obtener la venta', details: error.message });
+    return sendError(res, error, 'Error al obtener la venta');
   }
 }
 
@@ -720,8 +719,6 @@ export async function getSalesStats(req: AuthRequest, res: Response) {
     });
   } catch (error: any) {
     console.error('Error al obtener estadísticas:', error);
-    return res
-      .status(500)
-      .json({ error: 'Error al obtener estadísticas', details: error.message });
+    return sendError(res, error, 'Error al obtener estadísticas');
   }
 }

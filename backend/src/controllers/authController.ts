@@ -8,19 +8,57 @@ import {
 } from '../utils/jwt';
 import { AuthRequest } from '../middleware/authMiddleware';
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
+// bcrypt solo considera los primeros 72 bytes de la contraseña
+const MAX_PASSWORD_LENGTH = 72;
+
+// Hash de relleno: se compara contra él cuando el usuario no existe para que
+// el login tarde lo mismo y no revele qué emails están registrados.
+const dummyPasswordHash = hashPassword('contraseña-de-relleno');
+
+function normalizeEmail(value: unknown): string {
+  return typeof value === 'string' ? value.trim().toLowerCase() : '';
+}
+
 // POST /api/auth/register
 export async function register(req: Request, res: Response) {
   try {
-    const { email, password, name, storeName } = req.body;
+    const { password, name, storeName } = req.body;
+    const email = normalizeEmail(req.body.email);
 
     // Validar campos requeridos
     if (!email || !password || !name || !storeName) {
       return res.status(400).json({ error: 'Todos los campos son requeridos' });
     }
 
-    // Verificar si el usuario ya existe
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
+    if (
+      typeof password !== 'string' ||
+      typeof name !== 'string' ||
+      typeof storeName !== 'string'
+    ) {
+      return res.status(400).json({ error: 'Datos inválidos' });
+    }
+
+    if (!EMAIL_PATTERN.test(email) || email.length > 254) {
+      return res.status(400).json({ error: 'El email no es válido' });
+    }
+
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({
+        error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres`,
+      });
+    }
+
+    if (Buffer.byteLength(password, 'utf8') > MAX_PASSWORD_LENGTH) {
+      return res.status(400).json({
+        error: `La contraseña no puede superar ${MAX_PASSWORD_LENGTH} caracteres`,
+      });
+    }
+
+    // Verificar si el usuario ya existe (sin distinguir mayúsculas)
+    const existingUser = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
     });
 
     if (existingUser) {
@@ -40,7 +78,7 @@ export async function register(req: Request, res: Response) {
         stores: {
           create: {
             name: storeName,
-            currency: 'DOP',
+            currency: 'VES',
           },
         },
       },
@@ -82,30 +120,30 @@ export async function register(req: Request, res: Response) {
 // POST /api/auth/login
 export async function login(req: Request, res: Response) {
   try {
-    const { email, password } = req.body;
+    const { password } = req.body;
+    const email = normalizeEmail(req.body.email);
 
-    if (!email || !password) {
+    if (!email || !password || typeof password !== 'string') {
       return res
         .status(400)
         .json({ error: 'Email y contraseña son requeridos' });
     }
 
-    // Buscar usuario
-    const user = await prisma.user.findUnique({
-      where: { email },
+    // Buscar usuario (sin distinguir mayúsculas)
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
       include: {
         stores: true,
       },
     });
 
-    if (!user) {
-      return res.status(401).json({ error: 'Credenciales inválidas' });
-    }
+    // Verificar contraseña (siempre se compara un hash, exista o no el usuario)
+    const isValidPassword = await comparePassword(
+      password,
+      user ? user.password : await dummyPasswordHash
+    );
 
-    // Verificar contraseña
-    const isValidPassword = await comparePassword(password, user.password);
-
-    if (!isValidPassword) {
+    if (!user || !isValidPassword) {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
@@ -187,16 +225,27 @@ export async function refresh(req: Request, res: Response) {
     // Verificar refresh token
     const payload = verifyRefreshToken(refreshToken);
 
+    // El usuario debe seguir existiendo; email y rol se leen de la base de datos
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { id: true, email: true, role: true },
+    });
+
+    if (!user) {
+      return res
+        .status(401)
+        .json({ error: 'Refresh token inválido o expirado' });
+    }
+
     // Generar nuevo access token
     const newAccessToken = generateAccessToken({
-      userId: payload.userId,
-      email: payload.email,
-      role: payload.role,
+      userId: user.id,
+      email: user.email,
+      role: user.role,
     });
 
     res.json({ accessToken: newAccessToken });
   } catch (error) {
-    console.error('Refresh error:', error);
     res.status(401).json({ error: 'Refresh token inválido o expirado' });
   }
 }

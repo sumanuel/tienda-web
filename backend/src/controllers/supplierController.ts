@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/prisma';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { parsePagination } from '../utils/pagination';
 
 /**
  * Listar proveedores
@@ -41,8 +42,11 @@ export const listSuppliers = async (req: Request, res: Response) => {
       ];
     }
 
-    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
-    const take = parseInt(limit as string);
+    const {
+      page: pageNum,
+      limit: take,
+      skip,
+    } = parsePagination(page, limit);
 
     const [suppliers, total] = await Promise.all([
       prisma.supplier.findMany({
@@ -82,9 +86,9 @@ export const listSuppliers = async (req: Request, res: Response) => {
       suppliers: suppliersWithBalance,
       pagination: {
         total,
-        page: parseInt(page as string),
-        limit: parseInt(limit as string),
-        pages: Math.ceil(total / parseInt(limit as string)),
+        page: pageNum,
+        limit: take,
+        pages: Math.ceil(total / take),
       },
     });
   } catch (error) {
@@ -357,7 +361,7 @@ export const getSupplierTransactions = async (req: Request, res: Response) => {
     const transactions = await prisma.supplierTransaction.findMany({
       where: { supplierId: id },
       orderBy: { createdAt: 'desc' },
-      take: parseInt(limit as string),
+      take: parsePagination(undefined, limit).limit,
     });
 
     // Calcular balance

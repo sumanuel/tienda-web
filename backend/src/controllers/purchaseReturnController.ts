@@ -5,6 +5,7 @@ import { nextDocumentNumber } from '../utils/documentNumber';
 import { changeStock } from '../utils/stock';
 import { lockSupplier } from '../utils/ledgerLock';
 import { BusinessError, sendError } from '../utils/errors';
+import { parsePagination } from '../utils/pagination';
 import { validatePurchaseReturnData } from '../utils/purchaseValidator';
 
 /**
@@ -40,9 +41,11 @@ export async function listPurchaseReturns(req: AuthRequest, res: Response) {
       where.supplierId = supplierId;
     }
 
-    const pageNum = parseInt(page as string, 10);
-    const limitNum = parseInt(limit as string, 10);
-    const skip = (pageNum - 1) * limitNum;
+    const {
+      page: pageNum,
+      limit: limitNum,
+      skip,
+    } = parsePagination(page, limit, 1000);
 
     const [purchaseReturns, total] = await Promise.all([
       prisma.purchaseReturn.findMany({
@@ -80,10 +83,7 @@ export async function listPurchaseReturns(req: AuthRequest, res: Response) {
     });
   } catch (error: any) {
     console.error('Error al listar devoluciones de compra:', error);
-    return res.status(500).json({
-      error: 'Error al listar devoluciones de compra',
-      details: error.message,
-    });
+    return sendError(res, error, 'Error al listar devoluciones de compra');
   }
 }
 
@@ -128,10 +128,7 @@ export async function getPurchaseReturn(req: AuthRequest, res: Response) {
     return res.status(200).json({ purchaseReturn });
   } catch (error: any) {
     console.error('Error al obtener devolución de compra:', error);
-    return res.status(500).json({
-      error: 'Error al obtener la devolución',
-      details: error.message,
-    });
+    return sendError(res, error, 'Error al obtener la devolución');
   }
 }
 

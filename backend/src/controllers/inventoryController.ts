@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/prisma';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { parsePagination } from '../utils/pagination';
 import { changeStock } from '../utils/stock';
 import { sendError } from '../utils/errors';
 import { parseRangeStart, parseRangeEnd } from '../utils/dateRange';
@@ -61,8 +62,11 @@ export const listMovements = async (req: Request, res: Response) => {
       }
     }
 
-    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
-    const take = parseInt(limit as string);
+    const {
+      page: pageNum,
+      limit: take,
+      skip,
+    } = parsePagination(page, limit);
 
     const [movements, total] = await Promise.all([
       prisma.inventoryMovement.findMany({
@@ -91,9 +95,9 @@ export const listMovements = async (req: Request, res: Response) => {
       movements,
       pagination: {
         total,
-        page: parseInt(page as string),
-        limit: parseInt(limit as string),
-        pages: Math.ceil(total / parseInt(limit as string)),
+        page: pageNum,
+        limit: take,
+        pages: Math.ceil(total / take),
       },
     });
   } catch (error) {
@@ -463,7 +467,7 @@ export const getProductMovements = async (req: Request, res: Response) => {
       orderBy: {
         createdAt: 'desc',
       },
-      take: parseInt(limit as string),
+      take: parsePagination(undefined, limit).limit,
     });
 
     // Calcular stock en cada punto

@@ -8,10 +8,20 @@ export function errorHandler(
 ) {
   console.error('Error:', err);
 
+  // Cuerpo JSON mal formado o demasiado grande: error del cliente, no del servidor
+  if (err.type === 'entity.parse.failed') {
+    return res
+      .status(400)
+      .json({ error: 'El cuerpo de la solicitud no es un JSON válido' });
+  }
+
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'La solicitud es demasiado grande' });
+  }
+
   if (err.name === 'ValidationError') {
     return res.status(400).json({
       error: 'Error de validación',
-      details: err.message,
     });
   }
 

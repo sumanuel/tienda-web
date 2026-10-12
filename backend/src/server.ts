@@ -1,3 +1,4 @@
+import './config/env';
 import app from './app';
 import { Server } from 'http';
 
@@ -10,7 +11,7 @@ let server: Server | null = null;
 try {
   server = app.listen(PORT, HOST, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📡 Network: http://10.2.0.2:${PORT}`);
+    console.log(`📡 Escuchando en ${HOST}:${PORT}`);
     console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(
       `🔐 CORS enabled for: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`
