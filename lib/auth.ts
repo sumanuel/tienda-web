@@ -71,6 +71,7 @@ export async function getUserProfile(): Promise<UserProfile | null> {
 }
 
 export function isAuthenticated(): boolean {
-  if (typeof window === 'undefined') return false;
-  return !!localStorage.getItem('accessToken');
+  if (typeof document === 'undefined') return false;
+  // Indicador de sesión sin datos; los tokens van en cookies httpOnly
+  return document.cookie.split('; ').some((c) => c === 'tsuma_session=1');
 }

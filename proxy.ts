@@ -13,9 +13,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const accessToken = request.cookies.get('accessToken')?.value;
+  // Indicador de sesión (los tokens están en cookies httpOnly que valida el backend)
+  const hasSession = request.cookies.get('tsuma_session')?.value === '1';
 
-  if (!accessToken && pathname.startsWith('/dashboard')) {
+  if (!hasSession && pathname.startsWith('/dashboard')) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);

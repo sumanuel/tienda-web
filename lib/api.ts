@@ -14,40 +14,19 @@ class ApiClient {
     this.baseUrl = baseUrl;
   }
 
-  private getToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('accessToken');
+  // Los tokens viven en cookies httpOnly que pone el backend: el navegador las
+  // envía solo y este código nunca las ve. Solo existe un indicador sin datos
+  // (tsuma_session) para saber si hay una sesión iniciada.
+  private hasSession(): boolean {
+    if (typeof document === 'undefined') return false;
+    return document.cookie
+      .split('; ')
+      .some((cookie) => cookie === 'tsuma_session=1');
   }
 
-  private getRefreshToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('refreshToken');
-  }
-
-  private setCookie(name: string, value: string, maxAgeSeconds: number) {
+  private endSession() {
     if (typeof document === 'undefined') return;
-    document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax`;
-  }
-
-  private clearCookie(name: string) {
-    if (typeof document === 'undefined') return;
-    document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=Lax`;
-  }
-
-  private setTokens(accessToken: string, refreshToken: string) {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    this.setCookie('accessToken', accessToken, 60 * 60 * 24);
-    this.setCookie('refreshToken', refreshToken, 60 * 60 * 24 * 7);
-  }
-
-  private clearTokens() {
-    if (typeof window === 'undefined') return;
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    this.clearCookie('accessToken');
-    this.clearCookie('refreshToken');
+    document.cookie = 'tsuma_session=; Path=/; Max-Age=0; SameSite=Lax';
   }
 
   private getFallbackBaseUrls(): string[] {
@@ -112,11 +91,15 @@ class ApiClient {
     }
   }
 
+  // Número de renovaciones hechas: si cambió mientras una petición esperaba,
+  // otra ya renovó la sesión y basta con reintentar.
+  private refreshCount = 0;
+
   // Una sola renovación a la vez: si varias peticiones reciben 401 juntas
   // comparten el mismo intento en vez de gastar el refresh token varias veces.
-  private refreshInFlight: Promise<string | null> | null = null;
+  private refreshInFlight: Promise<boolean> | null = null;
 
-  private refreshAccessToken(): Promise<string | null> {
+  private refreshSession(): Promise<boolean> {
     if (!this.refreshInFlight) {
       this.refreshInFlight = this.performRefresh().finally(() => {
         this.refreshInFlight = null;
@@ -125,38 +108,30 @@ class ApiClient {
     return this.refreshInFlight;
   }
 
-  // Devuelve el nuevo access token, null si la sesión ya no es válida (hay que
-  // volver a iniciar sesión) o lanza un error si el fallo es transitorio.
-  private async performRefresh(): Promise<string | null> {
-    const refreshToken = this.getRefreshToken();
-    if (!refreshToken) return null;
-
+  // true si la sesión se renovó, false si ya no es válida (hay que volver a
+  // iniciar sesión) o lanza un error si el fallo es transitorio.
+  private async performRefresh(): Promise<boolean> {
     try {
       const response = await this.fetchWithFallback('/api/auth/refresh', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
       });
 
       if (response.status === 400 || response.status === 401) {
         // El refresh token no sirve (caducado o revocado): sesión terminada
-        this.clearTokens();
-        return null;
+        this.endSession();
+        return false;
       }
 
       if (!response.ok) {
         throw new Error('No se pudo renovar la sesión. Intenta de nuevo.');
       }
 
-      const data = await response.json();
-
-      // El backend rota el refresh token en cada renovación
-      this.setTokens(data.accessToken, data.refreshToken ?? refreshToken);
-
-      return data.accessToken as string;
+      this.refreshCount++;
+      return true;
     } catch (error) {
       // Un fallo de red o del servidor no debe cerrar la sesión
-      console.error('Error refreshing token:', error);
+      console.error('Error refreshing session:', error);
       throw error instanceof Error
         ? error
         : new Error('No se pudo renovar la sesión. Intenta de nuevo.');
@@ -164,16 +139,11 @@ class ApiClient {
   }
 
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const token = this.getToken();
-
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),
     };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+    const refreshCountBefore = this.refreshCount;
 
     try {
       const response = await this.fetchWithFallback(endpoint, {
@@ -181,18 +151,14 @@ class ApiClient {
         headers,
       });
 
-      // Si recibimos 401, intentar refrescar el token
-      if (response.status === 401 && token) {
-        // Si otra petición ya renovó el token, se reutiliza en vez de renovar de nuevo
-        const currentToken = this.getToken();
-        const newToken =
-          currentToken && currentToken !== token
-            ? currentToken
-            : await this.refreshAccessToken();
+      // Si recibimos 401 con una sesión iniciada, intentar renovarla
+      if (response.status === 401 && this.hasSession()) {
+        // Si otra petición ya renovó la sesión, basta con reintentar
+        const renewed =
+          this.refreshCount !== refreshCountBefore ||
+          (await this.refreshSession());
 
-        if (newToken) {
-          // Reintentar con el nuevo token
-          headers['Authorization'] = `Bearer ${newToken}`;
+        if (renewed) {
           const retryResponse = await this.fetchWithFallback(endpoint, {
             ...options,
             headers,
@@ -205,8 +171,8 @@ class ApiClient {
 
           return retryResponse.json();
         } else {
-          // No se pudo refrescar, redirigir a login
-          this.clearTokens();
+          // No se pudo renovar, redirigir a login
+          this.endSession();
           if (typeof window !== 'undefined') {
             window.location.href = '/login';
           }
@@ -270,14 +236,11 @@ class ApiClient {
         role: string;
         stores: Array<{ id: string; name: string; address: string | null }>;
       };
-      accessToken: string;
-      refreshToken: string;
     }>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     });
 
-    this.setTokens(response.accessToken, response.refreshToken);
     return response;
   }
 
@@ -290,33 +253,26 @@ class ApiClient {
         role: string;
         stores: Array<{ id: string; name: string; address: string | null }>;
       };
-      accessToken: string;
-      refreshToken: string;
     }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
 
-    this.setTokens(response.accessToken, response.refreshToken);
     return response;
   }
 
   async logout() {
-    // Revoca las sesiones en el servidor; si no hay conexión igual se cierra
-    // la sesión local
-    const refreshToken = this.getRefreshToken();
-    if (refreshToken) {
-      try {
-        await this.fetchWithFallback('/api/auth/logout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken }),
-        });
-      } catch {
-        // sin conexión
-      }
+    // El servidor revoca las sesiones y borra las cookies; si no hay conexión
+    // igual se limpia el indicador local
+    try {
+      await this.fetchWithFallback('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch {
+      // sin conexión
     }
-    this.clearTokens();
+    this.endSession();
   }
 
   async getMe() {

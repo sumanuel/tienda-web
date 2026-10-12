@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import authRoutes from './routes/auth.routes';
@@ -13,6 +14,8 @@ import customerRoutes from './routes/customer.routes';
 import supplierRoutes from './routes/supplier.routes';
 import exchangeRateRoutes from './routes/exchangeRateRoutes';
 import { errorHandler } from './middleware/errorHandler';
+import { originGuard } from './middleware/originGuard';
+import { allowedOrigins } from './config/origins';
 
 const app = express();
 
@@ -21,28 +24,6 @@ const app = express();
 if (process.env.TRUST_PROXY) {
   app.set('trust proxy', Number(process.env.TRUST_PROXY) || true);
 }
-
-// Orígenes de desarrollo local; en producción solo se permite FRONTEND_URL
-const developmentOrigins = [
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'http://localhost:3001',
-  'http://127.0.0.1:3001',
-  'http://10.2.0.2:3000',
-  'http://10.2.0.2:3001',
-];
-
-const envAllowedOrigins = (process.env.FRONTEND_URL || '')
-  .split(',')
-  .map((origin) => origin.trim().replace(/^"|"$/g, ''))
-  .filter(Boolean);
-
-const allowedOrigins = Array.from(
-  new Set([
-    ...(process.env.NODE_ENV === 'production' ? [] : developmentOrigins),
-    ...envAllowedOrigins,
-  ])
-);
 
 // Middleware
 app.use(
@@ -88,6 +69,8 @@ const authLimiter = rateLimit({
 });
 app.use('/api', apiLimiter);
 
+app.use(cookieParser());
+app.use('/api', originGuard);
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 

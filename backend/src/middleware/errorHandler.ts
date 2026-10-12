@@ -8,6 +8,14 @@ export function errorHandler(
 ) {
   console.error('Error:', err);
 
+  // Origen no permitido por CORS: es un rechazo, no un fallo del servidor
+  if (
+    typeof err.message === 'string' &&
+    err.message.startsWith('CORS bloqueado')
+  ) {
+    return res.status(403).json({ error: 'Origen no permitido' });
+  }
+
   // Cuerpo JSON mal formado o demasiado grande: error del cliente, no del servidor
   if (err.type === 'entity.parse.failed') {
     return res

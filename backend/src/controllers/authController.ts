@@ -3,6 +3,11 @@ import { prisma } from '../config/prisma';
 import { hashPassword, comparePassword } from '../utils/bcrypt';
 import { verifyRefreshToken } from '../utils/jwt';
 import {
+  REFRESH_COOKIE,
+  setAuthCookies,
+  clearAuthCookies,
+} from '../utils/authCookies';
+import {
   issueTokens,
   tokenVersionOf,
   SessionTokenPayload,
@@ -88,8 +93,8 @@ export async function register(req: Request, res: Response) {
       },
     });
 
-    // Generar tokens
-    const { accessToken, refreshToken } = issueTokens(user);
+    // Los tokens viajan solo en cookies httpOnly, nunca en el cuerpo
+    setAuthCookies(res, issueTokens(user));
 
     res.status(201).json({
       user: {
@@ -99,8 +104,6 @@ export async function register(req: Request, res: Response) {
         role: user.role,
         stores: user.stores,
       },
-      accessToken,
-      refreshToken,
     });
   } catch (error) {
     console.error('Register error:', error);
@@ -138,8 +141,8 @@ export async function login(req: Request, res: Response) {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
-    // Generar tokens
-    const { accessToken, refreshToken } = issueTokens(user);
+    // Los tokens viajan solo en cookies httpOnly, nunca en el cuerpo
+    setAuthCookies(res, issueTokens(user));
 
     res.json({
       user: {
@@ -149,8 +152,6 @@ export async function login(req: Request, res: Response) {
         role: user.role,
         stores: user.stores,
       },
-      accessToken,
-      refreshToken,
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -197,7 +198,9 @@ export async function getMe(req: AuthRequest, res: Response) {
 // POST /api/auth/refresh
 export async function refresh(req: Request, res: Response) {
   try {
-    const { refreshToken } = req.body;
+    // Cookie httpOnly en el navegador; el cuerpo queda para scripts y herramientas
+    const fromCookie = req.cookies?.[REFRESH_COOKIE];
+    const refreshToken: unknown = fromCookie ?? req.body?.refreshToken;
 
     if (!refreshToken || typeof refreshToken !== 'string') {
       return res.status(400).json({ error: 'Refresh token requerido' });
@@ -221,8 +224,11 @@ export async function refresh(req: Request, res: Response) {
 
     // Se emite también un refresh token nuevo: mientras el usuario esté
     // activo la sesión se renueva, y si deja de usarla caduca
-    res.json(issueTokens(user));
+    const tokens = issueTokens(user);
+    setAuthCookies(res, tokens);
+    res.json(fromCookie ? { ok: true } : tokens);
   } catch {
+    clearAuthCookies(res);
     res.status(401).json({ error: 'Refresh token inválido o expirado' });
   }
 }
@@ -233,7 +239,8 @@ export async function refresh(req: Request, res: Response) {
 // haya caducado.
 export async function logout(req: Request, res: Response) {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken: unknown =
+      req.cookies?.[REFRESH_COOKIE] ?? req.body?.refreshToken;
 
     if (refreshToken && typeof refreshToken === 'string') {
       const payload = verifyRefreshToken(refreshToken) as SessionTokenPayload;
@@ -247,5 +254,6 @@ export async function logout(req: Request, res: Response) {
     // Token inválido o caducado: no hay sesión que revocar
   }
 
+  clearAuthCookies(res);
   res.json({ message: 'Sesión cerrada' });
 }
