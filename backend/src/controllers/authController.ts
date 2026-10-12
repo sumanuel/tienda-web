@@ -1,11 +1,12 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/prisma';
 import { hashPassword, comparePassword } from '../utils/bcrypt';
+import { verifyRefreshToken } from '../utils/jwt';
 import {
-  generateAccessToken,
-  generateRefreshToken,
-  verifyRefreshToken,
-} from '../utils/jwt';
+  issueTokens,
+  tokenVersionOf,
+  SessionTokenPayload,
+} from '../utils/tokens';
 import { AuthRequest } from '../middleware/authMiddleware';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -88,17 +89,7 @@ export async function register(req: Request, res: Response) {
     });
 
     // Generar tokens
-    const accessToken = generateAccessToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    });
-
-    const refreshToken = generateRefreshToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    });
+    const { accessToken, refreshToken } = issueTokens(user);
 
     res.status(201).json({
       user: {
@@ -148,17 +139,7 @@ export async function login(req: Request, res: Response) {
     }
 
     // Generar tokens
-    const accessToken = generateAccessToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    });
-
-    const refreshToken = generateRefreshToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    });
+    const { accessToken, refreshToken } = issueTokens(user);
 
     res.json({
       user: {
@@ -218,34 +199,53 @@ export async function refresh(req: Request, res: Response) {
   try {
     const { refreshToken } = req.body;
 
-    if (!refreshToken) {
+    if (!refreshToken || typeof refreshToken !== 'string') {
       return res.status(400).json({ error: 'Refresh token requerido' });
     }
 
     // Verificar refresh token
-    const payload = verifyRefreshToken(refreshToken);
+    const payload = verifyRefreshToken(refreshToken) as SessionTokenPayload;
 
-    // El usuario debe seguir existiendo; email y rol se leen de la base de datos
+    // El usuario debe seguir existiendo y su sesión no debe haberse revocado;
+    // email y rol se leen de la base de datos
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
-      select: { id: true, email: true, role: true },
+      select: { id: true, email: true, role: true, tokenVersion: true },
     });
 
-    if (!user) {
+    if (!user || tokenVersionOf(payload) !== user.tokenVersion) {
       return res
         .status(401)
         .json({ error: 'Refresh token inválido o expirado' });
     }
 
-    // Generar nuevo access token
-    const newAccessToken = generateAccessToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    });
-
-    res.json({ accessToken: newAccessToken });
-  } catch (error) {
+    // Se emite también un refresh token nuevo: mientras el usuario esté
+    // activo la sesión se renueva, y si deja de usarla caduca
+    res.json(issueTokens(user));
+  } catch {
     res.status(401).json({ error: 'Refresh token inválido o expirado' });
   }
+}
+
+// POST /api/auth/logout
+// Revoca todas las sesiones del usuario: sus refresh tokens dejan de valer.
+// Se identifica con el refresh token, así funciona aunque el access token ya
+// haya caducado.
+export async function logout(req: Request, res: Response) {
+  try {
+    const { refreshToken } = req.body;
+
+    if (refreshToken && typeof refreshToken === 'string') {
+      const payload = verifyRefreshToken(refreshToken) as SessionTokenPayload;
+
+      await prisma.user.updateMany({
+        where: { id: payload.userId, tokenVersion: tokenVersionOf(payload) },
+        data: { tokenVersion: { increment: 1 } },
+      });
+    }
+  } catch {
+    // Token inválido o caducado: no hay sesión que revocar
+  }
+
+  res.json({ message: 'Sesión cerrada' });
 }

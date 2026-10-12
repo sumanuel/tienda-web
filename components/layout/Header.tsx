@@ -15,6 +15,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   const handleSignOut = async () => {
     await signOut();
+    window.location.href = '/login';
   };
 
   const initials =

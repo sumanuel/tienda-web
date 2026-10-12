@@ -112,7 +112,22 @@ class ApiClient {
     }
   }
 
-  private async refreshAccessToken(): Promise<string | null> {
+  // Una sola renovación a la vez: si varias peticiones reciben 401 juntas
+  // comparten el mismo intento en vez de gastar el refresh token varias veces.
+  private refreshInFlight: Promise<string | null> | null = null;
+
+  private refreshAccessToken(): Promise<string | null> {
+    if (!this.refreshInFlight) {
+      this.refreshInFlight = this.performRefresh().finally(() => {
+        this.refreshInFlight = null;
+      });
+    }
+    return this.refreshInFlight;
+  }
+
+  // Devuelve el nuevo access token, null si la sesión ya no es válida (hay que
+  // volver a iniciar sesión) o lanza un error si el fallo es transitorio.
+  private async performRefresh(): Promise<string | null> {
     const refreshToken = this.getRefreshToken();
     if (!refreshToken) return null;
 
@@ -123,25 +138,28 @@ class ApiClient {
         body: JSON.stringify({ refreshToken }),
       });
 
-      if (!response.ok) {
+      if (response.status === 400 || response.status === 401) {
+        // El refresh token no sirve (caducado o revocado): sesión terminada
         this.clearTokens();
         return null;
       }
 
-      const data = await response.json();
-      const newAccessToken = data.accessToken;
-
-      // Actualizar solo el access token
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('accessToken', newAccessToken);
-        this.setCookie('accessToken', newAccessToken, 60 * 60 * 24);
+      if (!response.ok) {
+        throw new Error('No se pudo renovar la sesión. Intenta de nuevo.');
       }
 
-      return newAccessToken;
+      const data = await response.json();
+
+      // El backend rota el refresh token en cada renovación
+      this.setTokens(data.accessToken, data.refreshToken ?? refreshToken);
+
+      return data.accessToken as string;
     } catch (error) {
+      // Un fallo de red o del servidor no debe cerrar la sesión
       console.error('Error refreshing token:', error);
-      this.clearTokens();
-      return null;
+      throw error instanceof Error
+        ? error
+        : new Error('No se pudo renovar la sesión. Intenta de nuevo.');
     }
   }
 
@@ -165,7 +183,12 @@ class ApiClient {
 
       // Si recibimos 401, intentar refrescar el token
       if (response.status === 401 && token) {
-        const newToken = await this.refreshAccessToken();
+        // Si otra petición ya renovó el token, se reutiliza en vez de renovar de nuevo
+        const currentToken = this.getToken();
+        const newToken =
+          currentToken && currentToken !== token
+            ? currentToken
+            : await this.refreshAccessToken();
 
         if (newToken) {
           // Reintentar con el nuevo token
@@ -279,6 +302,20 @@ class ApiClient {
   }
 
   async logout() {
+    // Revoca las sesiones en el servidor; si no hay conexión igual se cierra
+    // la sesión local
+    const refreshToken = this.getRefreshToken();
+    if (refreshToken) {
+      try {
+        await this.fetchWithFallback('/api/auth/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        });
+      } catch {
+        // sin conexión
+      }
+    }
     this.clearTokens();
   }
 
