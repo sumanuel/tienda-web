@@ -6,6 +6,7 @@ import { changeStock } from '../utils/stock';
 import { lockSupplier } from '../utils/ledgerLock';
 import { BusinessError, sendError } from '../utils/errors';
 import { parsePagination } from '../utils/pagination';
+import { round2, toUsd } from '../utils/money';
 import {
   validatePurchaseData,
   validateCancelPurchase,
@@ -377,12 +378,19 @@ export async function createPurchase(req: AuthRequest, res: Response) {
           _sum: { amount: true },
         });
 
+        // El libro del proveedor está en USD
+        const debtUsd = toUsd(
+          purchaseData.total,
+          purchaseData.totalReference,
+          purchaseData.exchangeRate
+        );
+
         await tx.supplierTransaction.create({
           data: {
             supplierId: purchaseData.supplierId,
             type: 'purchase',
-            amount: purchaseData.total,
-            balance: (currentBalance._sum.amount || 0) + purchaseData.total,
+            amount: debtUsd,
+            balance: (currentBalance._sum.amount || 0) + debtUsd,
             dueDate: purchaseData.dueDate
               ? new Date(purchaseData.dueDate)
               : null,
@@ -674,13 +682,6 @@ export async function getPurchaseStats(req: AuthRequest, res: Response) {
     console.error('Error al obtener estadísticas de compras:', error);
     return sendError(res, error, 'Error al obtener estadísticas');
   }
-}
-
-const round2 = (value: number) => Math.round(value * 100) / 100;
-
-// Monto en USD de una compra: el guardado o, si falta, derivado de su tasa
-function toUsd(total: number, totalReference: number | null, rate: number) {
-  return totalReference ?? (rate ? total / rate : 0);
 }
 
 // Día calendario local del servidor (mismo criterio que los filtros de fecha)

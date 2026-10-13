@@ -6,6 +6,7 @@ import { changeStock } from '../utils/stock';
 import { lockSupplier } from '../utils/ledgerLock';
 import { BusinessError, sendError } from '../utils/errors';
 import { parsePagination } from '../utils/pagination';
+import { round2, toUsd } from '../utils/money';
 import { validatePurchaseReturnData } from '../utils/purchaseValidator';
 
 /**
@@ -64,6 +65,7 @@ export async function listPurchaseReturns(req: AuthRequest, res: Response) {
           purchase: {
             select: { id: true, purchaseNumber: true },
           },
+          creditNote: { select: { id: true, noteNumber: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -117,6 +119,7 @@ export async function getPurchaseReturn(req: AuthRequest, res: Response) {
         purchase: {
           select: { id: true, purchaseNumber: true, invoiceNumber: true },
         },
+        creditNote: { select: { id: true, noteNumber: true } },
         transactions: true,
       },
     });
@@ -294,18 +297,57 @@ export async function createPurchaseReturn(req: AuthRequest, res: Response) {
         _sum: { amount: true },
       });
 
+      // El libro del proveedor está en USD
+      const returnUsd = toUsd(
+        returnData.total,
+        returnData.totalReference,
+        returnData.exchangeRate
+      );
+      const newBalance = (currentBalance._sum.amount || 0) - returnUsd;
+
       await tx.supplierTransaction.create({
         data: {
           supplierId: returnData.supplierId,
           type: 'payment',
-          amount: -returnData.total,
-          balance: (currentBalance._sum.amount || 0) - returnData.total,
+          amount: -returnUsd,
+          balance: newBalance,
           notes: `Devolución ${returnNumber}: ${returnData.reason}`,
           purchaseReturnId: purchaseReturn.id,
         },
       });
 
-      return { purchaseReturn, items: returnItems };
+      // Si la devolución deja saldo a favor (compra ya pagada o más de lo que
+      // se debía), se emite una nota de crédito por ese exceso
+      let creditNote = null;
+      if (newBalance < -0.005) {
+        const creditUsd = round2(Math.min(returnUsd, -newBalance));
+        const rate = returnData.exchangeRate || 0;
+
+        creditNote = await tx.creditNote.create({
+          data: {
+            noteNumber: await nextDocumentNumber(
+              tx,
+              returnData.storeId,
+              'credit_note'
+            ),
+            storeId: returnData.storeId,
+            supplierId: returnData.supplierId,
+            purchaseReturnId: purchaseReturn.id,
+            amountUsd: creditUsd,
+            amountVes: round2(
+              rate
+                ? creditUsd * rate
+                : returnUsd
+                  ? (returnData.total * creditUsd) / returnUsd
+                  : 0
+            ),
+            exchangeRate: rate,
+            notes: `Devolución ${returnNumber}`,
+          },
+        });
+      }
+
+      return { purchaseReturn, items: returnItems, creditNote };
     });
 
     const completeReturn = await prisma.purchaseReturn.findUnique({
@@ -327,6 +369,7 @@ export async function createPurchaseReturn(req: AuthRequest, res: Response) {
     return res.status(201).json({
       message: 'Devolución de compra creada exitosamente',
       purchaseReturn: completeReturn,
+      creditNote: result.creditNote,
     });
   } catch (error) {
     return sendError(res, error, 'Error al crear la devolución de compra');

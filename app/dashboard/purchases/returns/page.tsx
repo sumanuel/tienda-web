@@ -9,6 +9,7 @@ import { SidePanel } from '@/components/common/SidePanel';
 import PurchaseReturnForm from '@/components/purchases/PurchaseReturnForm';
 import { Loader2, Undo2, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { formatCurrency } from '@/lib/currency';
 import type {
   PurchaseReturn,
   CreatePurchaseReturnData,
@@ -64,6 +65,12 @@ export default function PurchaseReturnsPage() {
         toast.success(
           `Devolución ${purchaseReturn.returnNumber} registrada exitosamente`
         );
+        if (purchaseReturn.creditNote) {
+          toast(
+            `Nota de crédito ${purchaseReturn.creditNote.noteNumber} generada por ${formatCurrency(purchaseReturn.creditNote.amountUsd ?? 0, 'USD')}`,
+            { icon: '🧾' }
+          );
+        }
         setShowForm(false);
         loadReturns(1);
       }

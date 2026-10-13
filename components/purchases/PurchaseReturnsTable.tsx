@@ -53,6 +53,9 @@ export function PurchaseReturnsTable({
                 Motivo
               </th>
               <th className="border-b border-gray-200 px-4 py-2.5 text-left font-mono text-[0.65rem] font-semibold tracking-widest whitespace-nowrap text-gray-500 uppercase dark:border-slate-800 dark:text-slate-500">
+                Nota de Crédito
+              </th>
+              <th className="border-b border-gray-200 px-4 py-2.5 text-left font-mono text-[0.65rem] font-semibold tracking-widest whitespace-nowrap text-gray-500 uppercase dark:border-slate-800 dark:text-slate-500">
                 Total
               </th>
             </tr>
@@ -60,7 +63,7 @@ export function PurchaseReturnsTable({
           <tbody className="divide-y divide-gray-100 bg-white dark:divide-slate-800 dark:bg-slate-900">
             {purchaseReturns.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center">
+                <td colSpan={7} className="px-4 py-12 text-center">
                   <div className="flex flex-col items-center justify-center text-center">
                     <Undo2 className="mb-4 h-12 w-12 text-gray-300 dark:text-slate-700" />
                     <p className="text-lg font-medium text-gray-700 dark:text-slate-300">
@@ -93,6 +96,9 @@ export function PurchaseReturnsTable({
                   <td className="max-w-xs truncate px-4 py-3 text-sm text-gray-600 dark:text-slate-400">
                     {purchaseReturn.reason}
                   </td>
+                  <td className="px-4 py-3 font-mono text-sm text-gray-600 dark:text-slate-400">
+                    {purchaseReturn.creditNote?.noteNumber || '—'}
+                  </td>
                   <td className="px-4 py-3">
                     <DualCurrency
                       ves={purchaseReturn.total}
@@ -113,8 +119,8 @@ export function PurchaseReturnsTable({
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-600 dark:text-slate-400">
             Mostrando {(pagination.page - 1) * pagination.limit + 1} -{' '}
-            {Math.min(pagination.page * pagination.limit, pagination.total)}{' '}
-            de {pagination.total} devoluciones
+            {Math.min(pagination.page * pagination.limit, pagination.total)} de{' '}
+            {pagination.total} devoluciones
           </div>
           <div className="flex items-center gap-2">
             <button

@@ -5,7 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { getPayablesSummary } from '@/lib/accountsReceivable';
-import { getSuppliersWithBalance } from '@/lib/suppliers';
+import {
+  getSuppliersWithBalance,
+  getSuppliersWithCredit,
+} from '@/lib/suppliers';
 import {
   getUpcomingPayables,
   getSupplierAccountStatus,
@@ -74,6 +77,9 @@ export default function AccountsPayablePage() {
   const [suppliersWithBalance, setSuppliersWithBalance] = useState<Supplier[]>(
     []
   );
+  const [suppliersWithCredit, setSuppliersWithCredit] = useState<Supplier[]>(
+    []
+  );
   const [upcomingPayables, setUpcomingPayables] = useState<
     UpcomingPayableRow[]
   >([]);
@@ -102,14 +108,17 @@ export default function AccountsPayablePage() {
       setLoading(true);
       setError(null);
 
-      const [summaryData, suppliersData, upcomingData] = await Promise.all([
-        getPayablesSummary(profile.storeId),
-        getSuppliersWithBalance(profile.storeId),
-        getUpcomingPayables(profile.storeId),
-      ]);
+      const [summaryData, suppliersData, creditData, upcomingData] =
+        await Promise.all([
+          getPayablesSummary(profile.storeId),
+          getSuppliersWithBalance(profile.storeId),
+          getSuppliersWithCredit(profile.storeId),
+          getUpcomingPayables(profile.storeId),
+        ]);
 
       setSummary(summaryData);
       setSuppliersWithBalance(suppliersData);
+      setSuppliersWithCredit(creditData);
       setUpcomingPayables(upcomingData.payables || []);
     } catch (error: any) {
       console.error('Error cargando datos:', error);
@@ -262,6 +271,9 @@ export default function AccountsPayablePage() {
             <TabsTrigger value="upcoming">
               Por Vencer ({upcomingPayables.length})
             </TabsTrigger>
+            <TabsTrigger value="credit">
+              Saldos a Favor ({suppliersWithCredit.length})
+            </TabsTrigger>
           </TabsList>
 
           {/* Tab: Todos los proveedores con saldo */}
@@ -326,6 +338,78 @@ export default function AccountsPayablePage() {
                               onClick={() => handleShowPaymentForm(supplier)}
                             >
                               Registrar Pago
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          {/* Tab: Saldos a favor (devoluciones de compras ya pagadas) */}
+          <TabsContent value="credit" className="space-y-4">
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <p className="text-sm text-gray-600 dark:text-slate-400">
+                Dinero que estos proveedores te deben por devoluciones. Se
+                descuenta solo de tus próximas compras a crédito, o puedes
+                registrar un reembolso.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push('/dashboard/purchases/credit-notes')}
+              >
+                Ver notas de crédito
+              </Button>
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Proveedor</TableHead>
+                    <TableHead>RIF</TableHead>
+                    <TableHead className="text-right">Saldo a Favor</TableHead>
+                    <TableHead className="text-center">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {suppliersWithCredit.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={4}
+                        className="text-muted-foreground py-8 text-center"
+                      >
+                        No hay proveedores con saldo a favor
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    suppliersWithCredit.map((supplier) => (
+                      <TableRow key={supplier.id}>
+                        <TableCell className="font-medium">
+                          {supplier.name}
+                        </TableCell>
+                        <TableCell>{supplier.rif}</TableCell>
+                        <TableCell className="text-right">
+                          <DualCurrency
+                            usd={Math.abs(supplier.balance)}
+                            exchangeRate={exchangeRate}
+                            size="sm"
+                            primaryClassName="text-green-600 dark:text-green-400"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleShowAccountStatus(supplier)}
+                            >
+                              <FileText className="mr-1 h-4 w-4" />
+                              Estado de Cuenta
                             </Button>
                           </div>
                         </TableCell>

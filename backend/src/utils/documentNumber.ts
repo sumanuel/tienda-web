@@ -1,11 +1,13 @@
 import { Prisma } from '@prisma/client';
 
-export type DocumentType = 'sale' | 'purchase' | 'purchase_return';
+export type DocumentType =
+  'sale' | 'purchase' | 'purchase_return' | 'credit_note';
 
 const PREFIXES: Record<DocumentType, string> = {
   sale: 'VEN',
   purchase: 'COM',
   purchase_return: 'DEV',
+  credit_note: 'NC',
 };
 
 async function lastIssuedNumber(
@@ -33,6 +35,14 @@ async function lastIssuedNumber(
         select: { purchaseNumber: true },
       })
     )?.purchaseNumber;
+  } else if (type === 'credit_note') {
+    last = (
+      await tx.creditNote.findFirst({
+        where: { storeId, noteNumber: { startsWith: startsWith } },
+        orderBy: { noteNumber: 'desc' },
+        select: { noteNumber: true },
+      })
+    )?.noteNumber;
   } else {
     last = (
       await tx.purchaseReturn.findFirst({

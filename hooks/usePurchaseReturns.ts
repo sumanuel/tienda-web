@@ -46,6 +46,13 @@ export interface PurchaseReturn {
     purchaseNumber: string;
     invoiceNumber?: string;
   };
+  // Nota de crédito generada si la devolución dejó saldo a favor
+  creditNote?: {
+    id: string;
+    noteNumber: string;
+    amountUsd?: number;
+    amountVes?: number;
+  } | null;
 }
 
 export interface CreatePurchaseReturnData {
@@ -99,8 +106,12 @@ export function usePurchaseReturns() {
         const response = await apiClient.post<{
           message: string;
           purchaseReturn: PurchaseReturn;
+          creditNote?: PurchaseReturn['creditNote'];
         }>('/api/purchase-returns', data);
-        return response.purchaseReturn;
+        return {
+          ...response.purchaseReturn,
+          creditNote: response.creditNote ?? null,
+        };
       } catch (err: any) {
         const errorMessage = err.message || 'Error al crear la devolución';
         setError(errorMessage);

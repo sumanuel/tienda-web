@@ -202,3 +202,31 @@ export async function getSuppliersWithBalance(storeId: string) {
     throw new Error('Error al obtener proveedores con balance');
   }
 }
+
+/**
+ * Proveedores con saldo a favor (nuestro): el libro tiene saldo negativo, por
+ * ejemplo tras devolver una compra ya pagada. `balance` conserva el signo.
+ */
+export async function getSuppliersWithCredit(storeId: string) {
+  try {
+    const response = await apiClient.getSuppliers({ storeId, limit: 1000 });
+
+    return response.suppliers
+      .filter((supplier) => supplier.balance < -0.005)
+      .map((supplier) => ({
+        id: supplier.id,
+        storeId: supplier.storeId,
+        name: supplier.name,
+        email: supplier.email || '',
+        phone: supplier.phone || '',
+        rif: supplier.taxId || '',
+        address: supplier.address || '',
+        balance: supplier.balance,
+        createdAt: new Date(supplier.createdAt),
+        updatedAt: new Date(supplier.updatedAt),
+      }));
+  } catch (error: any) {
+    console.error('Error obteniendo proveedores con saldo a favor:', error);
+    throw new Error('Error al obtener proveedores con saldo a favor');
+  }
+}

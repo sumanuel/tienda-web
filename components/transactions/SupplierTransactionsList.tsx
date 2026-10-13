@@ -100,10 +100,18 @@ export function SupplierTransactionsList({
                 <TableCell>
                   <Badge
                     variant={
-                      transaction.type === 'charge' ? 'destructive' : 'default'
+                      transaction.type === 'charge'
+                        ? 'destructive'
+                        : transaction.type === 'refund'
+                          ? 'secondary'
+                          : 'default'
                     }
                   >
-                    {transaction.type === 'charge' ? 'Cargo' : 'Pago'}
+                    {transaction.type === 'charge'
+                      ? 'Cargo'
+                      : transaction.type === 'refund'
+                        ? 'Reembolso'
+                        : 'Pago'}
                   </Badge>
                   {isOverdue && (
                     <span className="ml-2 text-xs font-medium text-red-600">

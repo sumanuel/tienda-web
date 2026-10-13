@@ -30,7 +30,8 @@ export interface SupplierTransaction {
   id: string;
   storeId: string;
   supplierId: string;
-  type: TransactionType;
+  // refund: el proveedor devolvió dinero por una nota de crédito
+  type: TransactionType | 'refund';
   amount: number;
   balanceBefore: number;
   balanceAfter: number;

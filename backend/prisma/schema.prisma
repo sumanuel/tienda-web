@@ -47,6 +47,7 @@ model Store {
   purchases          Purchase[]
   purchaseReturns    PurchaseReturn[]
   documentCounters   DocumentCounter[]
+  creditNotes        CreditNote[]
 
   @@map("stores")
 }
@@ -242,6 +243,7 @@ model PurchaseReturn {
   user              User                  @relation("PurchaseReturnsUser", fields: [userId], references: [id], onDelete: Restrict)
   items             PurchaseReturnItem[]
   transactions      SupplierTransaction[]
+  creditNote        CreditNote?
 
   @@unique([storeId, returnNumber])
   @@index([storeId, createdAt(sort: Desc)])
@@ -327,6 +329,7 @@ model Supplier {
   store           Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
   purchases       Purchase[]
   purchaseReturns PurchaseReturn[]
+  creditNotes     CreditNote[]
 
   @@index([storeId])
   @@map("suppliers")
@@ -342,16 +345,19 @@ model SupplierTransaction {
   notes            String?
   purchaseId       String?
   purchaseReturnId String?
+  creditNoteId     String?
   createdAt        DateTime        @default(now())
   supplier         Supplier        @relation(fields: [supplierId], references: [id], onDelete: Cascade)
   purchase         Purchase?       @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
   purchaseReturn   PurchaseReturn? @relation(fields: [purchaseReturnId], references: [id], onDelete: SetNull)
+  creditNote       CreditNote?     @relation(fields: [creditNoteId], references: [id], onDelete: SetNull)
 
   @@index([supplierId])
   @@index([type])
   @@index([createdAt])
   @@index([dueDate])
   @@index([purchaseId])
+  @@index([creditNoteId])
   @@map("supplier_transactions")
 }
 
@@ -460,4 +466,31 @@ model DocumentCounter {
 
   @@id([storeId, type])
   @@map("document_counters")
+}
+
+// Nota de crédito emitida por la parte de una devolución que excede la deuda
+// con el proveedor (saldo a favor). El libro del proveedor está en USD, por eso
+// el monto principal y lo reembolsado son USD; amountVes es el equivalente a
+// la tasa del momento. El saldo real vive en el libro del proveedor.
+model CreditNote {
+  id               String                @id @default(uuid())
+  noteNumber       String
+  storeId          String
+  supplierId       String
+  purchaseReturnId String                @unique
+  amountUsd        Float
+  amountVes        Float
+  exchangeRate     Float                 @default(0)
+  refundedUsd      Float                 @default(0)
+  notes            String?
+  createdAt        DateTime              @default(now())
+  store            Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  supplier         Supplier              @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  purchaseReturn   PurchaseReturn        @relation(fields: [purchaseReturnId], references: [id], onDelete: Restrict)
+  transactions     SupplierTransaction[]
+
+  @@unique([storeId, noteNumber])
+  @@index([storeId, supplierId])
+  @@index([storeId, createdAt(sort: Desc)])
+  @@map("credit_notes")
 }

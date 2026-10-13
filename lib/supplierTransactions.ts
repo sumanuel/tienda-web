@@ -97,7 +97,12 @@ export async function getSupplierTransactions(
       id: transaction.id,
       storeId: '', // No disponible en la respuesta
       supplierId: transaction.supplierId,
-      type: transaction.type === 'purchase' ? 'charge' : 'payment',
+      type:
+        transaction.type === 'purchase'
+          ? 'charge'
+          : transaction.type === 'refund'
+            ? 'refund'
+            : 'payment',
       amount: Math.abs(transaction.amount),
       balanceBefore: 0, // No disponible directamente
       balanceAfter: transaction.balance,
@@ -123,7 +128,12 @@ export async function getSupplierAccountStatus(supplierId: string) {
       id: transaction.id,
       storeId: '',
       supplierId: transaction.supplierId,
-      type: transaction.type === 'purchase' ? 'charge' : 'payment',
+      type:
+        transaction.type === 'purchase'
+          ? 'charge'
+          : transaction.type === 'refund'
+            ? 'refund'
+            : 'payment',
       amount: Math.abs(transaction.amount),
       balanceBefore: 0,
       balanceAfter: transaction.balance,

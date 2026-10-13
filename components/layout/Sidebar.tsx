@@ -21,6 +21,7 @@ import {
   X,
   ShoppingBag,
   Undo2,
+  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { IconChip, type IconChipTone } from '@/components/common/IconChip';
@@ -85,6 +86,12 @@ const menuSections: MenuSection[] = [
         href: '/dashboard/purchases/returns',
         icon: Undo2,
         label: 'Devoluciones',
+        tone: 'warning',
+      },
+      {
+        href: '/dashboard/purchases/credit-notes',
+        icon: FileText,
+        label: 'Notas de Crédito',
         tone: 'warning',
       },
     ],

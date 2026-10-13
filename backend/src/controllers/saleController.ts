@@ -11,6 +11,7 @@ import { nextDocumentNumber } from '../utils/documentNumber';
 import { changeStock } from '../utils/stock';
 import { BusinessError, sendError } from '../utils/errors';
 import { parsePagination } from '../utils/pagination';
+import { toUsd } from '../utils/money';
 
 /**
  * GET /api/sales
@@ -416,6 +417,12 @@ export async function createSale(req: AuthRequest, res: Response) {
           data: { balance: { increment: saleData.total } },
         });
 
+        // El libro del cliente está en USD
+        const chargeUsd = toUsd(
+          saleData.total,
+          saleData.totalReference,
+          saleData.exchangeRate
+        );
         const ledger = await tx.customerTransaction.aggregate({
           where: { customerId: customer.id },
           _sum: { amount: true },
@@ -424,8 +431,8 @@ export async function createSale(req: AuthRequest, res: Response) {
           data: {
             customerId: customer.id,
             type: 'credit',
-            amount: saleData.total,
-            balance: (ledger._sum.amount || 0) + saleData.total,
+            amount: chargeUsd,
+            balance: (ledger._sum.amount || 0) + chargeUsd,
             saleId: sale.id,
             notes: `Venta ${saleNumber}`,
           },
