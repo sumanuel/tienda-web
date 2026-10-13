@@ -1,7 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { BarChart3, Package, DollarSign, TrendingUp } from 'lucide-react';
+import {
+  BarChart3,
+  Package,
+  DollarSign,
+  TrendingUp,
+  ShoppingBag,
+} from 'lucide-react';
 import { IconChip, type IconChipTone } from '@/components/common/IconChip';
 
 const reports: {
@@ -19,6 +25,15 @@ const reports: {
     icon: BarChart3,
     href: '/dashboard/reports/sales',
     tone: 'accent',
+  },
+  {
+    id: 'purchases',
+    title: 'Reporte de Compras',
+    description:
+      'Compras a proveedores por período, proveedor, producto y método de pago',
+    icon: ShoppingBag,
+    href: '/dashboard/reports/purchases',
+    tone: 'warning',
   },
   {
     id: 'inventory',

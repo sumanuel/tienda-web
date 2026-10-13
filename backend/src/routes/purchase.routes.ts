@@ -6,6 +6,7 @@ import {
   createPurchase,
   cancelPurchase,
   getPurchaseStats,
+  getPurchaseReport,
 } from '../controllers/purchaseController';
 
 const router = Router();
@@ -15,6 +16,9 @@ router.use(authMiddleware);
 
 // GET /api/purchases/stats/summary - Estadísticas de compras
 router.get('/stats/summary', getPurchaseStats);
+
+// GET /api/purchases/report - Reporte de compras del periodo
+router.get('/report', getPurchaseReport);
 
 // GET /api/purchases - Listar compras (con filtros opcionales)
 router.get('/', listPurchases);

@@ -36,6 +36,49 @@ export interface SalesReportData {
   }[];
 }
 
+export interface PurchasesReportData {
+  totalLocal: number;
+  totalReference: number;
+  purchasesCount: number;
+  averageLocal: number;
+  averageReference: number;
+  taxLocal: number;
+  creditLocal: number;
+  creditReference: number;
+  creditCount: number;
+  returnsLocal: number;
+  returnsReference: number;
+  returnsCount: number;
+  netLocal: number;
+  netReference: number;
+  byDay: {
+    date: string;
+    totalLocal: number;
+    totalReference: number;
+    count: number;
+  }[];
+  byPaymentMethod: {
+    method: string;
+    totalLocal: number;
+    totalReference: number;
+    count: number;
+  }[];
+  bySupplier: {
+    supplierId: string;
+    name: string;
+    totalLocal: number;
+    totalReference: number;
+    count: number;
+  }[];
+  byProduct: {
+    productId: string;
+    productName: string;
+    quantity: number;
+    totalLocal: number;
+    totalReference: number;
+  }[];
+}
+
 export interface InventoryReportData {
   totalValue: number;
   totalProducts: number;
@@ -105,7 +148,8 @@ export interface CashFlowReportData {
   }[];
 }
 
-export type ReportType = 'sales' | 'inventory' | 'financial' | 'cash-flow';
+export type ReportType =
+  'sales' | 'purchases' | 'inventory' | 'financial' | 'cash-flow';
 
 export interface ReportExportOptions {
   format: 'excel' | 'pdf';

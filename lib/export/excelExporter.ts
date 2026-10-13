@@ -1,7 +1,11 @@
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { SalesReportData, DateRange } from '@/types/reports';
+import {
+  SalesReportData,
+  PurchasesReportData,
+  DateRange,
+} from '@/types/reports';
 
 /**
  * Exporta datos genéricos a Excel
@@ -94,6 +98,121 @@ export async function exportSalesReportToExcel(
   const link = document.createElement('a');
   link.href = url;
   link.download = `reporte-ventas_${format(new Date(), 'yyyy-MM-dd_HHmm')}.xlsx`;
+  link.click();
+
+  window.URL.revokeObjectURL(url);
+}
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  efectivo: 'Efectivo',
+  transferencia: 'Transferencia',
+  credito: 'Crédito',
+};
+
+/**
+ * Exporta reporte de compras a Excel con múltiples hojas (VES y USD)
+ */
+export async function exportPurchasesReportToExcel(
+  reportData: PurchasesReportData,
+  dateRange: DateRange
+) {
+  const workbook = XLSX.utils.book_new();
+
+  // Hoja 1: Resumen
+  const summary = [
+    ['REPORTE DE COMPRAS'],
+    [
+      'Período',
+      `${format(dateRange.startDate, 'dd/MM/yyyy')} - ${format(dateRange.endDate, 'dd/MM/yyyy')}`,
+    ],
+    [],
+    ['', 'VES', 'USD'],
+    ['Total Compras', reportData.totalLocal, reportData.totalReference],
+    ['Compra Promedio', reportData.averageLocal, reportData.averageReference],
+    ['Compras a Crédito', reportData.creditLocal, reportData.creditReference],
+    ['Devoluciones', reportData.returnsLocal, reportData.returnsReference],
+    [
+      'Neto (compras - devoluciones)',
+      reportData.netLocal,
+      reportData.netReference,
+    ],
+    [],
+    ['Número de Compras', reportData.purchasesCount],
+    ['Compras a Crédito (cantidad)', reportData.creditCount],
+    ['Devoluciones (cantidad)', reportData.returnsCount],
+    ['IVA (VES)', reportData.taxLocal],
+  ];
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.aoa_to_sheet(summary),
+    'Resumen'
+  );
+
+  // Hoja 2: Compras por día
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.json_to_sheet(
+      reportData.byDay.map((day) => ({
+        Fecha: day.date,
+        'Total (VES)': day.totalLocal,
+        'Total (USD)': day.totalReference,
+        Compras: day.count,
+      }))
+    ),
+    'Compras por Día'
+  );
+
+  // Hoja 3: Por proveedor
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.json_to_sheet(
+      reportData.bySupplier.map((supplier) => ({
+        Proveedor: supplier.name,
+        Compras: supplier.count,
+        'Total (VES)': supplier.totalLocal,
+        'Total (USD)': supplier.totalReference,
+      }))
+    ),
+    'Por Proveedor'
+  );
+
+  // Hoja 4: Por producto
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.json_to_sheet(
+      reportData.byProduct.map((product) => ({
+        Producto: product.productName,
+        Cantidad: product.quantity,
+        'Total (VES)': product.totalLocal,
+        'Total (USD)': product.totalReference,
+      }))
+    ),
+    'Por Producto'
+  );
+
+  // Hoja 5: Métodos de pago
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.json_to_sheet(
+      reportData.byPaymentMethod.map((method) => ({
+        'Método de Pago': PAYMENT_METHOD_LABELS[method.method] ?? method.method,
+        Compras: method.count,
+        'Total (VES)': method.totalLocal,
+        'Total (USD)': method.totalReference,
+      }))
+    ),
+    'Métodos de Pago'
+  );
+
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `reporte-compras_${format(new Date(), 'yyyy-MM-dd_HHmm')}.xlsx`;
   link.click();
 
   window.URL.revokeObjectURL(url);

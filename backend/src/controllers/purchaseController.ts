@@ -675,3 +675,244 @@ export async function getPurchaseStats(req: AuthRequest, res: Response) {
     return sendError(res, error, 'Error al obtener estadísticas');
   }
 }
+
+const round2 = (value: number) => Math.round(value * 100) / 100;
+
+// Monto en USD de una compra: el guardado o, si falta, derivado de su tasa
+function toUsd(total: number, totalReference: number | null, rate: number) {
+  return totalReference ?? (rate ? total / rate : 0);
+}
+
+// Día calendario local del servidor (mismo criterio que los filtros de fecha)
+function localDayKey(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+interface Bucket {
+  totalLocal: number;
+  totalReference: number;
+  count: number;
+}
+
+const newBucket = (): Bucket => ({
+  totalLocal: 0,
+  totalReference: 0,
+  count: 0,
+});
+
+function bump(bucket: Bucket, local: number, usd: number) {
+  bucket.totalLocal += local;
+  bucket.totalReference += usd;
+  bucket.count += 1;
+}
+
+function bucketFor<T>(map: Map<string, T>, key: string, create: () => T): T {
+  let value = map.get(key);
+  if (!value) {
+    value = create();
+    map.set(key, value);
+  }
+  return value;
+}
+
+const money = (bucket: Bucket) => ({
+  totalLocal: round2(bucket.totalLocal),
+  totalReference: round2(bucket.totalReference),
+  count: bucket.count,
+});
+
+const byTotalDesc = <T extends { totalLocal: number }>(rows: T[]) =>
+  rows.sort((a, b) => b.totalLocal - a.totalLocal);
+
+/**
+ * GET /api/purchases/report
+ * Reporte de compras del período: totales, por día, método de pago,
+ * proveedor y producto, más compras a crédito y devoluciones. Solo cuenta
+ * compras completadas; todo en VES (principal) y USD (referencia).
+ */
+export async function getPurchaseReport(req: AuthRequest, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const { storeId, startDate, endDate } = req.query;
+
+    const validationErrors = validatePurchasesQuery({
+      storeId,
+      startDate,
+      endDate,
+    });
+    if (validationErrors.length > 0) {
+      return res.status(400).json({
+        error: 'Parámetros de búsqueda inválidos',
+        details: validationErrors,
+      });
+    }
+
+    const store = await prisma.store.findFirst({
+      where: { id: storeId as string, userId: req.user.userId },
+      select: { id: true },
+    });
+    if (!store) {
+      return res.status(403).json({ error: 'No tienes acceso a esta tienda' });
+    }
+
+    const createdAt: { gte?: Date; lte?: Date } = {};
+    if (typeof startDate === 'string') {
+      createdAt.gte = parseRangeStart(startDate);
+    }
+    if (typeof endDate === 'string') {
+      createdAt.lte = parseRangeEnd(endDate);
+    }
+
+    const [purchases, returns] = await Promise.all([
+      prisma.purchase.findMany({
+        where: { storeId: store.id, status: 'completed', createdAt },
+        select: {
+          createdAt: true,
+          total: true,
+          tax: true,
+          totalReference: true,
+          exchangeRate: true,
+          paymentMethod: true,
+          supplierId: true,
+          supplier: { select: { name: true } },
+          items: {
+            select: {
+              productId: true,
+              productName: true,
+              quantity: true,
+              subtotalLocal: true,
+              subtotalReference: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.purchaseReturn.findMany({
+        where: { storeId: store.id, status: 'completed', createdAt },
+        select: { total: true, totalReference: true, exchangeRate: true },
+      }),
+    ]);
+
+    const summary = newBucket();
+    let taxLocal = 0;
+    const credit = newBucket();
+    const byDay = new Map<string, Bucket>();
+    const byMethod = new Map<string, Bucket>();
+    const bySupplier = new Map<string, Bucket & { name: string }>();
+    const byProduct = new Map<
+      string,
+      {
+        productName: string;
+        quantity: number;
+        totalLocal: number;
+        totalReference: number;
+      }
+    >();
+
+    for (const purchase of purchases) {
+      const usd = toUsd(
+        purchase.total,
+        purchase.totalReference,
+        purchase.exchangeRate
+      );
+
+      bump(summary, purchase.total, usd);
+      taxLocal += purchase.tax;
+      if (purchase.paymentMethod === 'credito') {
+        bump(credit, purchase.total, usd);
+      }
+
+      bump(
+        bucketFor(byDay, localDayKey(purchase.createdAt), newBucket),
+        purchase.total,
+        usd
+      );
+      bump(
+        bucketFor(byMethod, purchase.paymentMethod, newBucket),
+        purchase.total,
+        usd
+      );
+      bump(
+        bucketFor(bySupplier, purchase.supplierId, () => ({
+          ...newBucket(),
+          name: purchase.supplier.name,
+        })),
+        purchase.total,
+        usd
+      );
+
+      for (const item of purchase.items) {
+        const product = bucketFor(byProduct, item.productId, () => ({
+          productName: item.productName,
+          quantity: 0,
+          totalLocal: 0,
+          totalReference: 0,
+        }));
+        product.quantity += item.quantity;
+        product.totalLocal += item.subtotalLocal;
+        product.totalReference += item.subtotalReference;
+      }
+    }
+
+    const returnsSummary = newBucket();
+    for (const purchaseReturn of returns) {
+      bump(
+        returnsSummary,
+        purchaseReturn.total,
+        toUsd(
+          purchaseReturn.total,
+          purchaseReturn.totalReference,
+          purchaseReturn.exchangeRate
+        )
+      );
+    }
+
+    return res.status(200).json({
+      summary: {
+        ...money(summary),
+        averageLocal: round2(
+          summary.count ? summary.totalLocal / summary.count : 0
+        ),
+        averageReference: round2(
+          summary.count ? summary.totalReference / summary.count : 0
+        ),
+        taxLocal: round2(taxLocal),
+      },
+      credit: money(credit),
+      returns: money(returnsSummary),
+      byDay: Array.from(byDay.entries()).map(([date, bucket]) => ({
+        date,
+        ...money(bucket),
+      })),
+      byPaymentMethod: byTotalDesc(
+        Array.from(byMethod.entries()).map(([method, bucket]) => ({
+          method,
+          ...money(bucket),
+        }))
+      ),
+      bySupplier: byTotalDesc(
+        Array.from(bySupplier.entries()).map(([supplierId, bucket]) => ({
+          supplierId,
+          name: bucket.name,
+          ...money(bucket),
+        }))
+      ).slice(0, 10),
+      byProduct: byTotalDesc(
+        Array.from(byProduct.entries()).map(([productId, product]) => ({
+          productId,
+          productName: product.productName,
+          quantity: product.quantity,
+          totalLocal: round2(product.totalLocal),
+          totalReference: round2(product.totalReference),
+        }))
+      ).slice(0, 20),
+    });
+  } catch (error) {
+    return sendError(res, error, 'Error al generar el reporte de compras');
+  }
+}
