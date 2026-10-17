@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useProductsStore } from '@/store/productsStore';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { usePagedList } from '@/hooks/usePagedList';
 import {
-  getProducts,
+  getProductsPage,
   createProduct,
   updateProduct,
   deleteProduct,
@@ -19,28 +19,29 @@ import toast from 'react-hot-toast';
 
 export default function ProductsPage() {
   const { profile } = useAuth();
-  const { products, setProducts, addProduct, removeProduct } =
-    useProductsStore();
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  useEffect(() => {
-    loadProducts();
-  }, [profile?.storeId]);
+  const storeId = profile?.storeId ?? '';
+  const fetchPage = useCallback(
+    (query: { page: number; limit: number; search: string }) =>
+      getProductsPage(storeId, query),
+    [storeId]
+  );
+  const {
+    rows: products,
+    pagination,
+    loading,
+    error,
+    search,
+    setSearch,
+    setPage,
+    refresh,
+  } = usePagedList(fetchPage, { pageSize: 10, enabled: !!storeId });
 
-  const loadProducts = async () => {
-    try {
-      if (!profile?.storeId) return;
-      setLoading(true);
-      const data = await getProducts(profile.storeId);
-      setProducts(data);
-    } catch (error) {
-      toast.error('Error al cargar productos');
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    if (error) toast.error('Error al cargar productos');
+  }, [error]);
 
   const closePanel = () => {
     setShowForm(false);
@@ -53,8 +54,8 @@ export default function ProductsPage() {
         toast.error('No se encontró la tienda');
         return;
       }
-      const newProduct = await createProduct(profile.storeId, data);
-      addProduct(newProduct);
+      await createProduct(profile.storeId, data);
+      refresh();
       toast.success('Producto creado exitosamente');
       closePanel();
     } catch (error: any) {
@@ -66,7 +67,7 @@ export default function ProductsPage() {
     try {
       if (!editingProduct) return;
       await updateProduct(editingProduct.id, data);
-      await loadProducts();
+      refresh();
       toast.success('Producto actualizado exitosamente');
       closePanel();
     } catch (error: any) {
@@ -77,14 +78,16 @@ export default function ProductsPage() {
   const handleDelete = async (productId: string) => {
     try {
       await deleteProduct(productId);
-      removeProduct(productId);
+      refresh();
       toast.success('Producto eliminado');
     } catch (error) {
       toast.error('Error al eliminar producto');
     }
   };
 
-  if (loading) {
+  // Solo la primera carga muestra el esqueleto; al cambiar de página o buscar
+  // se conserva la tabla
+  if (loading && products.length === 0 && search === '') {
     return (
       <div className="min-h-screen space-y-6 bg-gray-50 p-6 dark:bg-slate-950">
         <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -117,7 +120,7 @@ export default function ProductsPage() {
             </div>
           </div>
           <p className="mt-4 text-sm text-gray-600 dark:text-slate-400">
-            {products.length} productos registrados
+            {pagination.total} {search ? 'resultados' : 'productos registrados'}
           </p>
         </div>
         <button
@@ -175,6 +178,10 @@ export default function ProductsPage() {
 
       <ProductTable
         products={products}
+        pagination={pagination}
+        onPageChange={setPage}
+        search={search}
+        onSearchChange={setSearch}
         onEdit={setEditingProduct}
         onDelete={handleDelete}
       />

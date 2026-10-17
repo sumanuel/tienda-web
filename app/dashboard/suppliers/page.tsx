@@ -4,12 +4,13 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
-import { useSuppliersStore } from '@/store/suppliersStore';
+import { usePagedList } from '@/hooks/usePagedList';
 import {
-  getSuppliers,
+  getSuppliersPage,
+  getSuppliersSummary,
   createSupplier,
   updateSupplier,
   deleteSupplier,
@@ -32,45 +33,66 @@ import toast from 'react-hot-toast';
 
 export default function SuppliersPage() {
   const { profile } = useAuth();
-  const {
-    suppliers,
-    setSuppliers,
-    addSupplier: addSupplierToStore,
-    updateSupplier: updateSupplierInStore,
-    removeSupplier,
-  } = useSuppliersStore();
   const { activeRate } = useExchangeRates(profile?.storeId || '');
   const exchangeRate = activeRate?.usdToVes;
 
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [viewingSupplier, setViewingSupplier] = useState<Supplier | null>(null);
   const [supplierProducts, setSupplierProducts] = useState<any[]>([]);
 
-  useEffect(() => {
-    loadSuppliers();
-  }, [profile?.storeId]);
+  const storeId = profile?.storeId ?? '';
+  const fetchPage = useCallback(
+    (query: { page: number; limit: number; search: string }) =>
+      getSuppliersPage(storeId, query),
+    [storeId]
+  );
+  const {
+    rows: suppliers,
+    pagination,
+    loading,
+    error,
+    search,
+    setSearch,
+    setPage,
+    refresh,
+  } = usePagedList(fetchPage, { pageSize: 10, enabled: !!storeId });
 
-  const loadSuppliers = async () => {
-    try {
-      if (!profile?.storeId) return;
-      setLoading(true);
-      const data = await getSuppliers(profile.storeId);
-      setSuppliers(data);
-    } catch (error) {
-      console.error('Error cargando proveedores:', error);
-      toast.error('Error al cargar proveedores');
-    } finally {
-      setLoading(false);
-    }
+  // Las tarjetas de totales salen del servidor, no de la página visible
+  const [stats, setStats] = useState({
+    total: 0,
+    withBalance: 0,
+    totalBalance: 0,
+  });
+  const [statsNonce, setStatsNonce] = useState(0);
+
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    getSuppliersSummary(storeId)
+      .then((summary) => {
+        if (!cancelled) setStats(summary);
+      })
+      .catch((err) => console.error('Error cargando resumen:', err));
+    return () => {
+      cancelled = true;
+    };
+  }, [storeId, statsNonce]);
+
+  useEffect(() => {
+    if (error) toast.error('Error al cargar proveedores');
+  }, [error]);
+
+  const refreshAll = () => {
+    refresh();
+    setStatsNonce((value) => value + 1);
   };
 
   const handleCreate = async (data: SupplierFormData) => {
     try {
       if (!profile?.storeId) return;
-      const newSupplier = await createSupplier(profile.storeId, data);
-      addSupplierToStore(newSupplier);
+      await createSupplier(profile.storeId, data);
+      refreshAll();
       toast.success('Proveedor creado exitosamente');
       setShowForm(false);
     } catch (error: any) {
@@ -83,7 +105,7 @@ export default function SuppliersPage() {
     try {
       if (!editingSupplier) return;
       await updateSupplier(editingSupplier.id, data);
-      updateSupplierInStore(editingSupplier.id, data);
+      refresh();
       toast.success('Proveedor actualizado exitosamente');
       setEditingSupplier(null);
     } catch (error: any) {
@@ -95,7 +117,7 @@ export default function SuppliersPage() {
   const handleDelete = async (supplierId: string) => {
     try {
       await deleteSupplier(supplierId);
-      removeSupplier(supplierId);
+      refreshAll();
       toast.success('Proveedor eliminado');
     } catch (error) {
       console.error('Error eliminando proveedor:', error);
@@ -118,14 +140,9 @@ export default function SuppliersPage() {
     }
   };
 
-  // Estadísticas
-  const stats = {
-    total: suppliers.length,
-    withBalance: suppliers.filter((s) => s.balance > 0).length,
-    totalBalance: suppliers.reduce((sum, s) => sum + s.balance, 0),
-  };
-
-  if (loading) {
+  // Solo la primera carga muestra el esqueleto; al cambiar de página o buscar
+  // se conserva la tabla
+  if (loading && suppliers.length === 0 && search === '') {
     return (
       <div className="min-h-screen space-y-6 bg-gray-50 p-6 dark:bg-slate-950">
         <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -160,7 +177,8 @@ export default function SuppliersPage() {
             </div>
           </div>
           <p className="mt-4 text-sm text-gray-600 dark:text-slate-400">
-            {suppliers.length} proveedores registrados
+            {pagination.total}{' '}
+            {search ? 'resultados' : 'proveedores registrados'}
           </p>
         </div>
         <button
@@ -259,6 +277,10 @@ export default function SuppliersPage() {
 
       <SuppliersTable
         suppliers={suppliers}
+        pagination={pagination}
+        onPageChange={setPage}
+        search={search}
+        onSearchChange={setSearch}
         onEdit={(supplier) => {
           setEditingSupplier(supplier);
           setShowForm(false);

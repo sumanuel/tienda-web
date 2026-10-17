@@ -4,6 +4,7 @@
 
 import { apiClient } from '@/lib/api';
 import type { Product, ProductFormData } from '@/types/product';
+import type { PageResult } from '@/hooks/usePagedList';
 
 /**
  * Crear producto
@@ -57,6 +58,34 @@ export async function createProduct(
   }
 }
 
+type ApiProduct = Awaited<
+  ReturnType<typeof apiClient.getProducts>
+>['products'][number];
+
+function toProduct(product: ApiProduct): Product {
+  return {
+    id: product.id,
+    storeId: product.storeId,
+    code: product.code,
+    barcode: product.barcode || undefined,
+    name: product.name,
+    description: product.description || undefined,
+    category: product.category,
+    cost: product.cost,
+    prices: {
+      VES: product.priceVES,
+      USD: product.priceUSD,
+    },
+    stock: product.stock,
+    stockMin: product.minStock,
+    trackInventory: product.trackInventory,
+    costCurrency: product.costCurrency || 'USD',
+    imageUrl: product.imageUrl || undefined,
+    createdAt: new Date(product.createdAt),
+    updatedAt: new Date(product.updatedAt),
+  };
+}
+
 /**
  * Obtener todos los productos de una tienda
  */
@@ -64,27 +93,7 @@ export async function getProducts(storeId: string): Promise<Product[]> {
   try {
     const response = await apiClient.getProducts({ storeId, limit: 1000 });
 
-    return response.products.map((product) => ({
-      id: product.id,
-      storeId: product.storeId,
-      code: product.code,
-      barcode: product.barcode || undefined,
-      name: product.name,
-      description: product.description || undefined,
-      category: product.category,
-      cost: product.cost,
-      prices: {
-        VES: product.priceVES,
-        USD: product.priceUSD,
-      },
-      stock: product.stock,
-      stockMin: product.minStock,
-      trackInventory: product.trackInventory,
-      costCurrency: product.costCurrency || 'USD',
-      imageUrl: product.imageUrl || undefined,
-      createdAt: new Date(product.createdAt),
-      updatedAt: new Date(product.updatedAt),
-    }));
+    return response.products.map(toProduct);
   } catch (error: any) {
     console.error('Error obteniendo productos:', error);
     throw new Error('Error al obtener productos');
@@ -258,4 +267,30 @@ export async function updateProductStock(
     'updateProductStock es legacy - usar movimientos de inventario en su lugar'
   );
   // No-op: El stock se actualiza automáticamente
+}
+
+/**
+ * Una página de productos con búsqueda en el servidor (nombre, SKU o código
+ * de barras)
+ */
+export async function getProductsPage(
+  storeId: string,
+  query: { page: number; limit: number; search?: string }
+): Promise<PageResult<Product>> {
+  try {
+    const response = await apiClient.getProducts({
+      storeId,
+      search: query.search || undefined,
+      page: query.page,
+      limit: query.limit,
+    });
+
+    return {
+      items: response.products.map(toProduct),
+      pagination: response.pagination,
+    };
+  } catch (error: any) {
+    console.error('Error obteniendo productos:', error);
+    throw new Error('Error al obtener productos');
+  }
 }

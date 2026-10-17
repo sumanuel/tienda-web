@@ -1,15 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
-  getPaginationRowModel,
   ColumnDef,
   flexRender,
 } from '@tanstack/react-table';
+import { PaginationControls } from '@/components/common/PaginationControls';
+import type { PageInfo } from '@/hooks/usePagedList';
 import { InventoryMovement, MovementType } from '@/types/inventory';
 import { Search, ArrowRightLeft } from 'lucide-react';
 import { format } from 'date-fns';
@@ -17,6 +16,10 @@ import { StatusPill, StatusPillTone } from '@/components/common/StatusPill';
 
 interface MovementsTableProps {
   movements: InventoryMovement[];
+  pagination: PageInfo;
+  onPageChange: (page: number) => void;
+  search: string;
+  onSearchChange: (value: string) => void;
 }
 
 const typeMeta: Record<MovementType, { label: string; tone: StatusPillTone }> =
@@ -29,9 +32,13 @@ const typeMeta: Record<MovementType, { label: string; tone: StatusPillTone }> =
     purchase_return: { label: 'Dev. Compra', tone: 'crit' },
   };
 
-export default function MovementsTable({ movements }: MovementsTableProps) {
-  const [globalFilter, setGlobalFilter] = useState('');
-
+export default function MovementsTable({
+  movements,
+  pagination,
+  onPageChange,
+  search,
+  onSearchChange,
+}: MovementsTableProps) {
   const columns = useMemo<ColumnDef<InventoryMovement>[]>(
     () => [
       {
@@ -127,19 +134,10 @@ export default function MovementsTable({ movements }: MovementsTableProps) {
   const table = useReactTable({
     data: movements,
     columns,
-    state: {
-      globalFilter,
-    },
-    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: 20,
-      },
-    },
+    manualPagination: true,
+    manualFiltering: true,
+    rowCount: pagination.total,
   });
 
   return (
@@ -154,7 +152,7 @@ export default function MovementsTable({ movements }: MovementsTableProps) {
           </p>
         </div>
         <div className="rounded-full bg-gray-100 px-3 py-1 font-mono text-xs font-medium text-gray-600 dark:bg-slate-800 dark:text-slate-400">
-          {movements.length} registros
+          {pagination.total} registros
         </div>
       </div>
 
@@ -165,8 +163,8 @@ export default function MovementsTable({ movements }: MovementsTableProps) {
         />
         <input
           type="text"
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Buscar movimientos..."
           className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pr-4 pl-10 text-sm focus:bg-white focus:ring-1 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:focus:bg-slate-900"
         />
@@ -200,12 +198,12 @@ export default function MovementsTable({ movements }: MovementsTableProps) {
                   <div className="flex flex-col items-center justify-center text-center">
                     <ArrowRightLeft className="mb-4 h-12 w-12 text-gray-300 dark:text-slate-700" />
                     <p className="text-lg font-medium text-gray-700 dark:text-slate-300">
-                      {globalFilter
+                      {search
                         ? 'No se encontraron movimientos'
                         : 'No hay movimientos registrados'}
                     </p>
                     <p className="mt-1 text-sm text-gray-400 dark:text-slate-500">
-                      {globalFilter
+                      {search
                         ? 'Prueba con otro criterio de búsqueda.'
                         : 'Registra tu primer movimiento de inventario.'}
                     </p>
@@ -236,30 +234,11 @@ export default function MovementsTable({ movements }: MovementsTableProps) {
         </table>
       </div>
 
-      {table.getRowModel().rows.length > 0 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600 dark:text-slate-400">
-            Mostrando {table.getRowModel().rows.length} de {movements.length}{' '}
-            movimientos
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
-            >
-              Anterior
-            </button>
-            <button
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="bg-brand-primary hover:bg-brand-primary-dark rounded-lg px-3 py-1.5 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300 dark:disabled:bg-slate-700"
-            >
-              Siguiente
-            </button>
-          </div>
-        </div>
-      )}
+      <PaginationControls
+        pagination={pagination}
+        onPageChange={onPageChange}
+        label="movimientos"
+      />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import type {
   KardexEntry,
   StockAlert,
 } from '@/types/inventory';
+import type { PageResult } from '@/hooks/usePagedList';
 
 /**
  * Registrar movimiento de inventario con transacción
@@ -73,6 +74,39 @@ export async function registerInventoryMovement(
   }
 }
 
+type ApiMovement = Awaited<
+  ReturnType<typeof apiClient.getInventoryMovements>
+>['movements'][number];
+
+function toMovement(movement: ApiMovement): InventoryMovement {
+  return {
+    id: movement.id,
+    storeId: movement.storeId,
+    productId: movement.productId,
+    productName: movement.productName,
+    productCode: movement.productCode,
+    type:
+      movement.type === 'sale' ||
+      movement.type === 'purchase' ||
+      movement.type === 'purchase_return'
+        ? movement.type
+        : movement.quantity < 0
+          ? 'exit'
+          : 'entry', // Mapear tipos
+    quantity: movement.quantity,
+    stockBefore: movement.stockBefore,
+    stockAfter: movement.stockAfter,
+    unitCost: movement.unitCost,
+    totalCost: movement.totalCost,
+    supplierId: undefined,
+    reason: movement.reason || undefined,
+    notes: movement.notes || undefined,
+    userId: movement.userId,
+    userName: movement.userName,
+    createdAt: new Date(movement.createdAt),
+  };
+}
+
 /**
  * Obtener movimientos de inventario por tienda
  */
@@ -87,32 +121,7 @@ export async function getInventoryMovements(
       limit: 1000,
     });
 
-    return response.movements.map((movement) => ({
-      id: movement.id,
-      storeId: movement.storeId,
-      productId: movement.productId,
-      productName: movement.productName,
-      productCode: movement.productCode,
-      type:
-        movement.type === 'sale' ||
-        movement.type === 'purchase' ||
-        movement.type === 'purchase_return'
-          ? movement.type
-          : movement.quantity < 0
-            ? 'exit'
-            : 'entry', // Mapear tipos
-      quantity: movement.quantity,
-      stockBefore: movement.stockBefore,
-      stockAfter: movement.stockAfter,
-      unitCost: movement.unitCost,
-      totalCost: movement.totalCost,
-      supplierId: undefined,
-      reason: movement.reason || undefined,
-      notes: movement.notes || undefined,
-      userId: movement.userId,
-      userName: movement.userName,
-      createdAt: new Date(movement.createdAt),
-    }));
+    return response.movements.map(toMovement);
   } catch (error: any) {
     console.error('Error obteniendo movimientos:', error);
     throw new Error('Error al obtener movimientos');
@@ -246,5 +255,31 @@ export async function calculateInventoryValuation(storeId: string) {
   } catch (error: any) {
     console.error('Error calculando valoración de inventario:', error);
     throw new Error('Error al calcular valoración de inventario');
+  }
+}
+
+/**
+ * Una página de movimientos (más recientes primero) con búsqueda en el
+ * servidor por producto, código, razón o usuario
+ */
+export async function getInventoryMovementsPage(
+  storeId: string,
+  query: { page: number; limit: number; search?: string }
+): Promise<PageResult<InventoryMovement>> {
+  try {
+    const response = await apiClient.getInventoryMovements({
+      storeId,
+      search: query.search || undefined,
+      page: query.page,
+      limit: query.limit,
+    });
+
+    return {
+      items: response.movements.map(toMovement),
+      pagination: response.pagination,
+    };
+  } catch (error: any) {
+    console.error('Error obteniendo movimientos:', error);
+    throw new Error('Error al obtener movimientos');
   }
 }

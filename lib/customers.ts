@@ -4,6 +4,7 @@
 
 import { apiClient } from '@/lib/api';
 import type { Customer, CustomerFormData } from '@/types/customer';
+import type { PageResult } from '@/hooks/usePagedList';
 
 /**
  * Crear cliente
@@ -40,6 +41,25 @@ export async function createCustomer(
   }
 }
 
+type ApiCustomer = Awaited<
+  ReturnType<typeof apiClient.getCustomers>
+>['customers'][number];
+
+function toCustomer(customer: ApiCustomer): Customer {
+  return {
+    id: customer.id,
+    storeId: customer.storeId,
+    name: customer.name,
+    email: customer.email || '',
+    phone: customer.phone || '',
+    document: customer.taxId || '', // taxId → document
+    address: customer.address || '',
+    balance: customer.balance,
+    createdAt: new Date(customer.createdAt),
+    updatedAt: new Date(customer.updatedAt),
+  };
+}
+
 /**
  * Obtener todos los clientes de una tienda
  */
@@ -47,18 +67,7 @@ export async function getCustomers(storeId: string): Promise<Customer[]> {
   try {
     const response = await apiClient.getCustomers({ storeId, limit: 1000 });
 
-    return response.customers.map((customer) => ({
-      id: customer.id,
-      storeId: customer.storeId,
-      name: customer.name,
-      email: customer.email || '',
-      phone: customer.phone || '',
-      document: customer.taxId || '', // taxId → document
-      address: customer.address || '',
-      balance: customer.balance,
-      createdAt: new Date(customer.createdAt),
-      updatedAt: new Date(customer.updatedAt),
-    }));
+    return response.customers.map(toCustomer);
   } catch (error: any) {
     console.error('Error obteniendo clientes:', error);
     throw new Error('Error al obtener clientes');
@@ -185,5 +194,47 @@ export async function getCustomersWithBalance(storeId: string) {
   } catch (error: any) {
     console.error('Error obteniendo clientes con balance:', error);
     throw new Error('Error al obtener clientes con balance');
+  }
+}
+
+/**
+ * Una página de clientes con búsqueda en el servidor
+ */
+export async function getCustomersPage(
+  storeId: string,
+  query: { page: number; limit: number; search?: string }
+): Promise<PageResult<Customer>> {
+  try {
+    const response = await apiClient.getCustomers({
+      storeId,
+      search: query.search || undefined,
+      page: query.page,
+      limit: query.limit,
+    });
+
+    return {
+      items: response.customers.map(toCustomer),
+      pagination: response.pagination,
+    };
+  } catch (error: any) {
+    console.error('Error obteniendo clientes:', error);
+    throw new Error('Error al obtener clientes');
+  }
+}
+
+/**
+ * Totales para las tarjetas de la pantalla (saldos en USD), calculados en el
+ * servidor
+ */
+export async function getCustomersSummary(storeId: string) {
+  try {
+    return await apiClient.get<{
+      total: number;
+      withBalance: number;
+      totalBalance: number;
+    }>(`/api/customers/summary?storeId=${storeId}`);
+  } catch (error: any) {
+    console.error('Error obteniendo resumen de clientes:', error);
+    throw new Error('Error al obtener resumen de clientes');
   }
 }

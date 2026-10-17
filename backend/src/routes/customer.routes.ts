@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   listCustomers,
+  getCustomersSummary,
   getCustomer,
   createCustomer,
   updateCustomer,
@@ -18,6 +19,7 @@ router.use(authMiddleware);
 
 // CRUD de clientes
 router.get('/', listCustomers); // GET /api/customers?storeId=xxx&search=xxx&page=1&limit=50
+router.get('/summary', getCustomersSummary); // GET /api/customers/summary?storeId=xxx
 router.get('/:id', getCustomer); // GET /api/customers/:id
 router.post('/', createCustomer); // POST /api/customers
 router.put('/:id', updateCustomer); // PUT /api/customers/:id

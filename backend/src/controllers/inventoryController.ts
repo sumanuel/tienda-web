@@ -17,6 +17,7 @@ export const listMovements = async (req: Request, res: Response) => {
       storeId,
       productId,
       type,
+      search,
       startDate,
       endDate,
       page = '1',
@@ -52,6 +53,16 @@ export const listMovements = async (req: Request, res: Response) => {
       where.type = type as string;
     }
 
+    if (typeof search === 'string' && search.trim()) {
+      const term = search.trim();
+      where.OR = [
+        { productName: { contains: term, mode: 'insensitive' } },
+        { productCode: { contains: term, mode: 'insensitive' } },
+        { reason: { contains: term, mode: 'insensitive' } },
+        { userName: { contains: term, mode: 'insensitive' } },
+      ];
+    }
+
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) {
@@ -62,11 +73,7 @@ export const listMovements = async (req: Request, res: Response) => {
       }
     }
 
-    const {
-      page: pageNum,
-      limit: take,
-      skip,
-    } = parsePagination(page, limit);
+    const { page: pageNum, limit: take, skip } = parsePagination(page, limit);
 
     const [movements, total] = await Promise.all([
       prisma.inventoryMovement.findMany({

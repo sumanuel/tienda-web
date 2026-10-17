@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useInventoryStore } from '@/store/inventoryStore';
+import { usePagedList } from '@/hooks/usePagedList';
 import { useProductsStore } from '@/store/productsStore';
 import {
-  getInventoryMovements,
+  getInventoryMovementsPage,
   registerInventoryMovement,
 } from '@/lib/inventory';
 import { getProducts } from '@/lib/products';
@@ -18,46 +18,56 @@ import toast from 'react-hot-toast';
 
 export default function InventoryMovementsPage() {
   const { profile } = useAuth();
-  const { movements, setMovements, addMovement } = useInventoryStore();
   const { products, setProducts } = useProductsStore();
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
 
+  const storeId = profile?.storeId ?? '';
+  const fetchPage = useCallback(
+    (query: { page: number; limit: number; search: string }) =>
+      getInventoryMovementsPage(storeId, query),
+    [storeId]
+  );
+  const {
+    rows: movements,
+    pagination,
+    loading,
+    error,
+    search,
+    setSearch,
+    setPage,
+    refresh,
+  } = usePagedList(fetchPage, { pageSize: 20, enabled: !!storeId });
+
+  // El selector del formulario necesita todos los productos
   useEffect(() => {
-    loadData();
-  }, [profile?.storeId]);
+    if (!storeId) return;
+    let cancelled = false;
+    getProducts(storeId)
+      .then((data) => {
+        if (!cancelled) setProducts(data);
+      })
+      .catch(() => toast.error('Error al cargar productos'));
+    return () => {
+      cancelled = true;
+    };
+  }, [storeId, setProducts]);
 
-  const loadData = async () => {
-    try {
-      if (!profile?.storeId) return;
-      setLoading(true);
-
-      const [movementsData, productsData] = await Promise.all([
-        getInventoryMovements(profile.storeId),
-        getProducts(profile.storeId),
-      ]);
-
-      setMovements(movementsData);
-      setProducts(productsData);
-    } catch (error) {
-      toast.error('Error al cargar datos');
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    if (error) toast.error('Error al cargar movimientos');
+  }, [error]);
 
   const handleSubmit = async (data: InventoryMovementFormData) => {
     try {
       if (!profile) return;
 
-      const movement = await registerInventoryMovement(
+      await registerInventoryMovement(
         profile.storeId,
         profile.id,
         profile.name,
         data
       );
 
-      addMovement(movement);
+      refresh();
       toast.success('Movimiento registrado exitosamente');
       setShowForm(false);
 
@@ -69,7 +79,9 @@ export default function InventoryMovementsPage() {
     }
   };
 
-  if (loading) {
+  // Solo la primera carga muestra el esqueleto; al cambiar de página o buscar
+  // se conserva la tabla
+  if (loading && movements.length === 0 && search === '') {
     return (
       <div className="min-h-screen space-y-6 bg-gray-50 p-6 dark:bg-slate-950">
         <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -96,7 +108,8 @@ export default function InventoryMovementsPage() {
               Movimientos de Inventario
             </h1>
             <p className="text-sm text-gray-500 dark:text-slate-400">
-              {movements.length} movimientos registrados
+              {pagination.total}{' '}
+              {search ? 'resultados' : 'movimientos registrados'}
             </p>
           </div>
         </div>
@@ -122,7 +135,13 @@ export default function InventoryMovementsPage() {
         />
       </SidePanel>
 
-      <MovementsTable movements={movements} />
+      <MovementsTable
+        movements={movements}
+        pagination={pagination}
+        onPageChange={setPage}
+        search={search}
+        onSearchChange={setSearch}
+      />
     </div>
   );
 }

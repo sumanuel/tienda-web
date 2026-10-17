@@ -1,15 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
-  getPaginationRowModel,
   ColumnDef,
   flexRender,
 } from '@tanstack/react-table';
+import { PaginationControls } from '@/components/common/PaginationControls';
+import type { PageInfo } from '@/hooks/usePagedList';
 import { Product } from '@/types/product';
 import { Pencil, Trash2, Search, Package } from 'lucide-react';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -18,17 +17,24 @@ import { DualCurrency } from '@/components/common/DualCurrency';
 
 interface ProductTableProps {
   products: Product[];
+  pagination: PageInfo;
+  onPageChange: (page: number) => void;
+  search: string;
+  onSearchChange: (value: string) => void;
   onEdit: (product: Product) => void;
   onDelete: (productId: string) => void;
 }
 
 export default function ProductTable({
   products,
+  pagination,
+  onPageChange,
+  search,
+  onSearchChange,
   onEdit,
   onDelete,
 }: ProductTableProps) {
   const { confirm, dialog } = useConfirm();
-  const [globalFilter, setGlobalFilter] = useState('');
 
   const columns = useMemo<ColumnDef<Product>[]>(
     () => [
@@ -134,19 +140,10 @@ export default function ProductTable({
   const table = useReactTable({
     data: products,
     columns,
-    state: {
-      globalFilter,
-    },
-    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      },
-    },
+    manualPagination: true,
+    manualFiltering: true,
+    rowCount: pagination.total,
   });
 
   return (
@@ -161,7 +158,7 @@ export default function ProductTable({
           </p>
         </div>
         <div className="rounded-full bg-gray-100 px-3 py-1 font-mono text-xs font-medium text-gray-600 dark:bg-slate-800 dark:text-slate-400">
-          {products.length} productos totales
+          {pagination.total} productos totales
         </div>
       </div>
 
@@ -173,8 +170,8 @@ export default function ProductTable({
           />
           <input
             type="text"
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Buscar productos..."
             className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pr-4 pl-10 text-sm focus:bg-white focus:ring-1 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:focus:bg-slate-900"
           />
@@ -241,28 +238,11 @@ export default function ProductTable({
         </table>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-600 dark:text-slate-400">
-          Mostrando {table.getRowModel().rows.length} de {products.length}{' '}
-          productos
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
-          >
-            Anterior
-          </button>
-          <button
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-            className="bg-brand-primary hover:bg-brand-primary-dark rounded-lg px-3 py-1.5 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300 dark:disabled:bg-slate-700"
-          >
-            Siguiente
-          </button>
-        </div>
-      </div>
+      <PaginationControls
+        pagination={pagination}
+        onPageChange={onPageChange}
+        label="productos"
+      />
       {dialog}
     </div>
   );

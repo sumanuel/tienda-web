@@ -4,12 +4,13 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
-import { useCustomersStore } from '@/store/customersStore';
+import { usePagedList } from '@/hooks/usePagedList';
 import {
-  getCustomers,
+  getCustomersPage,
+  getCustomersSummary,
   createCustomer,
   updateCustomer,
   deleteCustomer,
@@ -32,45 +33,66 @@ import toast from 'react-hot-toast';
 
 export default function CustomersPage() {
   const { profile } = useAuth();
-  const {
-    customers,
-    setCustomers,
-    addCustomer: addCustomerToStore,
-    updateCustomer: updateCustomerInStore,
-    removeCustomer,
-  } = useCustomersStore();
   const { activeRate } = useExchangeRates(profile?.storeId || '');
   const exchangeRate = activeRate?.usdToVes;
 
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [viewingCustomer, setViewingCustomer] = useState<Customer | null>(null);
   const [salesHistory, setSalesHistory] = useState<any[]>([]);
 
-  useEffect(() => {
-    loadCustomers();
-  }, [profile?.storeId]);
+  const storeId = profile?.storeId ?? '';
+  const fetchPage = useCallback(
+    (query: { page: number; limit: number; search: string }) =>
+      getCustomersPage(storeId, query),
+    [storeId]
+  );
+  const {
+    rows: customers,
+    pagination,
+    loading,
+    error,
+    search,
+    setSearch,
+    setPage,
+    refresh,
+  } = usePagedList(fetchPage, { pageSize: 10, enabled: !!storeId });
 
-  const loadCustomers = async () => {
-    try {
-      if (!profile?.storeId) return;
-      setLoading(true);
-      const data = await getCustomers(profile.storeId);
-      setCustomers(data);
-    } catch (error) {
-      console.error('Error cargando clientes:', error);
-      toast.error('Error al cargar clientes');
-    } finally {
-      setLoading(false);
-    }
+  // Las tarjetas de totales salen del servidor, no de la página visible
+  const [stats, setStats] = useState({
+    total: 0,
+    withBalance: 0,
+    totalBalance: 0,
+  });
+  const [statsNonce, setStatsNonce] = useState(0);
+
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    getCustomersSummary(storeId)
+      .then((summary) => {
+        if (!cancelled) setStats(summary);
+      })
+      .catch((err) => console.error('Error cargando resumen:', err));
+    return () => {
+      cancelled = true;
+    };
+  }, [storeId, statsNonce]);
+
+  useEffect(() => {
+    if (error) toast.error('Error al cargar clientes');
+  }, [error]);
+
+  const refreshAll = () => {
+    refresh();
+    setStatsNonce((value) => value + 1);
   };
 
   const handleCreate = async (data: CustomerFormData) => {
     try {
       if (!profile?.storeId) return;
-      const newCustomer = await createCustomer(profile.storeId, data);
-      addCustomerToStore(newCustomer);
+      await createCustomer(profile.storeId, data);
+      refreshAll();
       toast.success('Cliente creado exitosamente');
       setShowForm(false);
     } catch (error: any) {
@@ -83,7 +105,7 @@ export default function CustomersPage() {
     try {
       if (!editingCustomer) return;
       await updateCustomer(editingCustomer.id, data);
-      updateCustomerInStore(editingCustomer.id, data);
+      refresh();
       toast.success('Cliente actualizado exitosamente');
       setEditingCustomer(null);
     } catch (error: any) {
@@ -95,7 +117,7 @@ export default function CustomersPage() {
   const handleDelete = async (customerId: string) => {
     try {
       await deleteCustomer(customerId);
-      removeCustomer(customerId);
+      refreshAll();
       toast.success('Cliente eliminado');
     } catch (error) {
       console.error('Error eliminando cliente:', error);
@@ -118,14 +140,9 @@ export default function CustomersPage() {
     }
   };
 
-  // Estadísticas
-  const stats = {
-    total: customers.length,
-    withBalance: customers.filter((c) => c.balance > 0).length,
-    totalBalance: customers.reduce((sum, c) => sum + c.balance, 0),
-  };
-
-  if (loading) {
+  // Solo la primera carga muestra el esqueleto; al cambiar de página o buscar
+  // se conserva la tabla
+  if (loading && customers.length === 0 && search === '') {
     return (
       <div className="min-h-screen space-y-6 bg-gray-50 p-6 dark:bg-slate-950">
         <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -161,7 +178,7 @@ export default function CustomersPage() {
             </div>
           </div>
           <p className="mt-4 text-sm text-gray-600 dark:text-slate-400">
-            {customers.length} clientes registrados
+            {pagination.total} {search ? 'resultados' : 'clientes registrados'}
           </p>
         </div>
         <button
@@ -260,6 +277,10 @@ export default function CustomersPage() {
 
       <CustomersTable
         customers={customers}
+        pagination={pagination}
+        onPageChange={setPage}
+        search={search}
+        onSearchChange={setSearch}
         onEdit={(customer) => {
           setEditingCustomer(customer);
           setShowForm(false);

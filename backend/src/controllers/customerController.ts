@@ -45,11 +45,7 @@ export const listCustomers = async (req: Request, res: Response) => {
       ];
     }
 
-    const {
-      page: pageNum,
-      limit: take,
-      skip,
-    } = parsePagination(page, limit);
+    const { page: pageNum, limit: take, skip } = parsePagination(page, limit);
 
     const [customers, total] = await Promise.all([
       prisma.customer.findMany({
@@ -71,20 +67,19 @@ export const listCustomers = async (req: Request, res: Response) => {
       prisma.customer.count({ where }),
     ]);
 
-    // Calcular balance de cada cliente
-    const customersWithBalance = await Promise.all(
-      customers.map(async (customer) => {
-        const balance = await prisma.customerTransaction.aggregate({
-          where: { customerId: customer.id },
-          _sum: { amount: true },
-        });
-
-        return {
-          ...customer,
-          balance: balance._sum.amount || 0,
-        };
-      })
+    // Saldo de cada cliente de la página con una sola consulta
+    const sums = await prisma.customerTransaction.groupBy({
+      by: ['customerId'],
+      where: { customerId: { in: customers.map((customer) => customer.id) } },
+      _sum: { amount: true },
+    });
+    const balanceById = new Map(
+      sums.map((row) => [row.customerId, row._sum.amount || 0])
     );
+    const customersWithBalance = customers.map((customer) => ({
+      ...customer,
+      balance: balanceById.get(customer.id) ?? 0,
+    }));
 
     res.json({
       customers: customersWithBalance,
@@ -586,5 +581,50 @@ export const getOverdueCustomers = async (req: Request, res: Response) => {
     res
       .status(500)
       .json({ error: 'Error al obtener clientes con saldo vencido' });
+  }
+};
+
+/**
+ * Resumen para las tarjetas de la pantalla (total, con saldo y saldo total en
+ * USD), calculado en el servidor para no descargar todo el listado
+ * GET /api/customers/summary
+ */
+export const getCustomersSummary = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as AuthRequest).user!.userId;
+    const { storeId } = req.query;
+
+    if (!storeId) {
+      return res.status(400).json({ error: 'storeId es requerido' });
+    }
+
+    const store = await prisma.store.findFirst({
+      where: { id: storeId as string, userId },
+      select: { id: true },
+    });
+
+    if (!store) {
+      return res.status(404).json({ error: 'Tienda no encontrada' });
+    }
+
+    const [total, sums] = await Promise.all([
+      prisma.customer.count({ where: { storeId: store.id } }),
+      prisma.customerTransaction.groupBy({
+        by: ['customerId'],
+        where: { customer: { storeId: store.id } },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    const balances = sums.map((row) => row._sum.amount || 0);
+
+    res.json({
+      total,
+      withBalance: balances.filter((balance) => balance > 0.005).length,
+      totalBalance: Math.round(balances.reduce((a, b) => a + b, 0) * 100) / 100,
+    });
+  } catch (error) {
+    console.error('Get clientes summary error:', error);
+    res.status(500).json({ error: 'Error al obtener el resumen de clientes' });
   }
 };

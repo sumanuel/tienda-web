@@ -954,6 +954,7 @@ class ApiClient {
     storeId: string;
     productId?: string;
     type?: string;
+    search?: string;
     startDate?: string;
     endDate?: string;
     page?: number;
@@ -963,6 +964,7 @@ class ApiClient {
       storeId: params.storeId,
       ...(params.productId && { productId: params.productId }),
       ...(params.type && { type: params.type }),
+      ...(params.search && { search: params.search }),
       ...(params.startDate && { startDate: params.startDate }),
       ...(params.endDate && { endDate: params.endDate }),
       ...(params.page && { page: params.page.toString() }),

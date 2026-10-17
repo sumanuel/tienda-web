@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   listSuppliers,
+  getSuppliersSummary,
   getSupplier,
   createSupplier,
   updateSupplier,
@@ -19,6 +20,7 @@ router.use(authMiddleware);
 
 // CRUD de proveedores
 router.get('/', listSuppliers); // GET /api/suppliers?storeId=xxx&search=xxx&page=1&limit=50
+router.get('/summary', getSuppliersSummary); // GET /api/suppliers/summary?storeId=xxx
 router.get('/:id', getSupplier); // GET /api/suppliers/:id
 router.post('/', createSupplier); // POST /api/suppliers
 router.put('/:id', updateSupplier); // PUT /api/suppliers/:id

@@ -4,6 +4,7 @@
 
 import { apiClient } from '@/lib/api';
 import type { Supplier, SupplierFormData } from '@/types/supplier';
+import type { PageResult } from '@/hooks/usePagedList';
 
 /**
  * Crear proveedor
@@ -40,6 +41,25 @@ export async function createSupplier(
   }
 }
 
+type ApiSupplier = Awaited<
+  ReturnType<typeof apiClient.getSuppliers>
+>['suppliers'][number];
+
+function toSupplier(supplier: ApiSupplier): Supplier {
+  return {
+    id: supplier.id,
+    storeId: supplier.storeId,
+    name: supplier.name,
+    email: supplier.email || '',
+    phone: supplier.phone || '',
+    rif: supplier.taxId || '', // taxId → rif
+    address: supplier.address || '',
+    balance: supplier.balance,
+    createdAt: new Date(supplier.createdAt),
+    updatedAt: new Date(supplier.updatedAt),
+  };
+}
+
 /**
  * Obtener todos los proveedores de una tienda
  */
@@ -47,18 +67,7 @@ export async function getSuppliers(storeId: string): Promise<Supplier[]> {
   try {
     const response = await apiClient.getSuppliers({ storeId, limit: 1000 });
 
-    return response.suppliers.map((supplier) => ({
-      id: supplier.id,
-      storeId: supplier.storeId,
-      name: supplier.name,
-      email: supplier.email || '',
-      phone: supplier.phone || '',
-      rif: supplier.taxId || '', // taxId → rif
-      address: supplier.address || '',
-      balance: supplier.balance,
-      createdAt: new Date(supplier.createdAt),
-      updatedAt: new Date(supplier.updatedAt),
-    }));
+    return response.suppliers.map(toSupplier);
   } catch (error: any) {
     console.error('Error obteniendo proveedores:', error);
     throw new Error('Error al obtener proveedores');
@@ -228,5 +237,47 @@ export async function getSuppliersWithCredit(storeId: string) {
   } catch (error: any) {
     console.error('Error obteniendo proveedores con saldo a favor:', error);
     throw new Error('Error al obtener proveedores con saldo a favor');
+  }
+}
+
+/**
+ * Una página de proveedores con búsqueda en el servidor
+ */
+export async function getSuppliersPage(
+  storeId: string,
+  query: { page: number; limit: number; search?: string }
+): Promise<PageResult<Supplier>> {
+  try {
+    const response = await apiClient.getSuppliers({
+      storeId,
+      search: query.search || undefined,
+      page: query.page,
+      limit: query.limit,
+    });
+
+    return {
+      items: response.suppliers.map(toSupplier),
+      pagination: response.pagination,
+    };
+  } catch (error: any) {
+    console.error('Error obteniendo proveedores:', error);
+    throw new Error('Error al obtener proveedores');
+  }
+}
+
+/**
+ * Totales para las tarjetas de la pantalla (saldos en USD), calculados en el
+ * servidor
+ */
+export async function getSuppliersSummary(storeId: string) {
+  try {
+    return await apiClient.get<{
+      total: number;
+      withBalance: number;
+      totalBalance: number;
+    }>(`/api/suppliers/summary?storeId=${storeId}`);
+  } catch (error: any) {
+    console.error('Error obteniendo resumen de proveedores:', error);
+    throw new Error('Error al obtener resumen de proveedores');
   }
 }

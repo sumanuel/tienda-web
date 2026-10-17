@@ -4,16 +4,15 @@
 
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
-  getPaginationRowModel,
   ColumnDef,
   flexRender,
 } from '@tanstack/react-table';
+import { PaginationControls } from '@/components/common/PaginationControls';
+import type { PageInfo } from '@/hooks/usePagedList';
 import { Customer } from '@/types/customer';
 import { Search, Edit, Trash2, Eye, Users } from 'lucide-react';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -21,6 +20,10 @@ import { DualCurrency } from '@/components/common/DualCurrency';
 
 interface CustomersTableProps {
   customers: Customer[];
+  pagination: PageInfo;
+  onPageChange: (page: number) => void;
+  search: string;
+  onSearchChange: (value: string) => void;
   onEdit: (customer: Customer) => void;
   onDelete: (customerId: string) => void;
   onView: (customer: Customer) => void;
@@ -29,13 +32,16 @@ interface CustomersTableProps {
 
 export default function CustomersTable({
   customers,
+  pagination,
+  onPageChange,
+  search,
+  onSearchChange,
   onEdit,
   onDelete,
   onView,
   exchangeRate,
 }: CustomersTableProps) {
   const { confirm, dialog } = useConfirm();
-  const [globalFilter, setGlobalFilter] = useState('');
 
   const columns = useMemo<ColumnDef<Customer>[]>(
     () => [
@@ -155,19 +161,10 @@ export default function CustomersTable({
   const table = useReactTable({
     data: customers,
     columns,
-    state: {
-      globalFilter,
-    },
-    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      },
-    },
+    manualPagination: true,
+    manualFiltering: true,
+    rowCount: pagination.total,
   });
 
   return (
@@ -182,7 +179,7 @@ export default function CustomersTable({
           </p>
         </div>
         <div className="rounded-full bg-gray-100 px-3 py-1 font-mono text-xs font-medium text-gray-600 dark:bg-slate-800 dark:text-slate-400">
-          {customers.length} registros
+          {pagination.total} registros
         </div>
       </div>
 
@@ -193,8 +190,8 @@ export default function CustomersTable({
         />
         <input
           type="text"
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Buscar por nombre, documento, teléfono o email..."
           className="focus:border-brand-primary focus:ring-brand-primary w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pr-4 pl-10 text-sm focus:bg-white focus:ring-1 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:focus:bg-slate-900"
         />
@@ -226,12 +223,12 @@ export default function CustomersTable({
                   <div className="flex flex-col items-center justify-center text-center">
                     <Users className="mb-4 h-12 w-12 text-gray-300 dark:text-slate-700" />
                     <p className="text-lg font-medium text-gray-700 dark:text-slate-300">
-                      {globalFilter
+                      {search
                         ? 'No se encontraron clientes'
                         : 'No hay clientes registrados'}
                     </p>
                     <p className="mt-1 text-sm text-gray-400 dark:text-slate-500">
-                      {globalFilter
+                      {search
                         ? 'Prueba con otro criterio de búsqueda.'
                         : 'Agrega tu primer cliente para empezar a vender a crédito.'}
                     </p>
@@ -263,30 +260,11 @@ export default function CustomersTable({
       </div>
 
       {/* Paginación */}
-      {table.getRowModel().rows.length > 0 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600 dark:text-slate-400">
-            Mostrando {table.getRowModel().rows.length} de {customers.length}{' '}
-            clientes
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
-            >
-              Anterior
-            </button>
-            <button
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="bg-brand-primary hover:bg-brand-primary-dark rounded-lg px-3 py-1.5 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300 dark:disabled:bg-slate-700"
-            >
-              Siguiente
-            </button>
-          </div>
-        </div>
-      )}
+      <PaginationControls
+        pagination={pagination}
+        onPageChange={onPageChange}
+        label="clientes"
+      />
       {dialog}
     </div>
   );

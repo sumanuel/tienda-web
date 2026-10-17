@@ -42,11 +42,7 @@ export const listSuppliers = async (req: Request, res: Response) => {
       ];
     }
 
-    const {
-      page: pageNum,
-      limit: take,
-      skip,
-    } = parsePagination(page, limit);
+    const { page: pageNum, limit: take, skip } = parsePagination(page, limit);
 
     const [suppliers, total] = await Promise.all([
       prisma.supplier.findMany({
@@ -67,20 +63,19 @@ export const listSuppliers = async (req: Request, res: Response) => {
       prisma.supplier.count({ where }),
     ]);
 
-    // Calcular balance de cada proveedor
-    const suppliersWithBalance = await Promise.all(
-      suppliers.map(async (supplier) => {
-        const balance = await prisma.supplierTransaction.aggregate({
-          where: { supplierId: supplier.id },
-          _sum: { amount: true },
-        });
-
-        return {
-          ...supplier,
-          balance: balance._sum.amount || 0,
-        };
-      })
+    // Saldo de cada proveedor de la página con una sola consulta
+    const sums = await prisma.supplierTransaction.groupBy({
+      by: ['supplierId'],
+      where: { supplierId: { in: suppliers.map((supplier) => supplier.id) } },
+      _sum: { amount: true },
+    });
+    const balanceById = new Map(
+      sums.map((row) => [row.supplierId, row._sum.amount || 0])
     );
+    const suppliersWithBalance = suppliers.map((supplier) => ({
+      ...supplier,
+      balance: balanceById.get(supplier.id) ?? 0,
+    }));
 
     res.json({
       suppliers: suppliersWithBalance,
@@ -618,5 +613,52 @@ export const getUpcomingPayables = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Get upcoming payables error:', error);
     res.status(500).json({ error: 'Error al obtener cuentas por pagar' });
+  }
+};
+
+/**
+ * Resumen para las tarjetas de la pantalla (total, con saldo y saldo total en
+ * USD), calculado en el servidor para no descargar todo el listado
+ * GET /api/suppliers/summary
+ */
+export const getSuppliersSummary = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as AuthRequest).user!.userId;
+    const { storeId } = req.query;
+
+    if (!storeId) {
+      return res.status(400).json({ error: 'storeId es requerido' });
+    }
+
+    const store = await prisma.store.findFirst({
+      where: { id: storeId as string, userId },
+      select: { id: true },
+    });
+
+    if (!store) {
+      return res.status(404).json({ error: 'Tienda no encontrada' });
+    }
+
+    const [total, sums] = await Promise.all([
+      prisma.supplier.count({ where: { storeId: store.id } }),
+      prisma.supplierTransaction.groupBy({
+        by: ['supplierId'],
+        where: { supplier: { storeId: store.id } },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    const balances = sums.map((row) => row._sum.amount || 0);
+
+    res.json({
+      total,
+      withBalance: balances.filter((balance) => balance > 0.005).length,
+      totalBalance: Math.round(balances.reduce((a, b) => a + b, 0) * 100) / 100,
+    });
+  } catch (error) {
+    console.error('Get proveedores summary error:', error);
+    res
+      .status(500)
+      .json({ error: 'Error al obtener el resumen de proveedores' });
   }
 };
