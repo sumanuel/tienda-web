@@ -11,7 +11,8 @@ import { nextDocumentNumber } from '../utils/documentNumber';
 import { changeStock } from '../utils/stock';
 import { BusinessError, sendError } from '../utils/errors';
 import { parsePagination } from '../utils/pagination';
-import { round2, toUsd } from '../utils/money';
+import { toUsd } from '../utils/money';
+import { buildSalesStats } from '../utils/reportAggregation';
 
 /**
  * GET /api/sales
@@ -697,43 +698,7 @@ export async function getSalesStats(req: AuthRequest, res: Response) {
       },
     });
 
-    let totalRevenue = 0;
-    let totalTax = 0;
-    let unconvertedSales = 0;
-    const byMethod = new Map<string, { count: number; total: number }>();
-
-    for (const sale of sales) {
-      const usd = toUsd(sale.total, sale.totalReference, sale.exchangeRate);
-      // Ventas antiguas sin tasa ni monto en USD: no hay con qué convertirlas
-      if (usd === 0 && sale.total > 0) unconvertedSales += 1;
-
-      totalRevenue += usd;
-      // El impuesto guarda la proporción del total de la venta
-      totalTax += sale.total > 0 ? usd * (sale.tax / sale.total) : 0;
-
-      const method = byMethod.get(sale.paymentMethod) ?? {
-        count: 0,
-        total: 0,
-      };
-      method.count += 1;
-      method.total += usd;
-      byMethod.set(sale.paymentMethod, method);
-    }
-
-    return res.status(200).json({
-      totalRevenue: round2(totalRevenue),
-      totalTax: round2(totalTax),
-      averageSale: sales.length > 0 ? round2(totalRevenue / sales.length) : 0,
-      salesCount: sales.length,
-      salesByPaymentMethod: Array.from(byMethod.entries()).map(
-        ([method, value]) => ({
-          paymentMethod: method,
-          count: value.count,
-          total: round2(value.total),
-        })
-      ),
-      unconvertedSales,
-    });
+    return res.status(200).json(buildSalesStats(sales));
   } catch (error: any) {
     console.error('Error al obtener estadísticas:', error);
     return sendError(res, error, 'Error al obtener estadísticas');
