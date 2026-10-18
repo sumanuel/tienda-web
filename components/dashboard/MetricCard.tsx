@@ -23,6 +23,7 @@ interface MetricCardProps {
     onClick: () => void;
   };
   className?: string;
+  style?: React.CSSProperties;
   loading?: boolean;
 }
 
@@ -36,6 +37,7 @@ export function MetricCard({
   badge,
   action,
   className,
+  style,
   loading = false,
 }: MetricCardProps) {
   if (loading) {
@@ -63,6 +65,7 @@ export function MetricCard({
         'active:scale-[0.98]',
         className
       )}
+      style={style}
     >
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">

@@ -151,18 +151,6 @@ export interface SalesResponse {
   };
 }
 
-export interface SalesStats {
-  totalRevenue: number;
-  totalTax: number;
-  averageSale: number;
-  salesCount: number;
-  salesByPaymentMethod: {
-    paymentMethod: string;
-    count: number;
-    total: number;
-  }[];
-}
-
 export function useSales() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -271,45 +259,6 @@ export function useSales() {
     []
   );
 
-  /**
-   * Obtener estadísticas de ventas
-   */
-  const getSalesStats = useCallback(
-    async (filters: {
-      storeId: string;
-      startDate?: string;
-      endDate?: string;
-    }): Promise<SalesStats | null> => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const params = new URLSearchParams();
-
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            params.append(key, value.toString());
-          }
-        });
-
-        const response = await apiClient.get<SalesStats>(
-          `/api/sales/stats/summary?${params.toString()}`
-        );
-        return response;
-      } catch (err: any) {
-        const errorMessage =
-          err.response?.data?.error ||
-          err.message ||
-          'Error al obtener estadísticas';
-        setError(errorMessage);
-        return null;
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
-
   return {
     loading,
     error,
@@ -317,6 +266,5 @@ export function useSales() {
     getSales,
     getSaleById,
     cancelSale,
-    getSalesStats,
   };
 }

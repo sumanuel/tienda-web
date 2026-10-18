@@ -7,16 +7,11 @@ import { getStockAlerts } from '@/lib/inventory';
 import { StockAlertsCardV2 } from '@/components/dashboard/StockAlertsCardV2';
 import { TasaActivaCardV2 } from '@/components/dashboard/TasaActivaCardV2';
 import { MetricCard } from '@/components/dashboard/MetricCard';
-import { TrendChartPlaceholder } from '@/components/dashboard/TrendChartPlaceholder';
+import { SalesTrendCard } from '@/components/dashboard/SalesTrendCard';
+import { getDashboardSummary, type DashboardSummary } from '@/lib/dashboard';
+import { formatCurrency } from '@/lib/currency';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
-import {
-  DollarSign,
-  Package,
-  ShoppingCart,
-  Users,
-  Calendar,
-  TrendingUp,
-} from 'lucide-react';
+import { DollarSign, Package, Users, Calendar } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
@@ -29,6 +24,51 @@ export default function DashboardPage() {
     loading: ratesLoading,
   } = useExchangeRates(profile?.storeId || '');
   const [loadingAlerts, setLoadingAlerts] = useState(false);
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState(true);
+  const exchangeRate = activeRate?.usdToVes;
+
+  useEffect(() => {
+    const storeId = profile?.storeId;
+    if (!storeId) return;
+
+    let cancelled = false;
+    getDashboardSummary(storeId)
+      .then((data) => {
+        if (!cancelled) setSummary(data);
+      })
+      .catch((error) => console.error('Error cargando el resumen:', error))
+      .finally(() => {
+        if (!cancelled) setLoadingSummary(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.storeId]);
+
+  // Los montos vienen en USD; la moneda principal es VES con la tasa activa
+  const money = (usd: number) =>
+    exchangeRate
+      ? formatCurrency(usd * exchangeRate, 'VES')
+      : formatCurrency(usd, 'USD');
+  const reference = (usd: number, count: number) =>
+    `${exchangeRate ? `≈ ${formatCurrency(usd, 'USD')} · ` : ''}${count} ${count === 1 ? 'venta' : 'ventas'}`;
+
+  // Variación contra el mismo tramo del mes anterior; sin base no hay tendencia
+  const monthTrend =
+    summary && summary.previousMonth.totalUsd > 0
+      ? (() => {
+          const change =
+            ((summary.month.totalUsd - summary.previousMonth.totalUsd) /
+              summary.previousMonth.totalUsd) *
+            100;
+          return {
+            value: `${Math.abs(change).toFixed(1)}%`,
+            isPositive: change >= 0,
+          };
+        })()
+      : undefined;
 
   const usdTrend = useMemo(() => {
     if (!activeRate || activeRate.usdToVes <= 0) return undefined;
@@ -104,39 +144,40 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Ventas del Día"
-          value="VES 0,00"
-          subtitle="Próximamente con datos reales"
+          value={money(summary?.today.totalUsd ?? 0)}
+          subtitle={reference(
+            summary?.today.totalUsd ?? 0,
+            summary?.today.count ?? 0
+          )}
           icon={DollarSign}
           tone="accent"
-          trend={{
-            value: '+0%',
-            isPositive: true,
-          }}
+          loading={loadingSummary}
           className="animate-slide-up"
           style={{ animationDelay: '0.2s' } as React.CSSProperties}
         />
 
         <MetricCard
           title="Ventas del Mes"
-          value="VES 0,00"
-          subtitle="vs mes pasado: 0%"
+          value={money(summary?.month.totalUsd ?? 0)}
+          subtitle={reference(
+            summary?.month.totalUsd ?? 0,
+            summary?.month.count ?? 0
+          )}
           icon={Calendar}
           tone="accent"
-          trend={{
-            value: '+0%',
-            isPositive: true,
-          }}
+          trend={monthTrend}
           action={{
             label: 'Ver historial',
             onClick: () => router.push('/dashboard/sales'),
           }}
+          loading={loadingSummary}
           className="animate-slide-up"
           style={{ animationDelay: '0.3s' } as React.CSSProperties}
         />
 
         <MetricCard
           title="Productos"
-          value="0"
+          value={summary?.products ?? 0}
           subtitle="Total en inventario"
           icon={Package}
           tone="warning"
@@ -144,13 +185,14 @@ export default function DashboardPage() {
             label: 'Gestionar',
             onClick: () => router.push('/dashboard/products'),
           }}
+          loading={loadingSummary}
           className="animate-slide-up"
           style={{ animationDelay: '0.4s' } as React.CSSProperties}
         />
 
         <MetricCard
           title="Clientes"
-          value="0"
+          value={summary?.customers ?? 0}
           subtitle="Clientes registrados"
           icon={Users}
           tone="neutral"
@@ -158,6 +200,7 @@ export default function DashboardPage() {
             label: 'Ver todos',
             onClick: () => router.push('/dashboard/customers'),
           }}
+          loading={loadingSummary}
           className="animate-slide-up"
           style={{ animationDelay: '0.5s' } as React.CSSProperties}
         />
@@ -170,7 +213,7 @@ export default function DashboardPage() {
 
       {/* Tendencia de Ventas */}
       <div className="animate-slide-up" style={{ animationDelay: '0.7s' }}>
-        <TrendChartPlaceholder />
+        <SalesTrendCard data={summary?.byDay ?? []} loading={loadingSummary} />
       </div>
     </div>
   );

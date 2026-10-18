@@ -370,3 +370,136 @@ export async function getSalesReport(req: AuthRequest, res: Response) {
     return sendError(res, error, 'Error al generar el reporte de ventas');
   }
 }
+
+const TREND_DAYS = 30;
+
+/**
+ * GET /api/reports/dashboard?storeId
+ * Resumen del panel principal: ventas de hoy y del mes (en USD, convertidas
+ * venta a venta), comparación contra el mismo tramo del mes anterior, conteo
+ * de productos y clientes y la tendencia de los últimos 30 días.
+ */
+export async function getDashboardSummary(req: AuthRequest, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const { storeId } = req.query;
+    if (typeof storeId !== 'string' || !storeId) {
+      return res.status(400).json({ error: 'El ID de tienda es requerido' });
+    }
+
+    const store = await prisma.store.findFirst({
+      where: { id: storeId, userId: req.user.userId },
+      select: { id: true },
+    });
+    if (!store) {
+      return res.status(403).json({ error: 'No tienes acceso a esta tienda' });
+    }
+
+    const now = new Date();
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    // Mismo tramo del mes anterior: del día 1 al mismo día del mes (acotado a
+    // la longitud de ese mes)
+    const daysInPrevMonth = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      0
+    ).getDate();
+    const endOfPrevSpan = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      Math.min(now.getDate(), daysInPrevMonth),
+      23,
+      59,
+      59,
+      999
+    );
+    const startOfTrend = new Date(startOfToday);
+    startOfTrend.setDate(startOfTrend.getDate() - (TREND_DAYS - 1));
+
+    const earliest = new Date(
+      Math.min(startOfPrevMonth.getTime(), startOfTrend.getTime())
+    );
+
+    const [sales, products, customers] = await Promise.all([
+      prisma.sale.findMany({
+        where: {
+          storeId: store.id,
+          status: 'completed',
+          createdAt: { gte: earliest },
+        },
+        select: {
+          createdAt: true,
+          total: true,
+          totalReference: true,
+          exchangeRate: true,
+        },
+      }),
+      prisma.product.count({ where: { storeId: store.id } }),
+      prisma.customer.count({ where: { storeId: store.id } }),
+    ]);
+
+    const sum = () => ({ totalUsd: 0, count: 0 });
+    const today = sum();
+    const month = sum();
+    const previousMonth = sum();
+    const byDay = new Map<string, { totalUsd: number; count: number }>();
+
+    for (let i = 0; i < TREND_DAYS; i++) {
+      const day = new Date(startOfTrend);
+      day.setDate(startOfTrend.getDate() + i);
+      byDay.set(dayKey(day), sum());
+    }
+
+    for (const sale of sales) {
+      const usd = toUsd(sale.total, sale.totalReference, sale.exchangeRate);
+      const at = sale.createdAt;
+
+      if (at >= startOfToday) {
+        today.totalUsd += usd;
+        today.count += 1;
+      }
+      if (at >= startOfMonth) {
+        month.totalUsd += usd;
+        month.count += 1;
+      } else if (at >= startOfPrevMonth && at <= endOfPrevSpan) {
+        previousMonth.totalUsd += usd;
+        previousMonth.count += 1;
+      }
+
+      const bucket = byDay.get(dayKey(at));
+      if (bucket) {
+        bucket.totalUsd += usd;
+        bucket.count += 1;
+      }
+    }
+
+    const finish = (value: { totalUsd: number; count: number }) => ({
+      totalUsd: round2(value.totalUsd),
+      count: value.count,
+    });
+
+    return res.status(200).json({
+      today: finish(today),
+      month: finish(month),
+      previousMonth: finish(previousMonth),
+      products,
+      customers,
+      byDay: Array.from(byDay.entries()).map(([date, value]) => ({
+        date,
+        ...finish(value),
+      })),
+    });
+  } catch (error: any) {
+    console.error('Error al generar el resumen del panel:', error);
+    return sendError(res, error, 'Error al generar el resumen del panel');
+  }
+}

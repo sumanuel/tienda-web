@@ -925,30 +925,6 @@ class ApiClient {
     }>(`/api/sales?${queryParams}`);
   }
 
-  async getSalesStats(params: {
-    storeId: string;
-    startDate?: string;
-    endDate?: string;
-  }) {
-    const queryParams = new URLSearchParams({
-      storeId: params.storeId,
-      ...(params.startDate && { startDate: params.startDate }),
-      ...(params.endDate && { endDate: params.endDate }),
-    });
-
-    return this.request<{
-      totalRevenue: number;
-      totalTax: number;
-      averageSale: number;
-      salesCount: number;
-      salesByPaymentMethod: Array<{
-        paymentMethod: string;
-        count: number;
-        total: number;
-      }>;
-    }>(`/api/sales/stats/summary?${queryParams}`);
-  }
-
   // Métodos de Inventory (Inventario)
   async getInventoryMovements(params: {
     storeId: string;

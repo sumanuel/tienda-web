@@ -11,7 +11,7 @@ import { nextDocumentNumber } from '../utils/documentNumber';
 import { changeStock } from '../utils/stock';
 import { BusinessError, sendError } from '../utils/errors';
 import { parsePagination } from '../utils/pagination';
-import { toUsd } from '../utils/money';
+import { round2, toUsd } from '../utils/money';
 
 /**
  * GET /api/sales
@@ -640,7 +640,10 @@ export async function cancelSale(req: AuthRequest, res: Response) {
 
 /**
  * GET /api/sales/stats/summary
- * Estadísticas de ventas
+ * Estadísticas de las ventas completadas, en USD. Sale.total está en la moneda
+ * de cada venta (normalmente VES), así que cada venta se convierte con su
+ * monto de referencia o su tasa antes de sumarse. Acepta los mismos filtros
+ * que el historial (fechas, método de pago y cliente).
  */
 export async function getSalesStats(req: AuthRequest, res: Response) {
   try {
@@ -648,7 +651,8 @@ export async function getSalesStats(req: AuthRequest, res: Response) {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
-    const { storeId, startDate, endDate } = req.query;
+    const { storeId, startDate, endDate, paymentMethod, customerId } =
+      req.query;
 
     // Validar que storeId pertenece al usuario
     if (storeId && typeof storeId === 'string') {
@@ -666,63 +670,69 @@ export async function getSalesStats(req: AuthRequest, res: Response) {
       }
     }
 
-    const whereClause: any = {
-      ...(storeId && typeof storeId === 'string' && { storeId }),
-      status: 'completed',
-      store: {
-        userId: req.user.userId,
-      },
-    };
-
+    const createdAt: { gte?: Date; lte?: Date } = {};
     if (startDate && typeof startDate === 'string') {
-      whereClause.createdAt = { gte: parseRangeStart(startDate) };
+      createdAt.gte = parseRangeStart(startDate);
     }
-
     if (endDate && typeof endDate === 'string') {
-      whereClause.createdAt = {
-        ...whereClause.createdAt,
-        lte: parseRangeEnd(endDate),
-      };
+      createdAt.lte = parseRangeEnd(endDate);
     }
 
-    // Obtener estadísticas
-    const [totalSales, salesCount, salesByMethod] = await Promise.all([
-      // Total de ventas
-      prisma.sale.aggregate({
-        where: whereClause,
-        _sum: {
-          total: true,
-          tax: true,
-        },
-        _avg: {
-          total: true,
-        },
-      }),
-      // Cantidad de ventas
-      prisma.sale.count({ where: whereClause }),
-      // Ventas por método de pago
-      prisma.sale.groupBy({
-        by: ['paymentMethod'],
-        where: whereClause,
-        _count: {
-          id: true,
-        },
-        _sum: {
-          total: true,
-        },
-      }),
-    ]);
+    const sales = await prisma.sale.findMany({
+      where: {
+        ...(storeId && typeof storeId === 'string' && { storeId }),
+        ...(paymentMethod &&
+          typeof paymentMethod === 'string' && { paymentMethod }),
+        ...(customerId && typeof customerId === 'string' && { customerId }),
+        ...((createdAt.gte || createdAt.lte) && { createdAt }),
+        status: 'completed',
+        store: { userId: req.user.userId },
+      },
+      select: {
+        total: true,
+        tax: true,
+        totalReference: true,
+        exchangeRate: true,
+        paymentMethod: true,
+      },
+    });
+
+    let totalRevenue = 0;
+    let totalTax = 0;
+    let unconvertedSales = 0;
+    const byMethod = new Map<string, { count: number; total: number }>();
+
+    for (const sale of sales) {
+      const usd = toUsd(sale.total, sale.totalReference, sale.exchangeRate);
+      // Ventas antiguas sin tasa ni monto en USD: no hay con qué convertirlas
+      if (usd === 0 && sale.total > 0) unconvertedSales += 1;
+
+      totalRevenue += usd;
+      // El impuesto guarda la proporción del total de la venta
+      totalTax += sale.total > 0 ? usd * (sale.tax / sale.total) : 0;
+
+      const method = byMethod.get(sale.paymentMethod) ?? {
+        count: 0,
+        total: 0,
+      };
+      method.count += 1;
+      method.total += usd;
+      byMethod.set(sale.paymentMethod, method);
+    }
 
     return res.status(200).json({
-      totalRevenue: totalSales._sum.total || 0,
-      totalTax: totalSales._sum.tax || 0,
-      averageSale: totalSales._avg.total || 0,
-      salesCount,
-      salesByPaymentMethod: salesByMethod.map((method) => ({
-        paymentMethod: method.paymentMethod,
-        count: method._count.id,
-        total: method._sum.total || 0,
-      })),
+      totalRevenue: round2(totalRevenue),
+      totalTax: round2(totalTax),
+      averageSale: sales.length > 0 ? round2(totalRevenue / sales.length) : 0,
+      salesCount: sales.length,
+      salesByPaymentMethod: Array.from(byMethod.entries()).map(
+        ([method, value]) => ({
+          paymentMethod: method,
+          count: value.count,
+          total: round2(value.total),
+        })
+      ),
+      unconvertedSales,
     });
   } catch (error: any) {
     console.error('Error al obtener estadísticas:', error);
