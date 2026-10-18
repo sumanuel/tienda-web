@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { getInventoryReport } from '@/lib/reports/inventoryReports';
 import { exportInventoryReportToExcel } from '@/lib/export/excelExporter';
+import { exportInventoryReportToPDF } from '@/lib/export/pdfExporter';
 import { InventoryReportData } from '@/types/reports';
 import ExportButtons from '@/components/reports/ExportButtons';
 import {
@@ -73,8 +74,14 @@ export default function InventoryReportPage() {
     exportInventoryReportToExcel(reportData);
   }
 
-  function handleExportPDF() {
-    toast('Exportación a PDF en desarrollo');
+  async function handleExportPDF() {
+    if (!reportData) return;
+    try {
+      await exportInventoryReportToPDF(reportData, exchangeRate);
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      toast.error('No se pudo generar el PDF');
+    }
   }
 
   if (loading) {

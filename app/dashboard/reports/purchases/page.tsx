@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useReportsStore } from '@/store/reportsStore';
 import { getPurchasesReport } from '@/lib/reports/purchaseReports';
 import { exportPurchasesReportToExcel } from '@/lib/export/excelExporter';
+import { exportPurchasesReportToPDF } from '@/lib/export/pdfExporter';
 import { formatCurrency } from '@/lib/currency';
 import { PurchasesReportData } from '@/types/reports';
 import DateRangePicker from '@/components/reports/DateRangePicker';
@@ -83,8 +84,14 @@ export default function PurchasesReportPage() {
     exportPurchasesReportToExcel(reportData, dateRange);
   }
 
-  function handleExportPDF() {
-    toast('Exportación a PDF en desarrollo');
+  async function handleExportPDF() {
+    if (!reportData) return;
+    try {
+      await exportPurchasesReportToPDF(reportData, dateRange);
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      toast.error('No se pudo generar el PDF');
+    }
   }
 
   if (loading) {

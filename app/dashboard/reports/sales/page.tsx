@@ -6,6 +6,7 @@ import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useReportsStore } from '@/store/reportsStore';
 import { getSalesReport } from '@/lib/reports/salesReports';
 import { exportSalesReportToExcel } from '@/lib/export/excelExporter';
+import { exportSalesReportToPDF } from '@/lib/export/pdfExporter';
 import { SalesReportData } from '@/types/reports';
 import DateRangePicker from '@/components/reports/DateRangePicker';
 import ExportButtons from '@/components/reports/ExportButtons';
@@ -69,9 +70,14 @@ export default function SalesReportPage() {
     exportSalesReportToExcel(reportData, dateRange);
   }
 
-  function handleExportPDF() {
-    // TODO: Implementar PDF
-    toast('Exportación a PDF en desarrollo');
+  async function handleExportPDF() {
+    if (!reportData) return;
+    try {
+      await exportSalesReportToPDF(reportData, dateRange, exchangeRate);
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      toast.error('No se pudo generar el PDF');
+    }
   }
 
   if (loading) {

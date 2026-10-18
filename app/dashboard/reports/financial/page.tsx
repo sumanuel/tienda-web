@@ -6,6 +6,7 @@ import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useReportsStore } from '@/store/reportsStore';
 import { getFinancialReport } from '@/lib/reports/financialReports';
 import { exportFinancialReportToExcel } from '@/lib/export/excelExporter';
+import { exportFinancialReportToPDF } from '@/lib/export/pdfExporter';
 import { FinancialReportData } from '@/types/reports';
 import DateRangePicker from '@/components/reports/DateRangePicker';
 import ExportButtons from '@/components/reports/ExportButtons';
@@ -63,8 +64,14 @@ export default function FinancialReportPage() {
     exportFinancialReportToExcel(reportData, dateRange);
   }
 
-  function handleExportPDF() {
-    toast('Exportación a PDF en desarrollo');
+  async function handleExportPDF() {
+    if (!reportData) return;
+    try {
+      await exportFinancialReportToPDF(reportData, dateRange, exchangeRate);
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      toast.error('No se pudo generar el PDF');
+    }
   }
 
   if (loading) {
