@@ -1,235 +1,95 @@
 /**
  * Tests unitarios para lib/reports/financialReports.ts
  *
- * Objetivo: Validar integración con Fase 5 y cálculos financieros
+ * El backend calcula en USD el estado de resultados mensual (ingresos por
+ * ventas, egresos por compras netas de devoluciones); aquí se valida cómo el
+ * servicio lo transforma y lo combina con cuentas por cobrar y por pagar.
  */
 
 import { getFinancialReport } from '@/lib/reports/financialReports';
-import { getSalesReport } from '@/lib/reports/salesReports';
-import { getPurchasesReport } from '@/lib/reports/purchaseReports';
+import { apiClient } from '@/lib/api';
 import {
   getReceivablesSummary,
   getPayablesSummary,
 } from '@/lib/accountsReceivable';
 
-// Mocks
-jest.mock('@/lib/reports/salesReports');
-jest.mock('@/lib/reports/purchaseReports');
+jest.mock('@/lib/api', () => ({ apiClient: { get: jest.fn() } }));
 jest.mock('@/lib/accountsReceivable');
+
+const mockGet = apiClient.get as jest.Mock;
+
+const mockReport = (overrides: Record<string, unknown> = {}) => ({
+  months: [
+    { month: '2026-08', revenueUsd: 600, expensesUsd: 200, profitUsd: 400 },
+    { month: '2026-09', revenueUsd: 400, expensesUsd: 200, profitUsd: 200 },
+  ],
+  totals: { revenueUsd: 1000, expensesUsd: 400, profitUsd: 600 },
+  byPaymentMethod: [],
+  unconvertedSales: 0,
+  ...overrides,
+});
 
 describe('financialReports.ts - getFinancialReport()', () => {
   const mockStoreId = 'store-123';
   const mockDateRange = {
-    startDate: new Date('2026-08-01'),
-    endDate: new Date('2026-08-31'),
+    startDate: new Date(2026, 7, 1),
+    endDate: new Date(2026, 8, 30),
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // Sin compras en el período salvo que cada prueba indique otra cosa
-    (getPurchasesReport as jest.Mock).mockResolvedValue({ netReference: 0 });
+    mockGet.mockResolvedValue(mockReport());
+    (getReceivablesSummary as jest.Mock).mockResolvedValue({
+      totalReceivable: 500,
+    });
+    (getPayablesSummary as jest.Mock).mockResolvedValue({
+      totalPayable: 300,
+    });
   });
 
   describe('Integración con servicios', () => {
-    it('debe llamar a getSalesReport con parámetros correctos', async () => {
-      (getSalesReport as jest.Mock).mockResolvedValue({
-        totalSales: 1000,
-        salesByPaymentMethod: [],
-      });
-
-      (getReceivablesSummary as jest.Mock).mockResolvedValue({
-        totalReceivable: 500,
-      });
-
-      (getPayablesSummary as jest.Mock).mockResolvedValue({
-        totalPayable: 300,
-      });
-
+    it('pide el reporte financiero del período con fechas de día calendario', async () => {
       await getFinancialReport(mockStoreId, mockDateRange);
 
-      expect(getSalesReport).toHaveBeenCalledWith(mockStoreId, mockDateRange);
+      expect(mockGet).toHaveBeenCalledTimes(1);
+      const url = mockGet.mock.calls[0][0] as string;
+      expect(url.startsWith('/api/reports/financial?')).toBe(true);
+      const params = new URLSearchParams(url.split('?')[1]);
+      expect(params.get('storeId')).toBe(mockStoreId);
+      expect(params.get('startDate')).toBe('2026-08-01');
+      expect(params.get('endDate')).toBe('2026-09-30');
     });
 
-    it('debe llamar a getReceivablesSummary con storeId', async () => {
-      (getSalesReport as jest.Mock).mockResolvedValue({
-        totalSales: 1000,
-        salesByPaymentMethod: [],
-      });
-
-      (getReceivablesSummary as jest.Mock).mockResolvedValue({
-        totalReceivable: 500,
-      });
-
-      (getPayablesSummary as jest.Mock).mockResolvedValue({
-        totalPayable: 300,
-      });
-
+    it('debe llamar a getReceivablesSummary y getPayablesSummary con storeId', async () => {
       await getFinancialReport(mockStoreId, mockDateRange);
 
       expect(getReceivablesSummary).toHaveBeenCalledWith(mockStoreId);
-    });
-
-    it('debe llamar a getPayablesSummary con storeId', async () => {
-      (getSalesReport as jest.Mock).mockResolvedValue({
-        totalSales: 1000,
-        salesByPaymentMethod: [],
-      });
-
-      (getReceivablesSummary as jest.Mock).mockResolvedValue({
-        totalReceivable: 500,
-      });
-
-      (getPayablesSummary as jest.Mock).mockResolvedValue({
-        totalPayable: 300,
-      });
-
-      await getFinancialReport(mockStoreId, mockDateRange);
-
       expect(getPayablesSummary).toHaveBeenCalledWith(mockStoreId);
     });
   });
 
-  describe('Egresos (compras netas de devoluciones)', () => {
-    const mockSummaries = () => {
-      (getReceivablesSummary as jest.Mock).mockResolvedValue({
-        totalReceivable: 500,
-      });
-      (getPayablesSummary as jest.Mock).mockResolvedValue({
-        totalPayable: 300,
-      });
-    };
-
-    it('debe pedir el reporte de compras del mismo período', async () => {
-      (getSalesReport as jest.Mock).mockResolvedValue({
-        totalSales: 1000,
-        salesByPaymentMethod: [],
-      });
-      mockSummaries();
-
-      await getFinancialReport(mockStoreId, mockDateRange);
-
-      expect(getPurchasesReport).toHaveBeenCalledWith(
-        mockStoreId,
-        mockDateRange
-      );
-    });
-
-    it('totalExpenses toma las compras netas en USD', async () => {
-      (getSalesReport as jest.Mock).mockResolvedValue({
-        totalSales: 1000,
-        salesByPaymentMethod: [],
-      });
-      (getPurchasesReport as jest.Mock).mockResolvedValue({
-        netReference: 400,
-      });
-      mockSummaries();
-
+  describe('Totales', () => {
+    it('toma ingresos, egresos y resultado de los totales del servidor', async () => {
       const result = await getFinancialReport(mockStoreId, mockDateRange);
 
+      expect(result.totalRevenue).toBe(1000);
       expect(result.totalExpenses).toBe(400);
       expect(result.grossProfit).toBe(600);
+    });
+
+    it('calcula el margen = resultado / ingresos * 100', async () => {
+      const result = await getFinancialReport(mockStoreId, mockDateRange);
+
       expect(result.profitMargin).toBe(60);
     });
 
-    it('permite resultado negativo cuando se compra más de lo que se vende', async () => {
-      (getSalesReport as jest.Mock).mockResolvedValue({
-        totalSales: 100,
-        salesByPaymentMethod: [],
-      });
-      (getPurchasesReport as jest.Mock).mockResolvedValue({
-        netReference: 250,
-      });
-      mockSummaries();
-
-      const result = await getFinancialReport(mockStoreId, mockDateRange);
-
-      expect(result.grossProfit).toBe(-150);
-      expect(result.profitMargin).toBe(-150);
-    });
-  });
-
-  describe('BUG-008: incomeStatement siempre devuelve 0s', () => {
-    it('FALLA: incomeStatement tiene todos los valores en 0 (bug crítico)', async () => {
-      (getSalesReport as jest.Mock).mockResolvedValue({
-        totalSales: 1000,
-        salesByPaymentMethod: [],
-      });
-
-      (getReceivablesSummary as jest.Mock).mockResolvedValue({
-        totalReceivable: 500,
-      });
-
-      (getPayablesSummary as jest.Mock).mockResolvedValue({
-        totalPayable: 300,
-      });
-
-      const result = await getFinancialReport(mockStoreId, mockDateRange);
-
-      // BUG: incomeStatement siempre tiene 0s
-      result.incomeStatement.forEach((month) => {
-        expect(month.revenue).toBe(0);
-        expect(month.expenses).toBe(0);
-        expect(month.profit).toBe(0);
-      });
-
-      // DEBERÍA tener valores reales por mes
-      // Este test DOCUMENTA el bug actual
-    });
-  });
-
-  describe('Cálculos básicos', () => {
-    it('debe calcular totalRevenue desde salesData.totalSales', async () => {
-      (getSalesReport as jest.Mock).mockResolvedValue({
-        totalSales: 5000,
-        salesByPaymentMethod: [],
-      });
-
-      (getReceivablesSummary as jest.Mock).mockResolvedValue({
-        totalReceivable: 500,
-      });
-
-      (getPayablesSummary as jest.Mock).mockResolvedValue({
-        totalPayable: 300,
-      });
-
-      const result = await getFinancialReport(mockStoreId, mockDateRange);
-
-      expect(result.totalRevenue).toBe(5000);
-    });
-
-    it('debe calcular grossProfit = totalRevenue - totalExpenses', async () => {
-      (getSalesReport as jest.Mock).mockResolvedValue({
-        totalSales: 5000,
-        salesByPaymentMethod: [],
-      });
-
-      (getReceivablesSummary as jest.Mock).mockResolvedValue({
-        totalReceivable: 500,
-      });
-
-      (getPayablesSummary as jest.Mock).mockResolvedValue({
-        totalPayable: 300,
-      });
-
-      const result = await getFinancialReport(mockStoreId, mockDateRange);
-
-      // Sin compras en el período (mock por defecto), el resultado es el ingreso
-      expect(result.grossProfit).toBe(5000); // 5000 - 0
-    });
-
-    it('debe manejar división por cero en profitMargin', async () => {
-      (getSalesReport as jest.Mock).mockResolvedValue({
-        totalSales: 0,
-        salesByPaymentMethod: [],
-      });
-
-      (getReceivablesSummary as jest.Mock).mockResolvedValue({
-        totalReceivable: 0,
-      });
-
-      (getPayablesSummary as jest.Mock).mockResolvedValue({
-        totalPayable: 0,
-      });
+    it('maneja división por cero en el margen', async () => {
+      mockGet.mockResolvedValue(
+        mockReport({
+          months: [],
+          totals: { revenueUsd: 0, expensesUsd: 0, profitUsd: 0 },
+        })
+      );
 
       const result = await getFinancialReport(mockStoreId, mockDateRange);
 
@@ -237,40 +97,91 @@ describe('financialReports.ts - getFinancialReport()', () => {
       expect(isNaN(result.profitMargin)).toBe(false);
     });
 
-    it('debe calcular profitMargin = (grossProfit / totalRevenue) * 100', async () => {
-      (getSalesReport as jest.Mock).mockResolvedValue({
-        totalSales: 1000,
-        salesByPaymentMethod: [],
-      });
-
-      (getReceivablesSummary as jest.Mock).mockResolvedValue({
-        totalReceivable: 500,
-      });
-
-      (getPayablesSummary as jest.Mock).mockResolvedValue({
-        totalPayable: 300,
-      });
+    it('permite resultado negativo cuando se compra más de lo que se vende', async () => {
+      mockGet.mockResolvedValue(
+        mockReport({
+          totals: { revenueUsd: 100, expensesUsd: 250, profitUsd: -150 },
+        })
+      );
 
       const result = await getFinancialReport(mockStoreId, mockDateRange);
 
-      // Sin compras: resultado = 1000 y margen = (1000 / 1000) * 100 = 100%
-      expect(result.profitMargin).toBe(100);
+      expect(result.grossProfit).toBe(-150);
+      expect(result.profitMargin).toBe(-150);
+    });
+
+    it('con egresos pero sin ingresos el margen es 0, no infinito', async () => {
+      mockGet.mockResolvedValue(
+        mockReport({
+          totals: { revenueUsd: 0, expensesUsd: 1.1, profitUsd: -1.1 },
+        })
+      );
+
+      const result = await getFinancialReport(mockStoreId, mockDateRange);
+
+      expect(result.totalExpenses).toBe(1.1);
+      expect(result.profitMargin).toBe(0);
+    });
+  });
+
+  describe('Estado de resultados mensual', () => {
+    it('devuelve una fila por mes con ingresos, egresos y resultado', async () => {
+      const result = await getFinancialReport(mockStoreId, mockDateRange);
+
+      expect(result.incomeStatement).toEqual([
+        { month: 'ago 2026', revenue: 600, expenses: 200, profit: 400 },
+        { month: 'sep 2026', revenue: 400, expenses: 200, profit: 200 },
+      ]);
+    });
+
+    it('conserva los meses sin movimientos', async () => {
+      mockGet.mockResolvedValue(
+        mockReport({
+          months: [
+            {
+              month: '2026-08',
+              revenueUsd: 0,
+              expensesUsd: 0,
+              profitUsd: 0,
+            },
+          ],
+        })
+      );
+
+      const result = await getFinancialReport(mockStoreId, mockDateRange);
+
+      expect(result.incomeStatement).toHaveLength(1);
+      expect(result.incomeStatement[0].profit).toBe(0);
+    });
+
+    it('la suma de los meses coincide con los totales', async () => {
+      const result = await getFinancialReport(mockStoreId, mockDateRange);
+
+      const revenue = result.incomeStatement.reduce(
+        (sum, row) => sum + row.revenue,
+        0
+      );
+      const expenses = result.incomeStatement.reduce(
+        (sum, row) => sum + row.expenses,
+        0
+      );
+      expect(revenue).toBe(result.totalRevenue);
+      expect(expenses).toBe(result.totalExpenses);
+    });
+
+    it('informa las ventas sin equivalente en USD', async () => {
+      mockGet.mockResolvedValue(mockReport({ unconvertedSales: 2 }));
+
+      const result = await getFinancialReport(mockStoreId, mockDateRange);
+
+      expect(result.unconvertedSales).toBe(2);
     });
   });
 
   describe('Cuentas por cobrar/pagar', () => {
     it('debe incluir accountsReceivable desde getReceivablesSummary', async () => {
-      (getSalesReport as jest.Mock).mockResolvedValue({
-        totalSales: 1000,
-        salesByPaymentMethod: [],
-      });
-
       (getReceivablesSummary as jest.Mock).mockResolvedValue({
         totalReceivable: 750,
-      });
-
-      (getPayablesSummary as jest.Mock).mockResolvedValue({
-        totalPayable: 300,
       });
 
       const result = await getFinancialReport(mockStoreId, mockDateRange);
@@ -279,15 +190,6 @@ describe('financialReports.ts - getFinancialReport()', () => {
     });
 
     it('debe incluir accountsPayable desde getPayablesSummary', async () => {
-      (getSalesReport as jest.Mock).mockResolvedValue({
-        totalSales: 1000,
-        salesByPaymentMethod: [],
-      });
-
-      (getReceivablesSummary as jest.Mock).mockResolvedValue({
-        totalReceivable: 500,
-      });
-
       (getPayablesSummary as jest.Mock).mockResolvedValue({
         totalPayable: 420,
       });
@@ -299,24 +201,18 @@ describe('financialReports.ts - getFinancialReport()', () => {
   });
 
   describe('Distribución de ingresos', () => {
-    it('debe traducir métodos de pago a español', async () => {
-      (getSalesReport as jest.Mock).mockResolvedValue({
-        totalSales: 1000,
-        salesByPaymentMethod: [
-          { method: 'cash', total: 300 },
-          { method: 'card', total: 400 },
-          { method: 'transfer', total: 200 },
-          { method: 'credit', total: 100 },
-        ],
-      });
-
-      (getReceivablesSummary as jest.Mock).mockResolvedValue({
-        totalReceivable: 500,
-      });
-
-      (getPayablesSummary as jest.Mock).mockResolvedValue({
-        totalPayable: 300,
-      });
+    it('debe traducir los métodos de pago a español, con monto en USD', async () => {
+      mockGet.mockResolvedValue(
+        mockReport({
+          byPaymentMethod: [
+            { method: 'cash', revenueUsd: 300, count: 3 },
+            { method: 'card', revenueUsd: 400, count: 4 },
+            { method: 'transfer', revenueUsd: 200, count: 2 },
+            { method: 'pago_movil', revenueUsd: 60, count: 1 },
+            { method: 'por_cobrar', revenueUsd: 40, count: 1 },
+          ],
+        })
+      );
 
       const result = await getFinancialReport(mockStoreId, mockDateRange);
 
@@ -324,28 +220,33 @@ describe('financialReports.ts - getFinancialReport()', () => {
         { source: 'Efectivo', amount: 300 },
         { source: 'Tarjeta', amount: 400 },
         { source: 'Transferencia', amount: 200 },
-        { source: 'Crédito', amount: 100 },
+        { source: 'Pago móvil', amount: 60 },
+        { source: 'Por cobrar', amount: 40 },
       ]);
     });
 
-    it('debe manejar método de pago desconocido', async () => {
-      (getSalesReport as jest.Mock).mockResolvedValue({
-        totalSales: 1000,
-        salesByPaymentMethod: [{ method: 'unknown', total: 100 }],
-      });
-
-      (getReceivablesSummary as jest.Mock).mockResolvedValue({
-        totalReceivable: 500,
-      });
-
-      (getPayablesSummary as jest.Mock).mockResolvedValue({
-        totalPayable: 300,
-      });
+    it('muestra tal cual un método de pago desconocido en lugar de llamarlo Crédito', async () => {
+      mockGet.mockResolvedValue(
+        mockReport({
+          byPaymentMethod: [{ method: 'unknown', revenueUsd: 100, count: 1 }],
+        })
+      );
 
       const result = await getFinancialReport(mockStoreId, mockDateRange);
 
-      // Debería manejar métodos desconocidos
-      expect(result.revenueDistribution).toHaveLength(1);
+      expect(result.revenueDistribution).toEqual([
+        { source: 'unknown', amount: 100 },
+      ]);
+    });
+  });
+
+  describe('Errores', () => {
+    it('propaga el error si el servidor falla', async () => {
+      mockGet.mockRejectedValue(new Error('500'));
+
+      await expect(
+        getFinancialReport(mockStoreId, mockDateRange)
+      ).rejects.toThrow('500');
     });
   });
 });

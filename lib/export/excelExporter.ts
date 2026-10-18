@@ -4,6 +4,7 @@ import { es } from 'date-fns/locale';
 import {
   SalesReportData,
   PurchasesReportData,
+  FinancialReportData,
   DateRange,
 } from '@/types/reports';
 
@@ -300,6 +301,25 @@ export async function exportFinancialReportToExcel(
 
   const revenueSheet = XLSX.utils.json_to_sheet(revenueData);
   XLSX.utils.book_append_sheet(workbook, revenueSheet, 'Distribución Ingresos');
+
+  // Hoja 3: Estado de resultados por mes
+  if (reportData.incomeStatement?.length > 0) {
+    const monthlySheet = XLSX.utils.json_to_sheet(
+      (
+        reportData.incomeStatement as FinancialReportData['incomeStatement']
+      ).map((row) => ({
+        Mes: row.month,
+        'Ingresos ($)': row.revenue,
+        'Egresos ($)': row.expenses,
+        'Resultado ($)': row.profit,
+      }))
+    );
+    XLSX.utils.book_append_sheet(
+      workbook,
+      monthlySheet,
+      'Estado de Resultados'
+    );
+  }
 
   // Exportar
   const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });

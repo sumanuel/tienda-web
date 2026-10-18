@@ -164,6 +164,9 @@ function usdColumns(exchangeRate?: number) {
   return {
     heads: (label: string) =>
       withVes ? [`${label} (USD)`, `${label} (VES)`] : [`${label} (USD)`],
+    // Índices de las columnas de cifras tras la columna de etiqueta
+    numericColumns: (groups: number) =>
+      Array.from({ length: groups * (withVes ? 2 : 1) }, (_, i) => i + 1),
     cells: (usd: number): string[] =>
       withVes ? [num(usd), num(usd * (exchangeRate as number))] : [num(usd)],
     note: withVes
@@ -417,6 +420,32 @@ export async function exportFinancialReportToPDF(
     head: ['Concepto', 'Valor'],
     numeric: [1],
     body: [['Margen de utilidad', `${num(data.profitMargin)} %`]],
+  });
+
+  report.addTable({
+    title: 'Estado de resultados mensual',
+    head: [
+      'Mes',
+      ...usd.heads('Ingresos'),
+      ...usd.heads('Egresos'),
+      ...usd.heads('Resultado'),
+    ],
+    numeric: usd.numericColumns(3),
+    body: [
+      ...data.incomeStatement.map((row) => [
+        row.month,
+        ...usd.cells(row.revenue),
+        ...usd.cells(row.expenses),
+        ...usd.cells(row.profit),
+      ]),
+      [
+        'Total',
+        ...usd.cells(data.totalRevenue),
+        ...usd.cells(data.totalExpenses),
+        ...usd.cells(data.grossProfit),
+      ],
+    ],
+    emptyMessage: 'Sin movimientos en el período',
   });
 
   report.addTable({

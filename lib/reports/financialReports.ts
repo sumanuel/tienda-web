@@ -1,61 +1,66 @@
+import { apiClient } from '@/lib/api';
 import { FinancialReportData, DateRange } from '@/types/reports';
-import { getSalesReport } from './salesReports';
-import { getPurchasesReport } from './purchaseReports';
 import {
   getReceivablesSummary,
   getPayablesSummary,
 } from '@/lib/accountsReceivable';
-import { eachMonthOfInterval, format } from 'date-fns';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+interface FinancialReportResponse {
+  months: {
+    month: string; // yyyy-MM
+    revenueUsd: number;
+    expensesUsd: number;
+    profitUsd: number;
+  }[];
+  totals: { revenueUsd: number; expensesUsd: number; profitUsd: number };
+  byPaymentMethod: { method: string; revenueUsd: number; count: number }[];
+  unconvertedSales: number;
+}
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cash: 'Efectivo',
+  card: 'Tarjeta',
+  transfer: 'Transferencia',
+  pago_movil: 'Pago móvil',
+  por_cobrar: 'Por cobrar',
+  credit: 'Crédito',
+};
+
+const monthLabel = (key: string) => {
+  const [year, month] = key.split('-').map(Number);
+  return format(new Date(year, month - 1, 1), 'MMM yyyy', { locale: es });
+};
+
 /**
- * Obtiene el reporte financiero completo
+ * Obtiene el reporte financiero completo. El backend calcula en USD, mes a
+ * mes, los ingresos (ventas completadas) y los egresos (compras menos
+ * devoluciones a proveedores), cada documento con su propia tasa.
  */
 export async function getFinancialReport(
   storeId: string,
   dateRange: DateRange
 ): Promise<FinancialReportData> {
-  const [salesData, purchasesData, receivablesSummary, payablesSummary] =
-    await Promise.all([
-      getSalesReport(storeId, dateRange),
-      getPurchasesReport(storeId, dateRange),
-      getReceivablesSummary(storeId),
-      getPayablesSummary(storeId),
-    ]);
-
-  const totalRevenue = salesData.totalSales;
-  // Egresos = compras a proveedores del período menos devoluciones, en USD
-  // (no hay módulo de gastos operativos)
-  const totalExpenses = purchasesData.netReference;
-  const grossProfit = totalRevenue - totalExpenses;
-  const profitMargin =
-    totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
-
-  // Estado de resultados por mes
-  const months = eachMonthOfInterval({
-    start: dateRange.startDate,
-    end: dateRange.endDate,
+  const params = new URLSearchParams({
+    storeId,
+    startDate: format(dateRange.startDate, 'yyyy-MM-dd'),
+    endDate: format(dateRange.endDate, 'yyyy-MM-dd'),
   });
 
-  const incomeStatement = months.map((month) => ({
-    month: format(month, 'MMM yyyy', { locale: es }),
-    revenue: 0, // TODO: Calcular ventas del mes
-    expenses: 0, // TODO: Calcular gastos del mes
-    profit: 0,
-  }));
+  const [report, receivablesSummary, payablesSummary] = await Promise.all([
+    apiClient.get<FinancialReportResponse>(
+      `/api/reports/financial?${params.toString()}`
+    ),
+    getReceivablesSummary(storeId),
+    getPayablesSummary(storeId),
+  ]);
 
-  // Distribución de ingresos por método de pago
-  const revenueDistribution = salesData.salesByPaymentMethod.map((pm) => ({
-    source:
-      pm.method === 'cash'
-        ? 'Efectivo'
-        : pm.method === 'card'
-          ? 'Tarjeta'
-          : pm.method === 'transfer'
-            ? 'Transferencia'
-            : 'Crédito',
-    amount: pm.total,
-  }));
+  const totalRevenue = report.totals.revenueUsd;
+  const totalExpenses = report.totals.expensesUsd;
+  const grossProfit = report.totals.profitUsd;
+  const profitMargin =
+    totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
   return {
     totalRevenue,
@@ -64,7 +69,16 @@ export async function getFinancialReport(
     profitMargin,
     accountsReceivable: receivablesSummary.totalReceivable,
     accountsPayable: payablesSummary.totalPayable,
-    incomeStatement,
-    revenueDistribution,
+    unconvertedSales: report.unconvertedSales,
+    incomeStatement: report.months.map((row) => ({
+      month: monthLabel(row.month),
+      revenue: row.revenueUsd,
+      expenses: row.expensesUsd,
+      profit: row.profitUsd,
+    })),
+    revenueDistribution: report.byPaymentMethod.map((method) => ({
+      source: PAYMENT_METHOD_LABELS[method.method] ?? method.method,
+      amount: method.revenueUsd,
+    })),
   };
 }

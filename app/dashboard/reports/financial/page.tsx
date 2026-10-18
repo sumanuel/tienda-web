@@ -14,6 +14,11 @@ import {
   PieChart,
   Pie,
   Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
@@ -28,8 +33,14 @@ import {
 import { IconChip } from '@/components/common/IconChip';
 import { DualCurrency } from '@/components/common/DualCurrency';
 import { toast } from 'react-hot-toast';
+import { formatCurrency } from '@/lib/currency';
 
 const COLORS = ['#1f7a59', '#3b82f6', '#f59e0b', '#ef4444'];
+
+const thClass =
+  'border-b border-gray-200 px-4 py-2.5 font-mono text-[0.65rem] font-semibold tracking-widest whitespace-nowrap text-gray-500 uppercase dark:border-slate-800 dark:text-slate-500';
+
+const formatUsd = (value: unknown) => formatCurrency(Number(value), 'USD');
 
 export default function FinancialReportPage() {
   const { profile } = useAuthStore();
@@ -288,6 +299,117 @@ export default function FinancialReportPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Estado de resultados mensual */}
+      <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-200">
+            Estado de Resultados Mensual
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-slate-400">
+            Ingresos por ventas contra egresos por compras netas de
+            devoluciones, mes a mes.
+          </p>
+        </div>
+
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={reportData?.incomeStatement ?? []}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" />
+            <YAxis />
+            <Tooltip formatter={formatUsd} />
+            <Legend />
+            <Bar dataKey="revenue" fill="#1f7a59" name="Ingresos (USD)" />
+            <Bar dataKey="expenses" fill="#ef4444" name="Egresos (USD)" />
+          </BarChart>
+        </ResponsiveContainer>
+
+        <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm dark:border-slate-800">
+          <table className="w-full">
+            <thead className="bg-gray-50 dark:bg-slate-950">
+              <tr>
+                <th className={`${thClass} text-left`}>Mes</th>
+                <th className={`${thClass} text-right`}>Ingresos</th>
+                <th className={`${thClass} text-right`}>Egresos</th>
+                <th className={`${thClass} text-right`}>Resultado</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 bg-white dark:divide-slate-800 dark:bg-slate-900">
+              {(reportData?.incomeStatement ?? []).map((row) => (
+                <tr
+                  key={row.month}
+                  className="transition-colors hover:bg-gray-50 dark:hover:bg-slate-800"
+                >
+                  <td className="px-4 py-3 text-sm text-gray-900 capitalize dark:text-slate-100">
+                    {row.month}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <DualCurrency
+                      usd={row.revenue}
+                      exchangeRate={exchangeRate}
+                      size="sm"
+                    />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <DualCurrency
+                      usd={row.expenses}
+                      exchangeRate={exchangeRate}
+                      size="sm"
+                    />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <DualCurrency
+                      usd={row.profit}
+                      exchangeRate={exchangeRate}
+                      size="sm"
+                      primaryClassName={
+                        row.profit < 0
+                          ? 'text-red-600 dark:text-red-400'
+                          : 'text-tsuma-primary-dark'
+                      }
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot className="bg-gray-50 dark:bg-slate-950">
+              <tr>
+                <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-slate-100">
+                  Total del período
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <DualCurrency
+                    usd={reportData?.totalRevenue ?? 0}
+                    exchangeRate={exchangeRate}
+                    size="sm"
+                  />
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <DualCurrency
+                    usd={reportData?.totalExpenses ?? 0}
+                    exchangeRate={exchangeRate}
+                    size="sm"
+                  />
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <DualCurrency
+                    usd={reportData?.grossProfit ?? 0}
+                    exchangeRate={exchangeRate}
+                    size="sm"
+                  />
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        {(reportData?.unconvertedSales ?? 0) > 0 && (
+          <p className="text-xs text-amber-700 dark:text-amber-400">
+            {reportData?.unconvertedSales} venta(s) antigua(s) no tienen monto
+            en USD ni tasa de cambio y no se incluyen en los ingresos.
+          </p>
+        )}
       </div>
     </div>
   );

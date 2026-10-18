@@ -114,6 +114,8 @@ export interface FinancialReportData {
   profitMargin: number;
   accountsReceivable: number;
   accountsPayable: number;
+  // Ventas sin monto en USD ni tasa: no entran en los ingresos
+  unconvertedSales?: number;
   incomeStatement: {
     month: string;
     revenue: number;
