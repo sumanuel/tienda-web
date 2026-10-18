@@ -282,7 +282,7 @@ export async function exportFinancialReportToExcel(
     [],
     ['Total Ingresos', reportData.totalRevenue],
     ['Total Egresos', reportData.totalExpenses],
-    ['Utilidad Bruta', reportData.grossProfit],
+    ['Resultado del Período', reportData.grossProfit],
     ['Margen de Utilidad (%)', reportData.profitMargin.toFixed(2)],
     [],
     ['Cuentas por Cobrar', reportData.accountsReceivable],

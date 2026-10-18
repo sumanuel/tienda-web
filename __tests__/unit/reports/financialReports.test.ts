@@ -6,6 +6,7 @@
 
 import { getFinancialReport } from '@/lib/reports/financialReports';
 import { getSalesReport } from '@/lib/reports/salesReports';
+import { getPurchasesReport } from '@/lib/reports/purchaseReports';
 import {
   getReceivablesSummary,
   getPayablesSummary,
@@ -13,6 +14,7 @@ import {
 
 // Mocks
 jest.mock('@/lib/reports/salesReports');
+jest.mock('@/lib/reports/purchaseReports');
 jest.mock('@/lib/accountsReceivable');
 
 describe('financialReports.ts - getFinancialReport()', () => {
@@ -24,6 +26,8 @@ describe('financialReports.ts - getFinancialReport()', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Sin compras en el período salvo que cada prueba indique otra cosa
+    (getPurchasesReport as jest.Mock).mockResolvedValue({ netReference: 0 });
   });
 
   describe('Integración con servicios', () => {
@@ -85,28 +89,62 @@ describe('financialReports.ts - getFinancialReport()', () => {
     });
   });
 
-  describe('BUG-007: totalExpenses siempre es 0', () => {
-    it('FALLA: totalExpenses siempre devuelve 0 (bug crítico)', async () => {
+  describe('Egresos (compras netas de devoluciones)', () => {
+    const mockSummaries = () => {
+      (getReceivablesSummary as jest.Mock).mockResolvedValue({
+        totalReceivable: 500,
+      });
+      (getPayablesSummary as jest.Mock).mockResolvedValue({
+        totalPayable: 300,
+      });
+    };
+
+    it('debe pedir el reporte de compras del mismo período', async () => {
       (getSalesReport as jest.Mock).mockResolvedValue({
         totalSales: 1000,
         salesByPaymentMethod: [],
       });
+      mockSummaries();
 
-      (getReceivablesSummary as jest.Mock).mockResolvedValue({
-        totalReceivable: 500,
-      });
+      await getFinancialReport(mockStoreId, mockDateRange);
 
-      (getPayablesSummary as jest.Mock).mockResolvedValue({
-        totalPayable: 300,
+      expect(getPurchasesReport).toHaveBeenCalledWith(
+        mockStoreId,
+        mockDateRange
+      );
+    });
+
+    it('totalExpenses toma las compras netas en USD', async () => {
+      (getSalesReport as jest.Mock).mockResolvedValue({
+        totalSales: 1000,
+        salesByPaymentMethod: [],
       });
+      (getPurchasesReport as jest.Mock).mockResolvedValue({
+        netReference: 400,
+      });
+      mockSummaries();
 
       const result = await getFinancialReport(mockStoreId, mockDateRange);
 
-      // BUG: totalExpenses siempre es 0
-      expect(result.totalExpenses).toBe(0);
+      expect(result.totalExpenses).toBe(400);
+      expect(result.grossProfit).toBe(600);
+      expect(result.profitMargin).toBe(60);
+    });
 
-      // DEBERÍA ser > 0 (costo de productos + cuentas por pagar)
-      // Este test FALLARÁ hasta que se corrija BUG-007
+    it('permite resultado negativo cuando se compra más de lo que se vende', async () => {
+      (getSalesReport as jest.Mock).mockResolvedValue({
+        totalSales: 100,
+        salesByPaymentMethod: [],
+      });
+      (getPurchasesReport as jest.Mock).mockResolvedValue({
+        netReference: 250,
+      });
+      mockSummaries();
+
+      const result = await getFinancialReport(mockStoreId, mockDateRange);
+
+      expect(result.grossProfit).toBe(-150);
+      expect(result.profitMargin).toBe(-150);
     });
   });
 
@@ -175,10 +213,8 @@ describe('financialReports.ts - getFinancialReport()', () => {
 
       const result = await getFinancialReport(mockStoreId, mockDateRange);
 
-      // BUG: Actualmente totalExpenses = 0, entonces grossProfit = totalRevenue
+      // Sin compras en el período (mock por defecto), el resultado es el ingreso
       expect(result.grossProfit).toBe(5000); // 5000 - 0
-
-      // DEBERÍA ser: 5000 - (gastos reales) = algo menor
     });
 
     it('debe manejar división por cero en profitMargin', async () => {
@@ -217,12 +253,8 @@ describe('financialReports.ts - getFinancialReport()', () => {
 
       const result = await getFinancialReport(mockStoreId, mockDateRange);
 
-      // BUG: Actualmente totalExpenses = 0
-      // grossProfit = 1000 - 0 = 1000
-      // profitMargin = (1000 / 1000) * 100 = 100%
+      // Sin compras: resultado = 1000 y margen = (1000 / 1000) * 100 = 100%
       expect(result.profitMargin).toBe(100);
-
-      // DEBERÍA ser menor si totalExpenses > 0
     });
   });
 

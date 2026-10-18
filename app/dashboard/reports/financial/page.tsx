@@ -150,12 +150,15 @@ export default function FinancialReportPage() {
             align="left"
             primaryClassName="text-red-600 dark:text-red-400"
           />
+          <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+            Compras netas de devoluciones
+          </p>
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm text-gray-600 dark:text-slate-400">
-              Utilidad Bruta
+              Resultado del Período
             </span>
             <IconChip icon={DollarSign} tone="info" className="h-9 w-9" />
           </div>
@@ -268,7 +271,7 @@ export default function FinancialReportPage() {
             </div>
             <div className="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-slate-800">
               <span className="font-semibold text-gray-600 dark:text-slate-400">
-                Utilidad Bruta
+                Resultado del Período
               </span>
               <DualCurrency
                 usd={reportData?.grossProfit ?? 0}

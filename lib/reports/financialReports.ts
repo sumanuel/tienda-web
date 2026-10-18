@@ -1,5 +1,6 @@
 import { FinancialReportData, DateRange } from '@/types/reports';
 import { getSalesReport } from './salesReports';
+import { getPurchasesReport } from './purchaseReports';
 import {
   getReceivablesSummary,
   getPayablesSummary,
@@ -14,15 +15,18 @@ export async function getFinancialReport(
   storeId: string,
   dateRange: DateRange
 ): Promise<FinancialReportData> {
-  // Obtener datos de ventas
-  const salesData = await getSalesReport(storeId, dateRange);
-
-  // Obtener cuentas por cobrar/pagar
-  const receivablesSummary = await getReceivablesSummary(storeId);
-  const payablesSummary = await getPayablesSummary(storeId);
+  const [salesData, purchasesData, receivablesSummary, payablesSummary] =
+    await Promise.all([
+      getSalesReport(storeId, dateRange),
+      getPurchasesReport(storeId, dateRange),
+      getReceivablesSummary(storeId),
+      getPayablesSummary(storeId),
+    ]);
 
   const totalRevenue = salesData.totalSales;
-  const totalExpenses = 0; // TODO: Implementar con sistema de gastos
+  // Egresos = compras a proveedores del período menos devoluciones, en USD
+  // (no hay módulo de gastos operativos)
+  const totalExpenses = purchasesData.netReference;
   const grossProfit = totalRevenue - totalExpenses;
   const profitMargin =
     totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;

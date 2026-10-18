@@ -17,6 +17,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   transferencia: 'Transferencia',
   credito: 'Crédito',
   por_cobrar: 'Por cobrar',
+  pago_movil: 'Pago móvil',
   cash: 'Efectivo',
   card: 'Tarjeta',
   transfer: 'Transferencia',
@@ -404,8 +405,8 @@ export async function exportFinancialReportToPDF(
     numeric: [1, 2],
     body: [
       ['Total ingresos', ...usd.cells(data.totalRevenue)],
-      ['Total egresos', ...usd.cells(data.totalExpenses)],
-      ['Utilidad bruta', ...usd.cells(data.grossProfit)],
+      ['Total egresos (compras netas)', ...usd.cells(data.totalExpenses)],
+      ['Resultado del período', ...usd.cells(data.grossProfit)],
       ['Cuentas por cobrar', ...usd.cells(data.accountsReceivable)],
       ['Cuentas por pagar', ...usd.cells(data.accountsPayable)],
     ],
