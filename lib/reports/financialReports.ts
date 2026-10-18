@@ -4,6 +4,7 @@ import {
   getReceivablesSummary,
   getPayablesSummary,
 } from '@/lib/accountsReceivable';
+import { paymentMethodLabel } from '@/lib/reports/paymentMethods';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -18,15 +19,6 @@ interface FinancialReportResponse {
   byPaymentMethod: { method: string; revenueUsd: number; count: number }[];
   unconvertedSales: number;
 }
-
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  cash: 'Efectivo',
-  card: 'Tarjeta',
-  transfer: 'Transferencia',
-  pago_movil: 'Pago móvil',
-  por_cobrar: 'Por cobrar',
-  credit: 'Crédito',
-};
 
 const monthLabel = (key: string) => {
   const [year, month] = key.split('-').map(Number);
@@ -77,7 +69,7 @@ export async function getFinancialReport(
       profit: row.profitUsd,
     })),
     revenueDistribution: report.byPaymentMethod.map((method) => ({
-      source: PAYMENT_METHOD_LABELS[method.method] ?? method.method,
+      source: paymentMethodLabel(method.method),
       amount: method.revenueUsd,
     })),
   };

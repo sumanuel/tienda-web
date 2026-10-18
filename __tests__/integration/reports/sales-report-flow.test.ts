@@ -1,33 +1,17 @@
 /**
- * Test de integración para flujo completo de reporte de ventas
+ * Test de integración para el flujo completo de reporte de ventas
  *
- * Objetivo: Validar que el flujo end-to-end funciona correctamente:
- * 1. Usuario selecciona rango de fechas
- * 2. Sistema carga datos desde Firestore
- * 3. Sistema calcula métricas
- * 4. Sistema renderiza gráficos
- * 5. Usuario exporta a Excel
+ * Objetivo: validar el flujo end-to-end:
+ * 1. Se solicita el reporte al backend (GET /api/reports/sales, en USD)
+ * 2. Se completan los días y las horas sin ventas para las gráficas
+ * 3. Se exporta el reporte a Excel
  */
 
 import { getSalesReport } from '@/lib/reports/salesReports';
 import { exportSalesReportToExcel } from '@/lib/export/excelExporter';
-import { getDocs } from 'firebase/firestore';
-import type { Sale } from '@/types/sale';
+import { apiClient } from '@/lib/api';
 
-// Mocks
-jest.mock('firebase/firestore', () => ({
-  collection: jest.fn(),
-  query: jest.fn(),
-  where: jest.fn(),
-  getDocs: jest.fn(),
-  Timestamp: {
-    fromDate: jest.fn((date) => ({ toDate: () => date })),
-  },
-}));
-
-jest.mock('@/lib/firebase', () => ({
-  db: {},
-}));
+jest.mock('@/lib/api', () => ({ apiClient: { get: jest.fn() } }));
 
 // Mock de XLSX para exportación
 jest.mock('xlsx', () => ({
@@ -37,24 +21,25 @@ jest.mock('xlsx', () => ({
     aoa_to_sheet: jest.fn(() => ({})),
     book_append_sheet: jest.fn(),
   },
-  write: jest.fn(() => new ArrayBuffer(0)),
+  write: jest.fn(() => new ArrayBuffer(8)),
 }));
 
 // Mock de DOM APIs
 global.URL.createObjectURL = jest.fn(() => 'mock-blob-url');
 global.URL.revokeObjectURL = jest.fn();
+global.Blob = jest.fn() as any;
 
 describe('Flujo de integración: Reporte de ventas completo', () => {
   const mockStoreId = 'store-123';
   const mockDateRange = {
-    startDate: new Date('2026-08-01'),
-    endDate: new Date('2026-08-07'),
+    startDate: new Date(2026, 7, 1),
+    endDate: new Date(2026, 7, 7),
   };
+  const mockGet = apiClient.get as jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Mock para createElement y click
     document.createElement = jest.fn((tag) => {
       if (tag === 'a') {
         return {
@@ -67,96 +52,63 @@ describe('Flujo de integración: Reporte de ventas completo', () => {
     });
   });
 
-  describe('Flujo completo: Carga → Cálculo → Visualización → Exportación', () => {
+  describe('Flujo completo: Carga → Gráficas → Exportación', () => {
     it('debe completar el flujo end-to-end correctamente', async () => {
-      // PASO 1: Setup - Datos de prueba realistas
-      const mockSales: Sale[] = [
-        {
-          id: 'sale-1',
-          storeId: mockStoreId,
-          total: 150.0,
-          paymentMethod: 'cash',
-          items: [
-            {
-              productId: 'prod-A',
-              productName: 'Laptop HP',
-              quantity: 1,
-              price: 150.0,
-            },
-          ],
-          createdAt: new Date('2026-08-05T10:30:00'),
-          status: 'completed',
+      mockGet.mockResolvedValue({
+        summary: { totalUsd: 435.5, count: 3, averageUsd: 145.17 },
+        topProduct: {
+          productId: 'p1',
+          productName: 'Harina Pan 1kg',
+          quantity: 5,
+          totalUsd: 250,
         },
-        {
-          id: 'sale-2',
-          storeId: mockStoreId,
-          total: 85.5,
-          paymentMethod: 'card',
-          items: [
-            {
-              productId: 'prod-B',
-              productName: 'Mouse Logitech',
-              quantity: 3,
-              price: 28.5,
-            },
-          ],
-          createdAt: new Date('2026-08-06T14:15:00'),
-          status: 'completed',
-        },
-        {
-          id: 'sale-3',
-          storeId: mockStoreId,
-          total: 200.0,
-          paymentMethod: 'cash',
-          items: [
-            {
-              productId: 'prod-A',
-              productName: 'Laptop HP',
-              quantity: 1,
-              price: 150.0,
-            },
-            {
-              productId: 'prod-C',
-              productName: 'Teclado Mecánico',
-              quantity: 1,
-              price: 50.0,
-            },
-          ],
-          createdAt: new Date('2026-08-07T16:45:00'),
-          status: 'completed',
-        },
-      ] as Sale[];
-
-      (getDocs as jest.Mock).mockResolvedValue({
-        docs: mockSales.map((sale) => ({
-          id: sale.id,
-          data: () => ({
-            ...sale,
-            createdAt: { toDate: () => sale.createdAt },
-          }),
-        })),
+        byDay: [
+          { date: '2026-08-05', totalUsd: 150, count: 1 },
+          { date: '2026-08-06', totalUsd: 85.5, count: 1 },
+          { date: '2026-08-07', totalUsd: 200, count: 1 },
+        ],
+        byPaymentMethod: [
+          { method: 'cash', totalUsd: 350, count: 2 },
+          { method: 'card', totalUsd: 85.5, count: 1 },
+        ],
+        byHour: [
+          { hour: 10, totalUsd: 150, count: 1 },
+          { hour: 14, totalUsd: 85.5, count: 1 },
+          { hour: 16, totalUsd: 200, count: 1 },
+        ],
+        byProduct: [
+          {
+            productId: 'p1',
+            productName: 'Harina Pan 1kg',
+            quantity: 5,
+            totalUsd: 250,
+          },
+          {
+            productId: 'p2',
+            productName: 'Arroz 1kg',
+            quantity: 3,
+            totalUsd: 185.5,
+          },
+        ],
+        unconvertedSales: 0,
       });
 
-      // PASO 2: Cargar reporte
+      // PASO 1: Cargar reporte
       const reportData = await getSalesReport(mockStoreId, mockDateRange);
 
-      // PASO 3: Validar cálculos
-      expect(reportData.totalSales).toBe(435.5); // 150 + 85.50 + 200
+      // PASO 2: Totales (vienen del backend, en USD)
+      expect(reportData.totalSales).toBe(435.5);
       expect(reportData.totalTransactions).toBe(3);
-      expect(reportData.averageTicket).toBeCloseTo(145.17, 2); // 435.50 / 3
+      expect(reportData.averageTicket).toBeCloseTo(145.17, 2);
+      expect(reportData.topProduct?.name).toBe('Harina Pan 1kg');
 
-      // PASO 4: Validar top producto
-      expect(reportData.topProduct?.name).toBe('Laptop HP');
-      expect(reportData.topProduct?.quantity).toBe(2); // Vendido 2 veces
-
-      // PASO 5: Validar ventas por día
-      expect(reportData.salesByDay).toHaveLength(7); // 7 días en el rango
-
+      // PASO 3: Ventas por día, con todos los días del rango
+      expect(reportData.salesByDay).toHaveLength(7); // 01-07 agosto
       const day5 = reportData.salesByDay.find((d) => d.date.includes('05'));
       expect(day5?.total).toBe(150.0);
       expect(day5?.transactions).toBe(1);
 
-      // PASO 6: Validar ventas por método de pago
+      // PASO 4: Ventas por método de pago
       const cashSales = reportData.salesByPaymentMethod.find(
         (pm) => pm.method === 'cash'
       );
@@ -169,31 +121,30 @@ describe('Flujo de integración: Reporte de ventas completo', () => {
       expect(cardSales?.total).toBe(85.5);
       expect(cardSales?.transactions).toBe(1);
 
-      // PASO 7: Validar ventas por hora
-      const hour10 = reportData.salesByHour.find((h) => h.hour === 10);
-      expect(hour10?.total).toBe(150.0);
+      // PASO 5: Detalle por producto y ventas por hora
+      expect(reportData.salesByProduct).toHaveLength(2);
+      expect(reportData.salesByHour).toHaveLength(24);
+      expect(reportData.salesByHour[14].transactions).toBe(1);
 
-      const hour14 = reportData.salesByHour.find((h) => h.hour === 14);
-      expect(hour14?.total).toBe(85.5);
-
-      const hour16 = reportData.salesByHour.find((h) => h.hour === 16);
-      expect(hour16?.total).toBe(200.0);
-
-      // PASO 8: Exportar a Excel
+      // PASO 6: Exportar a Excel
       await exportSalesReportToExcel(reportData, mockDateRange);
 
-      // PASO 9: Validar exportación
+      // PASO 7: Validar exportación
       expect(global.URL.createObjectURL).toHaveBeenCalled();
-
-      // Validar que se creó el link de descarga
       expect(document.createElement).toHaveBeenCalledWith('a');
     });
   });
 
   describe('Flujo con datos vacíos', () => {
     it('debe manejar correctamente cuando no hay ventas en el rango', async () => {
-      (getDocs as jest.Mock).mockResolvedValue({
-        docs: [],
+      mockGet.mockResolvedValue({
+        summary: { totalUsd: 0, count: 0, averageUsd: 0 },
+        topProduct: null,
+        byDay: [],
+        byPaymentMethod: [],
+        byHour: [],
+        byProduct: [],
+        unconvertedSales: 0,
       });
 
       const reportData = await getSalesReport(mockStoreId, mockDateRange);
@@ -203,14 +154,12 @@ describe('Flujo de integración: Reporte de ventas completo', () => {
       expect(reportData.averageTicket).toBe(0);
       expect(reportData.topProduct).toBeNull();
 
-      // Debe tener todos los días con 0 ventas
       expect(reportData.salesByDay).toHaveLength(7);
       reportData.salesByDay.forEach((day) => {
         expect(day.total).toBe(0);
         expect(day.transactions).toBe(0);
       });
 
-      // Exportación debe funcionar aunque no haya datos
       await expect(
         exportSalesReportToExcel(reportData, mockDateRange)
       ).resolves.not.toThrow();
@@ -218,62 +167,34 @@ describe('Flujo de integración: Reporte de ventas completo', () => {
   });
 
   describe('Flujo con volumen alto de datos', () => {
-    it('DOCUMENTA: debe manejar 1000 ventas (performance test)', async () => {
-      // BUG-001: Sin límite en query, esto sería LENTO en producción
+    it('debe manejar 1000 ventas y muchos productos sin fallar', async () => {
+      const products = Array.from({ length: 500 }, (_, i) => ({
+        productId: `p${i}`,
+        productName: `Producto ${i}`,
+        quantity: i + 1,
+        totalUsd: (i + 1) * 2,
+      }));
 
-      const largeSalesData: Sale[] = Array.from({ length: 1000 }, (_, i) => ({
-        id: `sale-${i}`,
-        storeId: mockStoreId,
-        total: 100 + i,
-        paymentMethod: i % 2 === 0 ? 'cash' : 'card',
-        items: [
-          {
-            productId: `prod-${i % 10}`,
-            productName: `Producto ${i % 10}`,
-            quantity: 1,
-            price: 100 + i,
-          },
+      mockGet.mockResolvedValue({
+        summary: { totalUsd: 250000, count: 1000, averageUsd: 250 },
+        topProduct: products[products.length - 1],
+        byDay: [{ date: '2026-08-05', totalUsd: 250000, count: 1000 }],
+        byPaymentMethod: [
+          { method: 'cash', totalUsd: 125000, count: 500 },
+          { method: 'card', totalUsd: 125000, count: 500 },
         ],
-        createdAt: new Date('2026-08-05T10:00:00'),
-        status: 'completed',
-      })) as Sale[];
-
-      (getDocs as jest.Mock).mockResolvedValue({
-        docs: largeSalesData.map((sale) => ({
-          id: sale.id,
-          data: () => ({
-            ...sale,
-            createdAt: { toDate: () => sale.createdAt },
-          }),
-        })),
+        byHour: [{ hour: 10, totalUsd: 250000, count: 1000 }],
+        byProduct: products,
+        unconvertedSales: 0,
       });
 
-      const startTime = Date.now();
       const reportData = await getSalesReport(mockStoreId, mockDateRange);
-      const endTime = Date.now();
-
-      const executionTime = endTime - startTime;
-
-      console.log(`Execution time for 1000 sales: ${executionTime}ms`);
-
-      // Debe completar en tiempo razonable
-      // expect(executionTime).toBeLessThan(1000); // < 1 segundo
 
       expect(reportData.totalTransactions).toBe(1000);
-    });
-  });
-
-  describe('BUG-001: Performance con muchas ventas', () => {
-    it('DOCUMENTA: sin limit() la query puede traer 100k documentos', async () => {
-      // Este test documenta el bug crítico BUG-001
-      // En producción real, sin limit() la query puede traer TODOS los documentos
-      // de ventas del store, causando:
-      // 1. Timeouts de Firestore
-      // 2. Consumo excesivo de bandwidth
-      // 3. Crasheo de la app
-      // 4. Experiencia de usuario terrible (30+ segundos de carga)
-      // SOLUCIÓN: Agregar limit(5000) a la query
-      // Ver BUG-001 en el reporte de QA
+      expect(reportData.salesByProduct).toHaveLength(500);
+      await expect(
+        exportSalesReportToExcel(reportData, mockDateRange)
+      ).resolves.not.toThrow();
     });
   });
 });

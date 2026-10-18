@@ -194,3 +194,179 @@ export async function getFinancialReport(req: AuthRequest, res: Response) {
     return sendError(res, error, 'Error al generar el reporte financiero');
   }
 }
+
+// Día calendario local del servidor (mismo criterio que los filtros de fecha)
+function dayKey(date: Date) {
+  return `${monthKey(date)}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * GET /api/reports/sales?storeId&startDate&endDate
+ * Reporte de ventas del período en USD. Cada venta se convierte con su propio
+ * monto de referencia (o su tasa), porque Sale.total está en la moneda de la
+ * venta (normalmente VES) y no puede sumarse como USD.
+ */
+export async function getSalesReport(req: AuthRequest, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const { storeId, startDate, endDate } = req.query;
+
+    const validationErrors = validatePurchasesQuery({
+      storeId,
+      startDate,
+      endDate,
+    });
+    if (typeof startDate !== 'string' || typeof endDate !== 'string') {
+      validationErrors.push({
+        field: 'startDate',
+        message: 'El período (startDate y endDate) es requerido',
+      });
+    }
+    if (validationErrors.length > 0) {
+      return res.status(400).json({
+        error: 'Parámetros de búsqueda inválidos',
+        details: validationErrors,
+      });
+    }
+
+    const store = await prisma.store.findFirst({
+      where: { id: storeId as string, userId: req.user.userId },
+      select: { id: true },
+    });
+    if (!store) {
+      return res.status(403).json({ error: 'No tienes acceso a esta tienda' });
+    }
+
+    const sales = await prisma.sale.findMany({
+      where: {
+        storeId: store.id,
+        status: 'completed',
+        createdAt: {
+          gte: parseRangeStart(startDate as string),
+          lte: parseRangeEnd(endDate as string),
+        },
+      },
+      select: {
+        createdAt: true,
+        total: true,
+        totalReference: true,
+        exchangeRate: true,
+        paymentMethod: true,
+        items: {
+          select: {
+            productId: true,
+            productName: true,
+            quantity: true,
+            subtotal: true,
+            subtotalLocal: true,
+            subtotalReference: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    interface Bucket {
+      totalUsd: number;
+      count: number;
+    }
+    const bump = (
+      map: Map<string | number, Bucket>,
+      key: string | number,
+      usd: number
+    ) => {
+      const bucket = map.get(key) ?? { totalUsd: 0, count: 0 };
+      bucket.totalUsd += usd;
+      bucket.count += 1;
+      map.set(key, bucket);
+    };
+
+    const byDay = new Map<string | number, Bucket>();
+    const byMethod = new Map<string | number, Bucket>();
+    const byHour = new Map<string | number, Bucket>();
+    const byProduct = new Map<
+      string,
+      { productName: string; quantity: number; totalUsd: number }
+    >();
+    let totalUsd = 0;
+    let unconvertedSales = 0;
+
+    for (const sale of sales) {
+      const usd = toUsd(sale.total, sale.totalReference, sale.exchangeRate);
+      // Ventas antiguas sin tasa ni monto en USD: no hay con qué convertirlas
+      if (usd === 0 && sale.total > 0) unconvertedSales += 1;
+
+      totalUsd += usd;
+      bump(byDay, dayKey(sale.createdAt), usd);
+      bump(byMethod, sale.paymentMethod, usd);
+      bump(byHour, sale.createdAt.getHours(), usd);
+
+      for (const item of sale.items) {
+        const itemUsd =
+          item.subtotalReference > 0
+            ? item.subtotalReference
+            : sale.exchangeRate > 0
+              ? (item.subtotalLocal || item.subtotal) / sale.exchangeRate
+              : 0;
+        const product = byProduct.get(item.productId) ?? {
+          productName: item.productName,
+          quantity: 0,
+          totalUsd: 0,
+        };
+        product.quantity += item.quantity;
+        product.totalUsd += itemUsd;
+        byProduct.set(item.productId, product);
+      }
+    }
+
+    const products = Array.from(byProduct.entries())
+      .map(([productId, value]) => ({
+        productId,
+        productName: value.productName,
+        quantity: value.quantity,
+        totalUsd: round2(value.totalUsd),
+      }))
+      .sort((a, b) => b.totalUsd - a.totalUsd);
+
+    const topProduct = products.reduce<(typeof products)[number] | null>(
+      (best, product) =>
+        !best || product.quantity > best.quantity ? product : best,
+      null
+    );
+
+    const rows = (map: Map<string | number, Bucket>) =>
+      Array.from(map.entries()).map(([key, value]) => ({
+        key,
+        totalUsd: round2(value.totalUsd),
+        count: value.count,
+      }));
+
+    return res.status(200).json({
+      summary: {
+        totalUsd: round2(totalUsd),
+        count: sales.length,
+        averageUsd: sales.length > 0 ? round2(totalUsd / sales.length) : 0,
+      },
+      topProduct,
+      byDay: rows(byDay).map(({ key, ...rest }) => ({
+        date: String(key),
+        ...rest,
+      })),
+      byPaymentMethod: rows(byMethod)
+        .map(({ key, ...rest }) => ({ method: String(key), ...rest }))
+        .sort((a, b) => b.totalUsd - a.totalUsd),
+      byHour: rows(byHour).map(({ key, ...rest }) => ({
+        hour: Number(key),
+        ...rest,
+      })),
+      byProduct: products,
+      unconvertedSales,
+    });
+  } catch (error: any) {
+    console.error('Error al generar el reporte de ventas:', error);
+    return sendError(res, error, 'Error al generar el reporte de ventas');
+  }
+}

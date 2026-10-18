@@ -36,8 +36,12 @@ import {
 import { IconChip } from '@/components/common/IconChip';
 import { DualCurrency } from '@/components/common/DualCurrency';
 import { toast } from 'react-hot-toast';
+import { formatCurrency } from '@/lib/currency';
+import { paymentMethodLabel } from '@/lib/reports/paymentMethods';
 
 const COLORS = ['#1f7a59', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
+
+const formatUsd = (value: unknown) => formatCurrency(Number(value), 'USD');
 
 export default function SalesReportPage() {
   const { profile } = useAuthStore();
@@ -196,7 +200,7 @@ export default function SalesReportPage() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
               <YAxis />
-              <Tooltip />
+              <Tooltip formatter={formatUsd} />
               <Legend />
               <Line
                 type="monotone"
@@ -218,7 +222,7 @@ export default function SalesReportPage() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="productName" />
               <YAxis />
-              <Tooltip />
+              <Tooltip formatter={formatUsd} />
               <Legend />
               <Bar dataKey="total" fill="#1f7a59" name="Ventas (USD)" />
             </BarChart>
@@ -233,9 +237,14 @@ export default function SalesReportPage() {
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={reportData?.salesByPaymentMethod || []}
+                data={(reportData?.salesByPaymentMethod || []).map(
+                  (method) => ({
+                    ...method,
+                    label: paymentMethodLabel(method.method),
+                  })
+                )}
                 dataKey="total"
-                nameKey="method"
+                nameKey="label"
                 cx="50%"
                 cy="50%"
                 outerRadius={80}
@@ -250,7 +259,7 @@ export default function SalesReportPage() {
                   )
                 )}
               </Pie>
-              <Tooltip />
+              <Tooltip formatter={formatUsd} />
               <Legend />
             </PieChart>
           </ResponsiveContainer>
@@ -264,9 +273,13 @@ export default function SalesReportPage() {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={reportData?.salesByHour || []}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="hour" />
-              <YAxis />
-              <Tooltip />
+              <XAxis
+                dataKey="hour"
+                tickFormatter={(hour) => `${hour}h`}
+                interval={2}
+              />
+              <YAxis allowDecimals={false} />
+              <Tooltip labelFormatter={(hour) => `${hour}:00`} />
               <Legend />
               <Bar dataKey="transactions" fill="#f59e0b" name="Transacciones" />
             </BarChart>
@@ -332,6 +345,13 @@ export default function SalesReportPage() {
           </table>
         </div>
       </div>
+
+      {(reportData?.unconvertedSales ?? 0) > 0 && (
+        <p className="text-xs text-amber-700 dark:text-amber-400">
+          {reportData?.unconvertedSales} venta(s) antigua(s) no tienen monto en
+          USD ni tasa de cambio y no se incluyen en los totales.
+        </p>
+      )}
     </div>
   );
 }

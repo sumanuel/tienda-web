@@ -7,6 +7,8 @@ export interface SalesReportData {
   totalSales: number;
   totalTransactions: number;
   averageTicket: number;
+  // Ventas sin monto en USD ni tasa: no entran en los totales
+  unconvertedSales?: number;
   topProduct: {
     id: string;
     name: string;

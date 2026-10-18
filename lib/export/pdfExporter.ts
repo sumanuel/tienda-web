@@ -1,6 +1,7 @@
 import type { jsPDF } from 'jspdf';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { paymentMethodLabel } from '@/lib/reports/paymentMethods';
 import type {
   DateRange,
   FinancialReportData,
@@ -11,20 +12,6 @@ import type {
 
 const BRAND: [number, number, number] = [31, 122, 89];
 const MARGIN = 14;
-
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  efectivo: 'Efectivo',
-  transferencia: 'Transferencia',
-  credito: 'Crédito',
-  por_cobrar: 'Por cobrar',
-  pago_movil: 'Pago móvil',
-  cash: 'Efectivo',
-  card: 'Tarjeta',
-  transfer: 'Transferencia',
-};
-
-const paymentLabel = (method: string) =>
-  PAYMENT_METHOD_LABELS[method] ?? method;
 
 const numberFormat = new Intl.NumberFormat('es-VE', {
   minimumFractionDigits: 2,
@@ -255,7 +242,7 @@ export async function exportPurchasesReportToPDF(
     head: ['Método', 'Compras', 'Total (VES)', 'Total (USD)'],
     numeric: [1, 2, 3],
     body: data.byPaymentMethod.map((method) => [
-      paymentLabel(method.method),
+      paymentMethodLabel(method.method),
       method.count,
       num(method.totalLocal),
       num(method.totalReference),
@@ -326,7 +313,7 @@ export async function exportSalesReportToPDF(
     head: ['Método', 'Transacciones', ...usd.heads('Total')],
     numeric: [1, 2, 3],
     body: data.salesByPaymentMethod.map((method) => [
-      paymentLabel(method.method),
+      paymentMethodLabel(method.method),
       method.transactions,
       ...usd.cells(method.total),
     ]),

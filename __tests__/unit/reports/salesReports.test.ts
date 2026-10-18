@@ -1,457 +1,200 @@
 /**
  * Tests unitarios para lib/reports/salesReports.ts
  *
- * Objetivo: Validar que todos los cálculos matemáticos sean correctos
- * y que se manejen correctamente los edge cases.
+ * Objetivo: validar el mapeo entre la respuesta de GET /api/reports/sales
+ * (montos en USD agregados por el backend) y SalesReportData.
+ *
+ * El frontend solo completa los días y las horas sin ventas para las
+ * gráficas; los totales no se recalculan aquí.
  */
 
 import { getSalesReport } from '@/lib/reports/salesReports';
-import { getDocs } from 'firebase/firestore';
-import type { Sale } from '@/types/sale';
+import { apiClient } from '@/lib/api';
 
-// Mock de Firestore
-jest.mock('firebase/firestore', () => ({
-  collection: jest.fn(),
-  query: jest.fn(),
-  where: jest.fn(),
-  getDocs: jest.fn(),
-  Timestamp: {
-    fromDate: jest.fn((date) => ({ toDate: () => date })),
-  },
-}));
+jest.mock('@/lib/api', () => ({ apiClient: { get: jest.fn() } }));
 
-jest.mock('@/lib/firebase', () => ({
-  db: {},
-}));
+const mockGet = apiClient.get as jest.Mock;
+
+const emptyReport = () => ({
+  summary: { totalUsd: 0, count: 0, averageUsd: 0 },
+  topProduct: null,
+  byDay: [],
+  byPaymentMethod: [],
+  byHour: [],
+  byProduct: [],
+  unconvertedSales: 0,
+});
 
 describe('salesReports.ts - getSalesReport()', () => {
   const mockStoreId = 'store-123';
   const mockDateRange = {
-    startDate: new Date('2026-08-01'),
-    endDate: new Date('2026-08-07'),
+    startDate: new Date(2026, 7, 1),
+    endDate: new Date(2026, 7, 7),
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGet.mockResolvedValue(emptyReport());
   });
 
-  describe('Cálculos básicos', () => {
-    it('debe calcular totalSales correctamente', async () => {
-      const mockSales: Sale[] = [
-        {
-          id: '1',
-          storeId: mockStoreId,
-          total: 100,
-          paymentMethod: 'cash',
-          items: [],
-          createdAt: new Date('2026-08-05'),
-          status: 'completed',
-        },
-        {
-          id: '2',
-          storeId: mockStoreId,
-          total: 250.5,
-          paymentMethod: 'card',
-          items: [],
-          createdAt: new Date('2026-08-06'),
-          status: 'completed',
-        },
-        {
-          id: '3',
-          storeId: mockStoreId,
-          total: 75.25,
-          paymentMethod: 'cash',
-          items: [],
-          createdAt: new Date('2026-08-07'),
-          status: 'completed',
-        },
-      ];
+  it('pide el reporte de la tienda con fechas de día calendario', async () => {
+    await getSalesReport(mockStoreId, mockDateRange);
 
-      (getDocs as jest.Mock).mockResolvedValue({
-        docs: mockSales.map((sale) => ({
-          id: sale.id,
-          data: () => ({
-            ...sale,
-            createdAt: { toDate: () => sale.createdAt },
-          }),
-        })),
+    expect(mockGet).toHaveBeenCalledTimes(1);
+    const url = mockGet.mock.calls[0][0] as string;
+    expect(url.startsWith('/api/reports/sales?')).toBe(true);
+    const params = new URLSearchParams(url.split('?')[1]);
+    expect(params.get('storeId')).toBe(mockStoreId);
+    expect(params.get('startDate')).toBe('2026-08-01');
+    expect(params.get('endDate')).toBe('2026-08-07');
+  });
+
+  describe('Totales (calculados por el backend en USD)', () => {
+    it('toma total, transacciones y ticket promedio del resumen', async () => {
+      mockGet.mockResolvedValue({
+        ...emptyReport(),
+        summary: { totalUsd: 435.5, count: 3, averageUsd: 145.17 },
       });
 
       const result = await getSalesReport(mockStoreId, mockDateRange);
 
-      expect(result.totalSales).toBe(425.75);
-    });
-
-    it('debe calcular totalTransactions correctamente', async () => {
-      const mockSales: Sale[] = [
-        { id: '1', total: 100, items: [], createdAt: new Date() } as Sale,
-        { id: '2', total: 200, items: [], createdAt: new Date() } as Sale,
-        { id: '3', total: 300, items: [], createdAt: new Date() } as Sale,
-      ];
-
-      (getDocs as jest.Mock).mockResolvedValue({
-        docs: mockSales.map((sale) => ({
-          id: sale.id,
-          data: () => ({
-            ...sale,
-            createdAt: { toDate: () => sale.createdAt },
-          }),
-        })),
-      });
-
-      const result = await getSalesReport(mockStoreId, mockDateRange);
-
+      expect(result.totalSales).toBe(435.5);
       expect(result.totalTransactions).toBe(3);
+      expect(result.averageTicket).toBe(145.17);
     });
 
-    it('debe calcular averageTicket correctamente', async () => {
-      const mockSales: Sale[] = [
-        { id: '1', total: 100, items: [], createdAt: new Date() } as Sale,
-        { id: '2', total: 200, items: [], createdAt: new Date() } as Sale,
-        { id: '3', total: 300, items: [], createdAt: new Date() } as Sale,
-      ];
-
-      (getDocs as jest.Mock).mockResolvedValue({
-        docs: mockSales.map((sale) => ({
-          id: sale.id,
-          data: () => ({
-            ...sale,
-            createdAt: { toDate: () => sale.createdAt },
-          }),
-        })),
-      });
-
-      const result = await getSalesReport(mockStoreId, mockDateRange);
-
-      expect(result.averageTicket).toBe(200); // (100 + 200 + 300) / 3
-    });
-  });
-
-  describe('Edge cases', () => {
-    it('debe manejar ventas vacías (0 transacciones)', async () => {
-      (getDocs as jest.Mock).mockResolvedValue({
-        docs: [],
-      });
-
+    it('maneja el caso de 0 ventas', async () => {
       const result = await getSalesReport(mockStoreId, mockDateRange);
 
       expect(result.totalSales).toBe(0);
       expect(result.totalTransactions).toBe(0);
-      expect(result.averageTicket).toBe(0); // División por cero manejada
+      expect(result.averageTicket).toBe(0);
       expect(result.topProduct).toBeNull();
+      expect(result.salesByProduct).toEqual([]);
     });
 
-    it('debe manejar división por cero en averageTicket', async () => {
-      (getDocs as jest.Mock).mockResolvedValue({
-        docs: [],
-      });
+    it('informa las ventas sin equivalente en USD', async () => {
+      mockGet.mockResolvedValue({ ...emptyReport(), unconvertedSales: 2 });
 
       const result = await getSalesReport(mockStoreId, mockDateRange);
 
-      expect(result.averageTicket).toBe(0);
-      expect(isNaN(result.averageTicket)).toBe(false);
-    });
-
-    it('debe manejar ventas con total = 0', async () => {
-      const mockSales: Sale[] = [
-        { id: '1', total: 0, items: [], createdAt: new Date() } as Sale,
-      ];
-
-      (getDocs as jest.Mock).mockResolvedValue({
-        docs: mockSales.map((sale) => ({
-          id: sale.id,
-          data: () => ({
-            ...sale,
-            createdAt: { toDate: () => sale.createdAt },
-          }),
-        })),
-      });
-
-      const result = await getSalesReport(mockStoreId, mockDateRange);
-
-      expect(result.totalSales).toBe(0);
-      expect(result.totalTransactions).toBe(1);
-      expect(result.averageTicket).toBe(0);
+      expect(result.unconvertedSales).toBe(2);
     });
   });
 
   describe('Ventas por día', () => {
-    it('debe incluir TODOS los días del rango incluso sin ventas', async () => {
-      // Solo 1 venta el 2026-08-05
-      const mockSales: Sale[] = [
-        {
-          id: '1',
-          total: 100,
-          items: [],
-          createdAt: new Date('2026-08-05T10:00:00'),
-        } as Sale,
-      ];
-
-      (getDocs as jest.Mock).mockResolvedValue({
-        docs: mockSales.map((sale) => ({
-          id: sale.id,
-          data: () => ({
-            ...sale,
-            createdAt: { toDate: () => sale.createdAt },
-          }),
-        })),
+    it('incluye todos los días del rango, incluso sin ventas', async () => {
+      mockGet.mockResolvedValue({
+        ...emptyReport(),
+        byDay: [{ date: '2026-08-05', totalUsd: 150, count: 1 }],
       });
 
-      const dateRange = {
-        startDate: new Date('2026-08-01'),
-        endDate: new Date('2026-08-07'),
-      };
+      const result = await getSalesReport(mockStoreId, mockDateRange);
 
-      const result = await getSalesReport(mockStoreId, dateRange);
-
-      // Debe tener 7 días (01-07 agosto)
-      expect(result.salesByDay).toHaveLength(7);
-
-      // Día con venta
+      expect(result.salesByDay).toHaveLength(7); // 01-07 agosto
       const dayWithSale = result.salesByDay.find((d) => d.date.includes('05'));
-      expect(dayWithSale?.total).toBe(100);
+      expect(dayWithSale?.total).toBe(150);
       expect(dayWithSale?.transactions).toBe(1);
 
-      // Días sin ventas deben tener total = 0
       const daysWithoutSales = result.salesByDay.filter(
-        (d) => !d.date.includes('05')
+        (d) => d.transactions === 0
       );
-      daysWithoutSales.forEach((day) => {
-        expect(day.total).toBe(0);
-        expect(day.transactions).toBe(0);
-      });
-    });
-  });
-
-  describe('Top producto', () => {
-    it('debe identificar el producto más vendido por cantidad', async () => {
-      const mockSales: Sale[] = [
-        {
-          id: '1',
-          total: 100,
-          items: [
-            {
-              productId: 'prod-A',
-              productName: 'Producto A',
-              quantity: 10,
-              price: 5,
-            },
-          ],
-          createdAt: new Date(),
-        } as Sale,
-        {
-          id: '2',
-          total: 200,
-          items: [
-            {
-              productId: 'prod-B',
-              productName: 'Producto B',
-              quantity: 5,
-              price: 20,
-            },
-          ],
-          createdAt: new Date(),
-        } as Sale,
-        {
-          id: '3',
-          total: 150,
-          items: [
-            {
-              productId: 'prod-A',
-              productName: 'Producto A',
-              quantity: 20,
-              price: 5,
-            },
-          ],
-          createdAt: new Date(),
-        } as Sale,
-      ];
-
-      (getDocs as jest.Mock).mockResolvedValue({
-        docs: mockSales.map((sale) => ({
-          id: sale.id,
-          data: () => ({
-            ...sale,
-            createdAt: { toDate: () => sale.createdAt },
-          }),
-        })),
-      });
-
-      const result = await getSalesReport(mockStoreId, mockDateRange);
-
-      // Producto A vendió 10 + 20 = 30 unidades
-      // Producto B vendió 5 unidades
-      expect(result.topProduct?.id).toBe('prod-A');
-      expect(result.topProduct?.name).toBe('Producto A');
-      expect(result.topProduct?.quantity).toBe(30);
-      expect(result.topProduct?.total).toBe(250); // (10*5) + (20*5)
-    });
-
-    it('debe retornar null cuando no hay productos vendidos', async () => {
-      const mockSales: Sale[] = [
-        {
-          id: '1',
-          total: 0,
-          items: [],
-          createdAt: new Date(),
-        } as Sale,
-      ];
-
-      (getDocs as jest.Mock).mockResolvedValue({
-        docs: mockSales.map((sale) => ({
-          id: sale.id,
-          data: () => ({
-            ...sale,
-            createdAt: { toDate: () => sale.createdAt },
-          }),
-        })),
-      });
-
-      const result = await getSalesReport(mockStoreId, mockDateRange);
-
-      expect(result.topProduct).toBeNull();
-    });
-  });
-
-  describe('Ventas por método de pago', () => {
-    it('debe agregar correctamente por método de pago', async () => {
-      const mockSales: Sale[] = [
-        {
-          id: '1',
-          total: 100,
-          paymentMethod: 'cash',
-          items: [],
-          createdAt: new Date(),
-        } as Sale,
-        {
-          id: '2',
-          total: 200,
-          paymentMethod: 'cash',
-          items: [],
-          createdAt: new Date(),
-        } as Sale,
-        {
-          id: '3',
-          total: 150,
-          paymentMethod: 'card',
-          items: [],
-          createdAt: new Date(),
-        } as Sale,
-        {
-          id: '4',
-          total: 75,
-          paymentMethod: 'transfer',
-          items: [],
-          createdAt: new Date(),
-        } as Sale,
-      ];
-
-      (getDocs as jest.Mock).mockResolvedValue({
-        docs: mockSales.map((sale) => ({
-          id: sale.id,
-          data: () => ({
-            ...sale,
-            createdAt: { toDate: () => sale.createdAt },
-          }),
-        })),
-      });
-
-      const result = await getSalesReport(mockStoreId, mockDateRange);
-
-      const cashSales = result.salesByPaymentMethod.find(
-        (pm) => pm.method === 'cash'
-      );
-      expect(cashSales?.total).toBe(300); // 100 + 200
-      expect(cashSales?.transactions).toBe(2);
-
-      const cardSales = result.salesByPaymentMethod.find(
-        (pm) => pm.method === 'card'
-      );
-      expect(cardSales?.total).toBe(150);
-      expect(cardSales?.transactions).toBe(1);
-
-      const transferSales = result.salesByPaymentMethod.find(
-        (pm) => pm.method === 'transfer'
-      );
-      expect(transferSales?.total).toBe(75);
-      expect(transferSales?.transactions).toBe(1);
+      expect(daysWithoutSales).toHaveLength(6);
+      daysWithoutSales.forEach((day) => expect(day.total).toBe(0));
     });
   });
 
   describe('Ventas por hora', () => {
-    it('debe extraer la hora correctamente y filtrar horas sin ventas', async () => {
-      const mockSales: Sale[] = [
-        {
-          id: '1',
-          total: 100,
-          items: [],
-          createdAt: new Date('2026-08-05T09:30:00'), // 9 AM
-        } as Sale,
-        {
-          id: '2',
-          total: 200,
-          items: [],
-          createdAt: new Date('2026-08-05T09:45:00'), // 9 AM
-        } as Sale,
-        {
-          id: '3',
-          total: 150,
-          items: [],
-          createdAt: new Date('2026-08-05T14:20:00'), // 2 PM
-        } as Sale,
-      ];
-
-      (getDocs as jest.Mock).mockResolvedValue({
-        docs: mockSales.map((sale) => ({
-          id: sale.id,
-          data: () => ({
-            ...sale,
-            createdAt: { toDate: () => sale.createdAt },
-          }),
-        })),
+    it('devuelve las 24 horas, con ceros donde no hubo ventas', async () => {
+      mockGet.mockResolvedValue({
+        ...emptyReport(),
+        byHour: [{ hour: 14, totalUsd: 85.5, count: 2 }],
       });
 
       const result = await getSalesReport(mockStoreId, mockDateRange);
 
-      // Solo debe retornar horas con transacciones
-      expect(result.salesByHour).toHaveLength(2); // Hora 9 y hora 14
-
-      const hour9 = result.salesByHour.find((h) => h.hour === 9);
-      expect(hour9?.total).toBe(300); // 100 + 200
-      expect(hour9?.transactions).toBe(2);
-
-      const hour14 = result.salesByHour.find((h) => h.hour === 14);
-      expect(hour14?.total).toBe(150);
-      expect(hour14?.transactions).toBe(1);
+      expect(result.salesByHour).toHaveLength(24);
+      expect(result.salesByHour[14]).toEqual({
+        hour: 14,
+        total: 85.5,
+        transactions: 2,
+      });
+      expect(result.salesByHour[3]).toEqual({
+        hour: 3,
+        total: 0,
+        transactions: 0,
+      });
     });
   });
 
-  describe('Validaciones', () => {
-    it('debe manejar ventas sin createdAt (no debe crashear)', async () => {
-      const mockSales = [
-        {
-          id: '1',
-          total: 100,
-          items: [],
-          // createdAt: undefined
-        },
-      ];
-
-      (getDocs as jest.Mock).mockResolvedValue({
-        docs: mockSales.map((sale) => ({
-          id: sale.id,
-          data: () => ({
-            ...sale,
-            createdAt: null, // Venta sin fecha
-          }),
-        })),
+  describe('Ventas por método de pago', () => {
+    it('conserva el monto en USD y las transacciones de cada método', async () => {
+      mockGet.mockResolvedValue({
+        ...emptyReport(),
+        byPaymentMethod: [
+          { method: 'cash', totalUsd: 350, count: 2 },
+          { method: 'card', totalUsd: 85.5, count: 1 },
+        ],
       });
 
-      // BUG-003: Esto DEBERÍA crashear actualmente
-      // Después de la corrección, NO debería crashear
-      await expect(
-        getSalesReport(mockStoreId, mockDateRange)
-      ).rejects.toThrow();
+      const result = await getSalesReport(mockStoreId, mockDateRange);
+
+      expect(result.salesByPaymentMethod).toEqual([
+        { method: 'cash', total: 350, transactions: 2 },
+        { method: 'card', total: 85.5, transactions: 1 },
+      ]);
+    });
+  });
+
+  describe('Productos', () => {
+    it('mapea el detalle por producto y el producto más vendido', async () => {
+      mockGet.mockResolvedValue({
+        ...emptyReport(),
+        topProduct: {
+          productId: 'p1',
+          productName: 'Harina Pan 1kg',
+          quantity: 120,
+          totalUsd: 300,
+        },
+        byProduct: [
+          {
+            productId: 'p1',
+            productName: 'Harina Pan 1kg',
+            quantity: 120,
+            totalUsd: 300,
+          },
+          { productId: 'p2', productName: 'Arroz', quantity: 10, totalUsd: 20 },
+        ],
+      });
+
+      const result = await getSalesReport(mockStoreId, mockDateRange);
+
+      expect(result.topProduct).toEqual({
+        id: 'p1',
+        name: 'Harina Pan 1kg',
+        quantity: 120,
+        total: 300,
+      });
+      expect(result.salesByProduct).toEqual([
+        {
+          productId: 'p1',
+          productName: 'Harina Pan 1kg',
+          quantity: 120,
+          total: 300,
+        },
+        { productId: 'p2', productName: 'Arroz', quantity: 10, total: 20 },
+      ]);
+    });
+  });
+
+  describe('Errores', () => {
+    it('lanza un error legible si el servidor falla', async () => {
+      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      mockGet.mockRejectedValue(new Error('500'));
+
+      await expect(getSalesReport(mockStoreId, mockDateRange)).rejects.toThrow(
+        'Error al generar reporte de ventas'
+      );
     });
   });
 });

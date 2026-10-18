@@ -1,11 +1,33 @@
 /**
- * Servicio de Reportes de Ventas - Migrado a PostgreSQL
+ * Servicio de Reportes de Ventas: el backend agrega el período en USD
+ * (GET /api/reports/sales) y aquí solo se completan los días y las horas sin
+ * ventas para las gráficas.
  */
 
 import { apiClient } from '@/lib/api';
 import type { SalesReportData, DateRange } from '@/types/reports';
 import { format, eachDayOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
+
+interface SalesReportResponse {
+  summary: { totalUsd: number; count: number; averageUsd: number };
+  topProduct: {
+    productId: string;
+    productName: string;
+    quantity: number;
+    totalUsd: number;
+  } | null;
+  byDay: { date: string; totalUsd: number; count: number }[];
+  byPaymentMethod: { method: string; totalUsd: number; count: number }[];
+  byHour: { hour: number; totalUsd: number; count: number }[];
+  byProduct: {
+    productId: string;
+    productName: string;
+    quantity: number;
+    totalUsd: number;
+  }[];
+  unconvertedSales: number;
+}
 
 /**
  * Obtiene el reporte completo de ventas para un rango de fechas
@@ -15,116 +37,65 @@ export async function getSalesReport(
   dateRange: DateRange
 ): Promise<SalesReportData> {
   try {
-    // Obtener ventas del período
-    const response = await apiClient.getSales({
+    // Fechas como día calendario local: el backend las interpreta así
+    const params = new URLSearchParams({
       storeId,
-      startDate: dateRange.startDate.toISOString(),
-      endDate: dateRange.endDate.toISOString(),
-      limit: 10000,
+      startDate: format(dateRange.startDate, 'yyyy-MM-dd'),
+      endDate: format(dateRange.endDate, 'yyyy-MM-dd'),
     });
 
-    const sales = response.sales;
+    const report = await apiClient.get<SalesReportResponse>(
+      `/api/reports/sales?${params.toString()}`
+    );
 
-    // Obtener estadísticas
-    const statsResponse = await apiClient.getSalesStats({
-      storeId,
-      startDate: dateRange.startDate.toISOString(),
-      endDate: dateRange.endDate.toISOString(),
-    });
-
-    // Calcular ventas por día
+    const byDayKey = new Map(report.byDay.map((day) => [day.date, day]));
     const days = eachDayOfInterval({
       start: dateRange.startDate,
       end: dateRange.endDate,
     });
 
-    const salesByDay = days.map((day) => {
-      const dayStr = format(day, 'yyyy-MM-dd');
-      const daySales = sales.filter((sale) =>
-        sale.createdAt.startsWith(dayStr)
-      );
+    const byHourKey = new Map(report.byHour.map((hour) => [hour.hour, hour]));
 
-      return {
-        date: format(day, 'dd MMM', { locale: es }),
-        total: daySales.reduce((sum, sale) => sum + sale.total, 0),
-        transactions: daySales.length,
-      };
-    });
-
-    // Agrupar ventas por método de pago
-    const paymentMethodMap = new Map<
-      string,
-      { total: number; transactions: number }
-    >();
-
-    sales.forEach((sale) => {
-      const method = sale.paymentMethod;
-      const existing = paymentMethodMap.get(method) || {
-        total: 0,
-        transactions: 0,
-      };
-
-      paymentMethodMap.set(method, {
-        total: existing.total + sale.total,
-        transactions: existing.transactions + 1,
-      });
-    });
-
-    const salesByPaymentMethod = Array.from(paymentMethodMap.entries()).map(
-      ([method, data]) => ({
-        method,
-        total: data.total,
-        transactions: data.transactions,
-      })
-    );
-
-    // Para obtener productos vendidos, necesitaríamos detalles de cada venta
-    // Por ahora devolvemos datos básicos
     return {
-      totalSales: statsResponse.totalRevenue,
-      totalTransactions: statsResponse.salesCount,
-      averageTicket: statsResponse.averageSale,
-      topProduct: null, // Requiere consultar detalles de items
-      salesByDay,
-      salesByProduct: [], // Requiere consultar detalles de items
-      salesByPaymentMethod,
-      salesByHour: [], // Requiere análisis de timestamps
+      totalSales: report.summary.totalUsd,
+      totalTransactions: report.summary.count,
+      averageTicket: report.summary.averageUsd,
+      unconvertedSales: report.unconvertedSales,
+      topProduct: report.topProduct
+        ? {
+            id: report.topProduct.productId,
+            name: report.topProduct.productName,
+            quantity: report.topProduct.quantity,
+            total: report.topProduct.totalUsd,
+          }
+        : null,
+      salesByDay: days.map((day) => {
+        const data = byDayKey.get(format(day, 'yyyy-MM-dd'));
+        return {
+          date: format(day, 'dd MMM', { locale: es }),
+          total: data?.totalUsd ?? 0,
+          transactions: data?.count ?? 0,
+        };
+      }),
+      salesByProduct: report.byProduct.map((product) => ({
+        productId: product.productId,
+        productName: product.productName,
+        quantity: product.quantity,
+        total: product.totalUsd,
+      })),
+      salesByPaymentMethod: report.byPaymentMethod.map((method) => ({
+        method: method.method,
+        total: method.totalUsd,
+        transactions: method.count,
+      })),
+      salesByHour: Array.from({ length: 24 }, (_, hour) => ({
+        hour,
+        total: byHourKey.get(hour)?.totalUsd ?? 0,
+        transactions: byHourKey.get(hour)?.count ?? 0,
+      })),
     };
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error generando reporte de ventas:', error);
     throw new Error('Error al generar reporte de ventas');
-  }
-}
-
-/**
- * Obtener ventas por producto para un rango de fechas
- */
-export async function getSalesProductReport(
-  storeId: string,
-  dateRange: DateRange
-) {
-  try {
-    // Obtener todas las ventas del período
-    const response = await apiClient.getSales({
-      storeId,
-      startDate: dateRange.startDate.toISOString(),
-      endDate: dateRange.endDate.toISOString(),
-      limit: 10000,
-    });
-
-    // Para obtener productos, necesitaríamos consultar cada venta individualmente
-    // o tener un endpoint dedicado en el backend
-    console.warn(
-      'getSalesProductReport requiere detalles de items - implementación simplificada'
-    );
-
-    return {
-      products: [],
-      totalSales: response.sales.reduce((sum, sale) => sum + sale.total, 0),
-      totalTransactions: response.sales.length,
-    };
-  } catch (error: any) {
-    console.error('Error generando reporte de productos:', error);
-    throw new Error('Error al generar reporte de productos');
   }
 }
