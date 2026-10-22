@@ -3,13 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev.mjs",
+    "dev:stop": "node scripts/dev.mjs --stop",
+    "dev:restart": "node scripts/dev.mjs --restart",
+    "dev:web": "next dev",
+    "dev:api": "npm --prefix backend run dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "start:all": "powershell -ExecutionPolicy Bypass -File start.ps1",
-    "stop:all": "powershell -ExecutionPolicy Bypass -File stop.ps1",
-    "restart:all": "powershell -ExecutionPolicy Bypass -File restart.ps1"
+    "lint": "eslint"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

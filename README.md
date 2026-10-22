@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# T-Suma
 
-## Getting Started
+Sistema de punto de venta e inventario (ventas, compras, clientes,
+proveedores, reportes) con moneda principal VES y referencia en USD.
 
-First, run the development server:
+- **Web:** Next.js (carpeta raíz).
+- **API:** Express + Prisma + PostgreSQL (carpeta `backend/`).
+
+## Puesta en marcha
+
+Requisitos: Node.js 20+ (probado con Node 24) y PostgreSQL con la base
+configurada en `backend/.env` (hay una plantilla en `backend/.env.example`).
+
+```bash
+npm install
+npm --prefix backend install
+```
+
+### Desarrollo: un solo comando
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Levanta la API (puerto 4000) y la web (puerto 3000) en **una sola terminal**,
+con la salida de cada una marcada con `[api]` y `[web]`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Ctrl+C** detiene las dos, con todos sus procesos hijos.
+- Si una de las dos se cae, la otra se detiene también (no queda media app
+  viva ocupando un puerto).
+- Al arrancar revisa los puertos: si los ocupa un resto de una ejecución
+  anterior **de este proyecto**, lo cierra; si los ocupa **otro programa**, no
+  lo toca y avisa cuál es.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Comando               | Qué hace                                                   |
+| --------------------- | ---------------------------------------------------------- |
+| `npm run dev`         | Levanta API y web                                          |
+| `npm run dev:stop`    | Cierra lo que haya quedado de este proyecto (por si acaso) |
+| `npm run dev:restart` | `dev:stop` y luego `dev`                                   |
+| `npm run dev:web`     | Solo la web (Next.js)                                      |
+| `npm run dev:api`     | Solo la API                                                |
 
-## Learn More
+### Cambiar los puertos
 
-To learn more about Next.js, take a look at the following resources:
+Si otro programa usa el 3000 o el 4000, en PowerShell:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```powershell
+$env:WEB_PORT=3100; $env:API_PORT=4100; npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+El script ajusta solo el CORS de la API y el proxy de la web a esos puertos.
 
-## Deploy on Vercel
+## Pruebas
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm test                      # web (Jest)
+npm --prefix backend test     # API (runner de Node, sin base de datos)
+```
